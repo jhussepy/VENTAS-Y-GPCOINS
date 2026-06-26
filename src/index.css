@@ -61,6 +61,7 @@ body {
   .btn-primary { @apply btn bg-vf-red hover:bg-vf-redDark text-white; }
   .btn-ghost   { @apply btn bg-bg-surface2 hover:bg-bg-border text-fg-soft border border-bg-border; }
   .btn-gold    { @apply btn bg-gp-gold hover:bg-gp-goldDark text-black; }
+  .btn-lowi    { @apply btn bg-sky-600 hover:bg-sky-700 text-white; }
   .input {
     @apply w-full bg-bg-surface2 border border-bg-border rounded-lg px-3 py-2 text-sm
            text-fg-soft placeholder:text-fg-muted

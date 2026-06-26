@@ -92,7 +92,7 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
 
       <div className="flex gap-2 justify-end">
         <button className="btn-ghost" onClick={onCancelar}><X size={16} /> Cancelar</button>
-        <button className="btn-primary" onClick={() => onGuardar(v)}><Check size={16} /> Guardar</button>
+        <button className="btn-lowi" onClick={() => onGuardar(v)}><Check size={16} /> Guardar</button>
       </div>
     </div>
   );
@@ -173,7 +173,7 @@ export default function LowiVentas() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex flex-wrap gap-2">
-          <button className="btn-primary" onClick={() => { setEditId(null); setForm(true); }}>
+          <button className="btn-lowi" onClick={() => { setEditId(null); setForm(true); }}>
             <Plus size={16} /> Nueva venta Lowi
           </button>
           <button className="btn-ghost" onClick={() => fileRef.current?.click()}>
