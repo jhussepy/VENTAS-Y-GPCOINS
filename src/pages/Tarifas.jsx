@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Plus, Upload, FileSpreadsheet, Trash2, Tag, Tv, Zap } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage.js';
+import { useApp } from '../App.jsx';
 import {
   TARIFAS_EXCLUSIVO, OTT_COLS, PROMO_FLASH, FLASH_OTT,
 } from '../data/tarifas.js';
@@ -110,7 +110,7 @@ function PromoFlash() {
 }
 
 function MisTarifas() {
-  const [tarifas, setTarifas] = useLocalStorage('vf_tarifas', []);
+  const { tarifas, setTarifas } = useApp();
   const [form, setForm] = useState({ concepto: '', descripcion: '', precio: '', promo: '' });
   const fileRef = useRef(null);
 
