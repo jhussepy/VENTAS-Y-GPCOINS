@@ -4,7 +4,8 @@ import { db } from '../lib/firebase.js';
 
 const DEBOUNCE_MS = 1500;
 
-export function useCloudData(uid) {
+export function useCloudData(user) {
+  const uid = user?.uid;
   const [ventas, setVentasState] = useState([]);
   const [tarifas, setTarifasState] = useState([]);
   const [tema, setTemaState] = useState('dark');
@@ -14,6 +15,13 @@ export function useCloudData(uid) {
   useEffect(() => {
     if (!uid) { setLoading(false); return; }
     const ref = doc(db, 'usuarios', uid);
+    // Guarda/actualiza el perfil para que el admin pueda identificar al agente
+    setDoc(ref, {
+      email: user.email || '',
+      nombre: user.displayName || '',
+      foto: user.photoURL || '',
+      ultimoAcceso: Date.now(),
+    }, { merge: true }).catch(() => {});
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
         const d = snap.data();

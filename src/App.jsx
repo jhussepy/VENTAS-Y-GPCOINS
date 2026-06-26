@@ -1,12 +1,13 @@
 import { useState, useMemo, createContext, useContext } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
-  Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2,
+  Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useCloudData } from './hooks/useCloudData.js';
 import { cerrarSesion } from './lib/firebase.js';
+import { esAdmin } from './lib/admin.js';
 
 import Dashboard from './pages/Dashboard.jsx';
 import Ventas from './pages/Ventas.jsx';
@@ -16,6 +17,7 @@ import Incentivos from './pages/Incentivos.jsx';
 import Tarifas from './pages/Tarifas.jsx';
 import Catalogo from './pages/Catalogo.jsx';
 import Login from './pages/Login.jsx';
+import Admin from './pages/Admin.jsx';
 
 export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -30,6 +32,8 @@ const NAV = [
   { id: 'catalogo', label: 'Catálogo', icon: Smartphone, Comp: Catalogo },
 ];
 
+const NAV_ADMIN = { id: 'admin', label: 'Supervisor', icon: ShieldCheck, Comp: Admin };
+
 function Spinner() {
   return (
     <div className="min-h-dvh flex items-center justify-center bg-bg-base">
@@ -43,7 +47,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, tarifas, setTarifas, tema, setTema, loading } = useCloudData(user?.uid);
+  const { ventas, setVentas, tarifas, setTarifas, tema, setTema, loading } = useCloudData(user);
   const [page, setPage] = useState('dashboard');
   const [mes, setMes] = useState('junio');
   const [open, setOpen] = useState(false);
@@ -55,8 +59,10 @@ export default function App() {
   // Data loading
   if (loading) return <Spinner />;
 
-  const ctx = { ventas, setVentas, tarifas, setTarifas, mes, setMes };
-  const Active = NAV.find((n) => n.id === page)?.Comp ?? Dashboard;
+  const admin = esAdmin(user);
+  const nav = admin ? [...NAV, NAV_ADMIN] : NAV;
+  const ctx = { ventas, setVentas, tarifas, setTarifas, mes, setMes, user, admin };
+  const Active = nav.find((n) => n.id === page)?.Comp ?? Dashboard;
 
   return (
     <AppCtx.Provider value={ctx}>
@@ -76,7 +82,7 @@ export default function App() {
           </div>
 
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {NAV.map((n) => (
+            {nav.map((n) => (
               <button
                 key={n.id}
                 onClick={() => { setPage(n.id); setOpen(false); }}
@@ -129,7 +135,7 @@ export default function App() {
                 <Menu size={20} />
               </button>
               <h1 className="text-base font-semibold text-fg capitalize">
-                {NAV.find((n) => n.id === page)?.label}
+                {nav.find((n) => n.id === page)?.label}
               </h1>
             </div>
             <div className="flex items-center gap-2">
