@@ -22,6 +22,20 @@ export default function Dashboard() {
   // Nº total de incentivos (dinámico, en vez de hardcodear 6)
   const totalIncentivos = ORDEN_INCENTIVOS.length;
 
+  // Distribución de ventas por estado de instalación (activa / pendiente)
+  const distribucion = useMemo(() => {
+    const total = r.totalVentas;
+    const activa = r.instalacionesActivas;
+    const pendiente = Math.max(0, total - activa);
+    return {
+      total,
+      items: [
+        { id: 'activa', label: 'Instalación activa', n: activa, color: '#10B981' },
+        { id: 'pendiente', label: 'Pendiente de instalar', n: pendiente, color: '#FFB81C' },
+      ],
+    };
+  }, [r.totalVentas, r.instalacionesActivas]);
+
   // --- Proyección / ritmo del mes activo --------------------------------------
   const proyeccion = useMemo(() => {
     // Año del período (2026) y mes activo (junio=5, julio=6 en base 0)
@@ -153,6 +167,36 @@ export default function Dashboard() {
             <p className="text-xs text-fg-muted mt-1">al ritmo actual</p>
           </div>
         </div>
+      </Card>
+
+      {/* Distribución de ventas por estado de instalación */}
+      <Card>
+        <SectionTitle right={<Badge tone="neutral">{fmtNum(distribucion.total)} ventas</Badge>}>
+          Distribución por instalación
+        </SectionTitle>
+        {distribucion.total === 0 ? (
+          <p className="py-6 text-center text-fg-muted text-sm">Aún no hay ventas este mes.</p>
+        ) : (
+          <div className="space-y-3">
+            {distribucion.items.map((it) => {
+              const pct = distribucion.total ? (it.n / distribucion.total) * 100 : 0;
+              return (
+                <div key={it.id}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="flex items-center gap-2 text-fg-soft">
+                      <span className="inline-block w-3 h-3 rounded-sm" style={{ background: it.color }} />
+                      {it.label}
+                    </span>
+                    <span className="text-fg-muted tabnum">{it.n} · {pct.toFixed(0)}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: it.color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
 
       <Card>
