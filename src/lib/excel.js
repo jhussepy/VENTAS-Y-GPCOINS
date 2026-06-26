@@ -94,7 +94,13 @@ export function plantillaVentas() {
     fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414',
     cantidad: 1, portasVoz: 2, lineasVoz: 2, til65: 1, secureNet: 1,
-    instalacionActiva: 'SI', notas: 'Ejemplo',
+    instalacionActiva: 'SI', notas: 'Ejemplo con terminal',
+  }, {
+    nombre: 'María', apellido: 'García', fechaVenta: '2026-06-18',
+    fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB',
+    clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '',
+    cantidad: '', portasVoz: 1, lineasVoz: 1, til65: 0, secureNet: 0,
+    instalacionActiva: 'SI', notas: 'Solo fibra y movil (sin terminal): deja marca y sap vacios',
   }];
   const ws = XLSX.utils.json_to_sheet(ejemplo, { header: COLUMNAS_VENTAS });
   const wb = XLSX.utils.book_new();

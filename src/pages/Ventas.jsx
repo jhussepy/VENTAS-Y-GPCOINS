@@ -47,20 +47,26 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           </select>
         </div>
         <div>
-          <label className="label">Marca terminal</label>
+          <label className="label">Marca terminal <span className="text-fg-muted font-normal">(opcional)</span></label>
           <select className="input" value={v.marca} onChange={(e) => set('marca', e.target.value)}>
-            <option value="">—</option>
+            <option value="">Sin terminal</option>
             {MARCAS.map((m) => <option key={m} value={m}>{CATALOGO[m].marca}</option>)}
           </select>
         </div>
         <div>
-          <label className="label">Modelo (SAP)</label>
+          <label className="label">Modelo (SAP) <span className="text-fg-muted font-normal">(opcional)</span></label>
           <select className="input" value={v.sap} onChange={(e) => set('sap', e.target.value)} disabled={!v.marca}>
-            <option value="">—</option>
+            <option value="">{v.marca ? '—' : 'Sin terminal'}</option>
             {productos.map((p) => <option key={p.sap} value={p.sap}>{p.sap} · {p.modelo}</option>)}
           </select>
         </div>
       </div>
+
+      {!v.marca && (
+        <p className="text-xs text-fg-muted -mt-1">
+          Sin terminal: venta de solo fibra y/o líneas móviles. Puntúa para <span className="text-fg-soft">Cliente Nuevo</span> y sus llaves, pero no genera GP Coins de dispositivo.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div><label className="label">Cantidad</label><input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', Number(e.target.value))} /></div>
@@ -217,7 +223,9 @@ export default function Ventas() {
                         {v.convergencia ? `${v.convergencia} · ${v.velocidad}` : '—'}
                       </td>
                       <td className="px-4 py-3 text-fg-soft">
-                        {prod ? <span title={prod.modelo}>{nombreMarca(v.marca)} · {prod.modelo.slice(0, 22)}{prod.modelo.length > 22 ? '…' : ''}</span> : '—'}
+                        {prod
+                          ? <span title={prod.modelo}>{nombreMarca(v.marca)} · {prod.modelo.slice(0, 22)}{prod.modelo.length > 22 ? '…' : ''}</span>
+                          : <span className="text-fg-muted italic">Sin terminal</span>}
                       </td>
                       <td className="px-4 py-3 text-center"><Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge></td>
                       <td className="px-4 py-3 text-center">
