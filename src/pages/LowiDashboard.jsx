@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
 } from 'recharts';
 import { useApp } from '../App.jsx';
-import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS, MOTIVOS_BAJA } from '../lib/lowi.js';
+import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS } from '../lib/lowi.js';
 import { StatCard, Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtNum, fmtEur } from '../lib/format.js';
 

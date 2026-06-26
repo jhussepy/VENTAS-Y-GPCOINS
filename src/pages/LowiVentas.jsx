@@ -205,7 +205,9 @@ export default function LowiVentas() {
         <Card>
           <SectionTitle>{editId ? 'Editar venta Lowi' : 'Registrar nueva venta Lowi'}</SectionTitle>
           <FormLowi
-            inicial={editId ? ventasLowi.find((v) => v.id === editId) : ventaLowiVacia()}
+            inicial={editId
+              ? { ...ventaLowiVacia(), ...ventasLowi.find((v) => v.id === editId) }
+              : ventaLowiVacia()}
             onGuardar={guardar}
             onCancelar={() => { setForm(false); setEditId(null); }}
           />

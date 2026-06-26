@@ -306,7 +306,9 @@ export default function Ventas() {
         <Card>
           <SectionTitle>{editId ? 'Editar venta' : 'Registrar nueva venta'}</SectionTitle>
           <FormVenta
-            inicial={editId ? ventas.find((v) => v.id === editId) : { ...ventaVacia(), mes }}
+            inicial={editId
+              ? (() => { const f = ventas.find((v) => v.id === editId); return { ...ventaVacia(), ...f, estado: estadoDe(f) }; })()
+              : { ...ventaVacia(), mes }}
             onGuardar={guardar}
             onCancelar={() => { setForm(false); setEditId(null); }}
           />
