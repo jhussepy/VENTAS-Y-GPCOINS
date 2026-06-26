@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Coins, Wallet, Trophy, TrendingUp, Wifi } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { resumenGlobal, puntosClienteNuevo } from '../lib/engine.js';
+import { resumenGlobal, puntosClienteNuevo, portasDetalle } from '../lib/engine.js';
 import { INCENTIVOS, PUNTOS_CONVERGENCIA, PERIODO, convPts } from '../data/incentivos.js';
 import { StatCard, Card, SectionTitle, Badge } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
@@ -21,6 +21,11 @@ export default function GPCoins() {
 
   const ptsFibra = puntosClienteNuevo(ventas, mes);
 
+  // Detalle de la llave de portas (común a todos los incentivos): % y X/Y portas
+  const portas = useMemo(() => portasDetalle(ventas, mes), [ventas, mes]);
+  // Objetivo de portas (75%) tomado de la llave 'portas' de cualquier incentivo
+  const objetivoPortas = INCENTIVOS.clienteNuevo.llaves.find((l) => l.id === 'portas')?.objetivo ?? 75;
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -29,6 +34,20 @@ export default function GPCoins() {
         <StatCard icon={TrendingUp} label="Puntos de fibra (Cliente Nuevo)" value={fmtNum(ptsFibra)} accent="text-vf-red" />
         <StatCard icon={Coins} label="Total estimado GP Coins" value={fmtNum(r.gpDirectosTotal + r.gpPotencialRanking)} sub="Directos + mejor ranking" accent="text-gp-gold" />
       </div>
+
+      {/* Llave de portas (común a todos los incentivos): % alcanzado y detalle X/Y */}
+      <Card>
+        <SectionTitle right={<Badge tone="neutral">{PERIODO.etiquetas[mes]}</Badge>}>
+          Portas voz móvil (Individual)
+        </SectionTitle>
+        <div className="flex items-baseline gap-3">
+          <p className={`text-3xl font-semibold tabnum ${portas.pct >= objetivoPortas ? 'text-emerald-400' : 'text-fg'}`}>
+            {portas.pct}%
+          </p>
+          <span className="text-sm text-fg-soft tabnum">{portas.portas}/{portas.lineas} portas</span>
+          <span className="text-xs text-fg-muted">objetivo {objetivoPortas}%</span>
+        </div>
+      </Card>
 
       <Card>
         <SectionTitle right={<Badge tone="neutral">{PERIODO.etiquetas[mes]}</Badge>}>

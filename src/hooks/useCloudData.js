@@ -10,6 +10,7 @@ export function useCloudData(user) {
   const [tarifas, setTarifasState] = useState([]);
   const [tema, setTemaState] = useState('dark');
   const [loading, setLoading] = useState(true);
+  const [estadoGuardado, setEstadoGuardado] = useState('idle'); // idle | guardando | guardado | error
   const timers = useRef({});
 
   useEffect(() => {
@@ -41,8 +42,15 @@ export function useCloudData(user) {
 
   const persist = (field, value) => {
     clearTimeout(timers.current[field]);
+    setEstadoGuardado('guardando');
     timers.current[field] = setTimeout(() => {
-      setDoc(doc(db, 'usuarios', uid), { [field]: value }, { merge: true });
+      setDoc(doc(db, 'usuarios', uid), { [field]: value }, { merge: true })
+        .then(() => {
+          setEstadoGuardado('guardado');
+          // Tras 2s volvemos a estado de reposo
+          setTimeout(() => setEstadoGuardado('idle'), 2000);
+        })
+        .catch(() => setEstadoGuardado('error'));
     }, DEBOUNCE_MS);
   };
 
@@ -70,5 +78,5 @@ export function useCloudData(user) {
     if (uid) persist('tema', t);
   };
 
-  return { ventas, setVentas, tarifas, setTarifas, tema, setTema, loading };
+  return { ventas, setVentas, tarifas, setTarifas, tema, setTema, loading, estadoGuardado };
 }

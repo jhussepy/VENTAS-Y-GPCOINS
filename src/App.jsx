@@ -1,7 +1,7 @@
-import { useState, useMemo, createContext, useContext } from 'react';
+import { useState, createContext, useContext } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
-  Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck,
+  Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -47,7 +47,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, tarifas, setTarifas, tema, setTema, loading } = useCloudData(user);
+  const { ventas, setVentas, tarifas, setTarifas, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [page, setPage] = useState('dashboard');
   const [mes, setMes] = useState('junio');
   const [open, setOpen] = useState(false);
@@ -61,6 +61,13 @@ export default function App() {
 
   const admin = esAdmin(user);
   const nav = admin ? [...NAV, NAV_ADMIN] : NAV;
+
+  // Indicador de sincronización con la nube
+  const guardado = {
+    guardando: { icon: Cloud, text: 'Guardando…', cls: 'text-fg-muted' },
+    guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
+    error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
+  }[estadoGuardado];
   const ctx = { ventas, setVentas, tarifas, setTarifas, mes, setMes, user, admin };
   const Active = nav.find((n) => n.id === page)?.Comp ?? Dashboard;
 
@@ -139,6 +146,12 @@ export default function App() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
+              {guardado && (
+                <span className={`hidden sm:flex items-center gap-1 text-xs ${guardado.cls}`} title="Estado de sincronización en la nube">
+                  <guardado.icon size={14} className={estadoGuardado === 'guardando' ? 'animate-pulse' : ''} />
+                  {guardado.text}
+                </span>
+              )}
               <span className="text-xs text-fg-muted hidden sm:inline">Período activo:</span>
               <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
                 {PERIODO.meses.map((m) => (

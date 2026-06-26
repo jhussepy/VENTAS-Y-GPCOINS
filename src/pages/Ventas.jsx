@@ -3,9 +3,9 @@ import {
   Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { ventaVacia, mesDesdeFecha } from '../lib/engine.js';
+import { ventaVacia, mesDesdeFecha, unidadesVendidas } from '../lib/engine.js';
 import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js';
-import { CATALOGO } from '../data/incentivos.js';
+import { CATALOGO, PERIODO, udsDe } from '../data/incentivos.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
 
@@ -23,12 +23,23 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 
   const productos = v.marca ? CATALOGO[v.marca]?.productos ?? [] : [];
 
+  // ¿La fecha de venta cae fuera del período del incentivo (1-jun → 31-jul 2026)?
+  const fechaFuera = !!v.fechaVenta && (v.fechaVenta < PERIODO.inicio || v.fechaVenta > PERIODO.fin);
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div><label className="label">Nombre</label><input className="input" value={v.nombre} onChange={(e) => set('nombre', e.target.value)} /></div>
         <div><label className="label">Apellido</label><input className="input" value={v.apellido} onChange={(e) => set('apellido', e.target.value)} /></div>
-        <div><label className="label">Fecha de venta</label><input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></div>
+        <div>
+          <label className="label">Fecha de venta</label>
+          <input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} />
+          {fechaFuera && (
+            <p className="text-xs text-amber-400 mt-1">
+              Fecha fuera del período del incentivo (1 jun → 31 jul 2026).
+            </p>
+          )}
+        </div>
         <div><label className="label">Fecha de instalación</label><input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} /></div>
       </div>
 
@@ -87,7 +98,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         <div><label className="label">Secure Net</label><input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', Number(e.target.value))} /></div>
         <div>
           <label className="label">Mes (auto)</label>
-          <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)}>
+          <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!v.fechaVenta} title={v.fechaVenta ? 'Se autodetecta desde la fecha de venta' : undefined}>
             <option value="junio">Junio</option><option value="julio">Julio</option>
           </select>
         </div>
@@ -129,11 +140,50 @@ export default function Ventas() {
   const lista = ventas.filter((v) => filtroMes === 'todos' || v.mes === filtroMes);
 
   const guardar = (venta) => {
+    // 1) Validación: nombre y apellido obligatorios
+    if (!venta.nombre.trim() || !venta.apellido.trim()) {
+      setMsg({ tone: 'red', text: 'Indica al menos nombre y apellido para guardar la venta.' });
+      setTimeout(() => setMsg(null), 4000);
+      return;
+    }
+
+    // 2) Avisos no bloqueantes (fecha fuera de período y tope de stock)
+    const avisos = [];
+
+    if (venta.fechaVenta && (venta.fechaVenta < PERIODO.inicio || venta.fechaVenta > PERIODO.fin)) {
+      avisos.push('La fecha de venta está fuera del período del incentivo (1 jun → 31 jul 2026).');
+    }
+
+    // Aviso de stock: tope de unidades por modelo (y familia si aplica). Solo informativo.
+    if (venta.marca && venta.sap) {
+      const prod = CATALOGO[venta.marca]?.productos.find((p) => p.sap === venta.sap);
+      if (prod) {
+        const tope = udsDe(prod, venta.mes);
+        if (tope > 0) {
+          // Ventas del mes ya guardadas (excluyendo la que se edita) + esta venta
+          const otras = ventas.filter((p) => p.id !== venta.id);
+          const conEsta = [...otras, venta];
+          const { porModelo, porFamilia } = unidadesVendidas(conEsta, venta.marca, venta.mes);
+          const usadasModelo = porModelo[venta.sap] || 0;
+          const usadasFamilia = prod.familia ? (porFamilia[prod.familia] || 0) : usadasModelo;
+          const usadas = Math.max(usadasModelo, usadasFamilia);
+          if (usadas >= tope) {
+            avisos.push(`Aviso de stock: se alcanzaría el tope de ${tope} uds (${usadas}) para ${prod.modelo} en ${venta.mes}. El stock es global de plataforma; la venta se guarda igualmente.`);
+          }
+        }
+      }
+    }
+
     setVentas((prev) => {
       const existe = prev.some((p) => p.id === venta.id);
       return existe ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
     });
     setForm(false); setEditId(null);
+
+    if (avisos.length) {
+      setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
+      setTimeout(() => setMsg(null), 7000);
+    }
   };
 
   const eliminar = (id) => {
@@ -144,9 +194,13 @@ export default function Ventas() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const nuevas = await importarVentas(file);
+      const { ventas: nuevas, duplicadas, fueraPeriodo } = await importarVentas(file);
       setVentas((prev) => [...nuevas, ...prev]);
-      setMsg({ tone: 'green', text: `${nuevas.length} ventas importadas correctamente.` });
+      let text = `${nuevas.length} ventas importadas`;
+      if (duplicadas > 0) text += ` (${duplicadas} duplicadas omitidas)`;
+      if (fueraPeriodo > 0) text += ` (${fueraPeriodo} fuera de período)`;
+      text += '.';
+      setMsg({ tone: fueraPeriodo > 0 ? 'red' : 'green', text });
     } catch {
       setMsg({ tone: 'red', text: 'Error al leer el Excel. Revisa el formato con la plantilla.' });
     }

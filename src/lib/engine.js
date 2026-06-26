@@ -2,7 +2,7 @@
 //  MOTOR DE CÁLCULO — GP Coins, puntos de ranking y progreso de llaves
 // ============================================================================
 import {
-  CATALOGO, INCENTIVOS, ORDEN_INCENTIVOS, PUNTOS_CONVERGENCIA,
+  CATALOGO, INCENTIVOS, ORDEN_INCENTIVOS, PUNTOS_CONVERGENCIA, PERIODO,
   ptsDe, gpDe, convPts,
 } from '../data/incentivos.js';
 
@@ -35,8 +35,20 @@ export const ventaVacia = () => ({
 
 export const mesDesdeFecha = (fecha) => {
   if (!fecha) return 'junio';
-  const m = new Date(fecha).getMonth(); // 0=ene
-  return m === 6 ? 'julio' : 'junio';   // julio=6
+  const m = new Date(fecha).getMonth(); // 0=ene, 5=junio, 6=julio
+  if (m === 5) return 'junio';
+  if (m === 6) return 'julio';
+  return 'junio'; // fallback: siempre devolvemos 'junio' o 'julio', nunca null
+};
+
+// --- ¿La fecha cae dentro del período válido del incentivo? -------------------
+export const dentroDePeriodo = (fecha) => {
+  if (!fecha) return false;
+  // Normalizamos a YYYY-MM-DD para comparar como cadenas ISO (orden lexicográfico)
+  const f = fecha instanceof Date
+    ? fecha.toISOString().slice(0, 10)
+    : String(fecha).slice(0, 10);
+  return f >= PERIODO.inicio && f <= PERIODO.fin;
 };
 
 const buscarProducto = (marca, sap) => {
@@ -123,6 +135,15 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
     default:
       return 0;
   }
+}
+
+// --- Detalle de portas de voz del mes (portas, líneas y % redondeado) --------
+export function portasDetalle(ventas, mes) {
+  const delMes = ventas.filter((v) => v.mes === mes);
+  const portas = delMes.reduce((a, v) => a + (Number(v.portasVoz) || 0), 0);
+  const lineas = delMes.reduce((a, v) => a + (Number(v.lineasVoz) || 0), 0);
+  const pct = lineas > 0 ? Math.round((portas / lineas) * 100) : 0;
+  return { portas, lineas, pct };
 }
 
 // --- Estado completo de un incentivo ----------------------------------------

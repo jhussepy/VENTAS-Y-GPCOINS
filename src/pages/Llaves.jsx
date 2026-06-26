@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
 import { KeyRound, Check, X } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { estadoIncentivo } from '../lib/engine.js';
+import { estadoIncentivo, portasDetalle } from '../lib/engine.js';
 import { ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
 import { Card, Badge, Progress } from '../components/ui.jsx';
 
-function LlaveRow({ ll }) {
+function LlaveRow({ ll, portas }) {
   const sufijo = ll.tipo === 'porcentaje' ? '%' : '';
+  // En la llave de portas mostramos también el detalle numerador/denominador
+  const esPortas = ll.id === 'portas';
   return (
     <div className="py-3 border-b border-bg-border/60 last:border-0">
       <div className="flex items-start gap-3">
@@ -18,6 +20,9 @@ function LlaveRow({ ll }) {
           <div className="flex items-center justify-between gap-2">
             <p className="font-medium text-fg text-sm">{ll.label}</p>
             <span className="text-xs tabnum text-fg-muted shrink-0">
+              {esPortas && portas && (
+                <span className="text-fg-soft mr-1">{portas.portas}/{portas.lineas} portas · </span>
+              )}
               {ll.valor}{sufijo} / {ll.objetivo}{sufijo}
             </span>
           </div>
@@ -35,6 +40,8 @@ export default function Llaves() {
     () => ORDEN_INCENTIVOS.map((id) => estadoIncentivo(ventas, id, mes)),
     [ventas, mes]
   );
+  // Detalle de portas (X/Y) del mes activo, compartido por todas las llaves 'portas'
+  const portas = useMemo(() => portasDetalle(ventas, mes), [ventas, mes]);
 
   return (
     <div className="space-y-6">
@@ -58,7 +65,7 @@ export default function Llaves() {
                 : <Badge tone="red">{e.llaves.filter((l) => l.cumple).length}/{e.llaves.length} llaves</Badge>}
             </div>
             <div>
-              {e.llaves.map((ll) => <LlaveRow key={ll.id} ll={ll} />)}
+              {e.llaves.map((ll) => <LlaveRow key={ll.id} ll={ll} portas={portas} />)}
             </div>
           </Card>
         ))}

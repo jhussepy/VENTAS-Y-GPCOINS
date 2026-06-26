@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { ventaVacia, mesDesdeFecha } from './engine.js';
+import { PERIODO } from '../data/incentivos.js';
 
 // Cabeceras esperadas en el Excel de ventas (orden de plantilla)
 export const COLUMNAS_VENTAS = [
@@ -40,7 +41,20 @@ export function importarVentas(file) {
         const wb = XLSX.read(e.target.result, { type: 'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-        const ventas = rows.map((r) => {
+        // Clave de deduplicación dentro del mismo archivo
+        const claveVenta = (v) => [v.nombre, v.apellido, v.fechaVenta, v.sap]
+          .map((x) => String(x ?? '').trim().toLowerCase())
+          .join('|');
+        // ¿La fecha cae fuera del período del incentivo (1-jun → 31-jul 2026)?
+        const fueraDePeriodo = (fecha) => {
+          if (!fecha) return false; // sin fecha no se considera fuera de período
+          return fecha < PERIODO.inicio || fecha > PERIODO.fin;
+        };
+
+        const vistas = new Set();
+        let duplicadas = 0;
+        let fueraPeriodo = 0;
+        const todas = rows.map((r) => {
           const v = ventaVacia();
           v.nombre = String(r.nombre ?? r.Nombre ?? '').trim();
           v.apellido = String(r.apellido ?? r.Apellido ?? '').trim();
@@ -62,7 +76,21 @@ export function importarVentas(file) {
           v.mes = mesDesdeFecha(v.fechaVenta);
           return v;
         }).filter((v) => v.nombre || v.apellido || v.sap || v.convergencia);
-        resolve(ventas);
+
+        // Deduplicación interna + conteo de ventas fuera de período
+        const ventas = [];
+        for (const v of todas) {
+          const clave = claveVenta(v);
+          if (vistas.has(clave)) {
+            duplicadas += 1;
+            continue; // se omite el duplicado dentro del mismo archivo
+          }
+          vistas.add(clave);
+          if (fueraDePeriodo(v.fechaVenta)) fueraPeriodo += 1;
+          ventas.push(v);
+        }
+
+        resolve({ ventas, duplicadas, fueraPeriodo });
       } catch (err) {
         reject(err);
       }
