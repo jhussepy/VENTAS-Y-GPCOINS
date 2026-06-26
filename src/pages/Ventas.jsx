@@ -77,15 +77,15 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
       </div>
 
       <div className="flex flex-wrap gap-4 pt-1">
-        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
           <input type="checkbox" checked={v.clienteNuevo} onChange={(e) => set('clienteNuevo', e.target.checked)} className="accent-vf-red w-4 h-4" />
           Cliente nuevo
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
           <input type="checkbox" checked={v.fibraActiva} onChange={(e) => set('fibraActiva', e.target.checked)} className="accent-vf-red w-4 h-4" />
           Fibra activa (neba o fibra)
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
           <input type="checkbox" checked={v.instalacionActiva} onChange={(e) => set('instalacionActiva', e.target.checked)} className="accent-emerald-500 w-4 h-4" />
           Instalación activa
         </label>
@@ -179,7 +179,7 @@ export default function Ventas() {
 
       <Card className="!p-0 overflow-hidden">
         <div className="p-5 border-b border-bg-border flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Ventas registradas</h2>
+          <h2 className="text-lg font-semibold text-fg">Ventas registradas</h2>
           <Badge tone="neutral">{lista.length} registros</Badge>
         </div>
         {lista.length === 0 ? (
@@ -188,7 +188,7 @@ export default function Ventas() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-slate-400 border-b border-bg-border">
+                <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
                   <th className="px-4 py-3 font-medium">Cliente</th>
                   <th className="px-4 py-3 font-medium">F. Venta</th>
                   <th className="px-4 py-3 font-medium">F. Instalación</th>
@@ -205,18 +205,18 @@ export default function Ventas() {
                   return (
                     <tr key={v.id} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
                       <td className="px-4 py-3">
-                        <div className="font-medium text-white">{v.nombre} {v.apellido}</div>
+                        <div className="font-medium text-fg">{v.nombre} {v.apellido}</div>
                         <div className="flex gap-1 mt-1">
                           {v.clienteNuevo && <Badge tone="red">Nuevo</Badge>}
                           {v.fibraActiva && <Badge tone="neutral">Fibra</Badge>}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-400 tabnum">{fmtFecha(v.fechaVenta)}</td>
-                      <td className="px-4 py-3 text-slate-400 tabnum">{fmtFecha(v.fechaInstalacion)}</td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-fg-muted tabnum">{fmtFecha(v.fechaVenta)}</td>
+                      <td className="px-4 py-3 text-fg-muted tabnum">{fmtFecha(v.fechaInstalacion)}</td>
+                      <td className="px-4 py-3 text-fg-soft">
                         {v.convergencia ? `${v.convergencia} · ${v.velocidad}` : '—'}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-fg-soft">
                         {prod ? <span title={prod.modelo}>{nombreMarca(v.marca)} · {prod.modelo.slice(0, 22)}{prod.modelo.length > 22 ? '…' : ''}</span> : '—'}
                       </td>
                       <td className="px-4 py-3 text-center"><Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge></td>
@@ -225,8 +225,8 @@ export default function Ventas() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
-                          <button className="p-2 rounded-lg hover:bg-bg-border text-slate-400 hover:text-white cursor-pointer" onClick={() => { setEditId(v.id); setForm(true); }} aria-label="Editar"><Pencil size={15} /></button>
-                          <button className="p-2 rounded-lg hover:bg-vf-red/20 text-slate-400 hover:text-vf-redLight cursor-pointer" onClick={() => eliminar(v.id)} aria-label="Eliminar"><Trash2 size={15} /></button>
+                          <button className="p-2 rounded-lg hover:bg-bg-border text-fg-muted hover:text-fg cursor-pointer" onClick={() => { setEditId(v.id); setForm(true); }} aria-label="Editar"><Pencil size={15} /></button>
+                          <button className="p-2 rounded-lg hover:bg-vf-red/20 text-fg-muted hover:text-vf-redLight cursor-pointer" onClick={() => eliminar(v.id)} aria-label="Eliminar"><Trash2 size={15} /></button>
                         </div>
                       </td>
                     </tr>

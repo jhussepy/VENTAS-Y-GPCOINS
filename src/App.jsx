@@ -1,7 +1,7 @@
-import { useState, useMemo, createContext, useContext } from 'react';
+import { useState, useMemo, useEffect, createContext, useContext } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
-  Tag, Smartphone, Menu, X,
+  Tag, Smartphone, Menu, X, Sun, Moon,
 } from 'lucide-react';
 import { useLocalStorage } from './hooks/useLocalStorage.js';
 import { PERIODO } from './data/incentivos.js';
@@ -32,6 +32,13 @@ export default function App() {
   const [mes, setMes] = useState('junio');
   const [ventas, setVentas] = useLocalStorage('vf_ventas', []);
   const [open, setOpen] = useState(false);
+  const [tema, setTema] = useLocalStorage('vf_tema', 'dark');
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(tema);
+  }, [tema]);
 
   const ctx = useMemo(() => ({ ventas, setVentas, mes, setMes }), [ventas, setVentas, mes]);
   const Active = NAV.find((n) => n.id === page)?.Comp ?? Dashboard;
@@ -48,8 +55,8 @@ export default function App() {
           <div className="h-16 flex items-center gap-3 px-5 border-b border-bg-border">
             <img src="/vodafone.svg" alt="Vodafone" className="w-8 h-8" />
             <div>
-              <p className="font-semibold text-white leading-tight">Ventas & GP Coins</p>
-              <p className="text-[10px] text-slate-500">Captación · Vodafone</p>
+              <p className="font-semibold text-fg leading-tight">Ventas & GP Coins</p>
+              <p className="text-[10px] text-fg-muted">Captación · Vodafone</p>
             </div>
           </div>
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -61,7 +68,7 @@ export default function App() {
                             transition-colors cursor-pointer
                             ${page === n.id
                               ? 'bg-vf-red text-white'
-                              : 'text-slate-400 hover:text-white hover:bg-bg-surface2'}`}
+                              : 'text-fg-muted hover:text-fg hover:bg-bg-surface2'}`}
                 aria-current={page === n.id ? 'page' : undefined}
               >
                 <n.icon size={18} aria-hidden="true" />
@@ -69,7 +76,7 @@ export default function App() {
               </button>
             ))}
           </nav>
-          <div className="p-4 border-t border-bg-border text-[10px] text-slate-500">
+          <div className="p-4 border-t border-bg-border text-[10px] text-fg-muted">
             Período {PERIODO.inicio} → {PERIODO.fin}
           </div>
         </aside>
@@ -85,24 +92,32 @@ export default function App() {
               <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)} aria-label="Abrir menú">
                 <Menu size={20} />
               </button>
-              <h1 className="text-base font-semibold text-white capitalize">
+              <h1 className="text-base font-semibold text-fg capitalize">
                 {NAV.find((n) => n.id === page)?.label}
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 hidden sm:inline">Período activo:</span>
+              <span className="text-xs text-fg-muted hidden sm:inline">Período activo:</span>
               <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
                 {PERIODO.meses.map((m) => (
                   <button
                     key={m}
                     onClick={() => setMes(m)}
                     className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer
-                                ${mes === m ? 'bg-vf-red text-white' : 'text-slate-400 hover:text-white'}`}
+                                ${mes === m ? 'bg-vf-red text-white' : 'text-fg-muted hover:text-fg'}`}
                   >
                     {PERIODO.etiquetas[m]}
                   </button>
                 ))}
               </div>
+              <button
+                onClick={() => setTema(tema === 'dark' ? 'light' : 'dark')}
+                className="btn-ghost p-2"
+                aria-label={tema === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
+                title={tema === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              >
+                {tema === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
             </div>
           </header>
 

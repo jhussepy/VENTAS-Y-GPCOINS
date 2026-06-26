@@ -37,7 +37,7 @@ export default function GPCoins() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-slate-400 border-b border-bg-border">
+              <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
                 <th className="px-4 py-3 font-medium">Incentivo</th>
                 <th className="px-4 py-3 font-medium">Mecánica</th>
                 <th className="px-4 py-3 font-medium text-right">Puntos ranking</th>
@@ -48,13 +48,13 @@ export default function GPCoins() {
             <tbody>
               {r.estados.map((e) => (
                 <tr key={e.incentivoId} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
-                  <td className="px-4 py-3 font-medium text-white">{e.nombre}</td>
+                  <td className="px-4 py-3 font-medium text-fg">{e.nombre}</td>
                   <td className="px-4 py-3">
                     <Badge tone={e.mecanica === 'directo' ? 'gold' : e.mecanica === 'mixta' ? 'red' : 'neutral'}>
                       {e.mecanica}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-right tabnum text-slate-300">{e.puntos ? fmtNum(e.puntos) : '—'}</td>
+                  <td className="px-4 py-3 text-right tabnum text-fg-soft">{e.puntos ? fmtNum(e.puntos) : '—'}</td>
                   <td className="px-4 py-3 text-right tabnum text-gp-gold">{e.gp ? fmtNum(e.gp) : '—'}</td>
                   <td className="px-4 py-3 text-center">
                     {e.clasifica ? <Badge tone="green">Sí</Badge> : <Badge tone="neutral">No</Badge>}
@@ -72,11 +72,11 @@ export default function GPCoins() {
             Desglose puntos de fibra (Cliente Nuevo)
           </SectionTitle>
           {desgloseFibra.length === 0 ? (
-            <p className="text-sm text-slate-500 py-8 text-center">Sin ventas de fibra este mes.</p>
+            <p className="text-sm text-fg-muted py-8 text-center">Sin ventas de fibra este mes.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-slate-400 border-b border-bg-border">
+                <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
                   <th className="py-2 font-medium">Convergencia</th>
                   <th className="py-2 font-medium text-center">Uds</th>
                   <th className="py-2 font-medium text-right">Pts/u</th>
@@ -86,10 +86,10 @@ export default function GPCoins() {
               <tbody>
                 {desgloseFibra.map((d, i) => (
                   <tr key={i} className="border-b border-bg-border/60">
-                    <td className="py-2 text-slate-300">{d.tipo} · {d.velocidad}</td>
+                    <td className="py-2 text-fg-soft">{d.tipo} · {d.velocidad}</td>
                     <td className="py-2 text-center tabnum">{d.count}</td>
-                    <td className="py-2 text-right tabnum text-slate-400">{fmtNum(convPts(d, mes))}</td>
-                    <td className="py-2 text-right tabnum text-white font-medium">{fmtNum(d.total)}</td>
+                    <td className="py-2 text-right tabnum text-fg-muted">{fmtNum(convPts(d, mes))}</td>
+                    <td className="py-2 text-right tabnum text-fg font-medium">{fmtNum(d.total)}</td>
                   </tr>
                 ))}
                 <tr className="font-semibold text-vf-redLight">
@@ -109,12 +109,12 @@ export default function GPCoins() {
               return (
                 <div key={e.incentivoId} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-white">{e.nombre}</span>
-                    <span className="text-xs text-slate-500">Top {inc.premiados}</span>
+                    <span className="font-medium text-fg">{e.nombre}</span>
+                    <span className="text-xs text-fg-muted">Top {inc.premiados}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {inc.premios.map((p, i) => (
-                      <span key={i} className="text-xs px-2 py-1 rounded bg-bg-base border border-bg-border text-slate-300">
+                      <span key={i} className="text-xs px-2 py-1 rounded bg-bg-base border border-bg-border text-fg-soft">
                         {p.rango}: <span className="text-gp-gold font-semibold">{p.gpcoins} GP</span>
                       </span>
                     ))}

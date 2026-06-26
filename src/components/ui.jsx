@@ -11,9 +11,9 @@ export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red'
         <Icon size={22} aria-hidden="true" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-slate-400 truncate">{label}</p>
-        <p className="text-2xl font-semibold tabnum text-white">{value}</p>
-        {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
+        <p className="text-xs text-fg-muted truncate">{label}</p>
+        <p className="text-2xl font-semibold tabnum text-fg">{value}</p>
+        {sub && <p className="text-xs text-fg-muted mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -32,7 +32,7 @@ export function Progress({ value, cumple }) {
 
 export function Badge({ children, tone = 'neutral' }) {
   const tones = {
-    neutral: 'bg-bg-surface2 text-slate-300 border-bg-border',
+    neutral: 'bg-bg-surface2 text-fg-soft border-bg-border',
     red: 'bg-vf-red/15 text-vf-redLight border-vf-red/30',
     gold: 'bg-gp-gold/15 text-gp-gold border-gp-gold/30',
     green: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
@@ -55,7 +55,7 @@ export function EstrellaTag({ tipo = 'ESTRELLA' }) {
 export function SectionTitle({ children, right }) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <h2 className="text-lg font-semibold text-white">{children}</h2>
+      <h2 className="text-lg font-semibold text-fg">{children}</h2>
       {right}
     </div>
   );
@@ -64,11 +64,11 @@ export function SectionTitle({ children, right }) {
 export function EmptyState({ icon: Icon, title, hint }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="p-4 rounded-full bg-bg-surface2 mb-4 text-slate-500">
+      <div className="p-4 rounded-full bg-bg-surface2 mb-4 text-fg-muted">
         <Icon size={32} aria-hidden="true" />
       </div>
-      <p className="text-slate-300 font-medium">{title}</p>
-      {hint && <p className="text-sm text-slate-500 mt-1 max-w-sm">{hint}</p>}
+      <p className="text-fg-soft font-medium">{title}</p>
+      {hint && <p className="text-sm text-fg-muted mt-1 max-w-sm">{hint}</p>}
     </div>
   );
 }

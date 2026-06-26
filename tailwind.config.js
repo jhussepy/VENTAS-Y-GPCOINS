@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -14,10 +15,15 @@ export default {
           goldDark: '#D99700',
         },
         bg: {
-          base: '#0A0A0F',
-          surface: '#15151E',
-          surface2: '#1E1E2A',
-          border: '#2A2A38',
+          base: 'var(--bg-base)',
+          surface: 'var(--bg-surface)',
+          surface2: 'var(--bg-surface2)',
+          border: 'var(--bg-border)',
+        },
+        fg: {
+          DEFAULT: 'var(--fg)',
+          soft: 'var(--fg-soft)',
+          muted: 'var(--fg-muted)',
         },
       },
       fontFamily: {

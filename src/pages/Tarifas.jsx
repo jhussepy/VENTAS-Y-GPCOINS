@@ -25,7 +25,7 @@ function TablaExclusivo() {
   return (
     <Card className="!p-0 overflow-hidden">
       <div className="p-5 border-b border-bg-border flex flex-wrap items-center gap-3 justify-between">
-        <h2 className="text-lg font-semibold text-white">Oferta Exclusivo 30% · Origen Contrato</h2>
+        <h2 className="text-lg font-semibold text-fg">Oferta Exclusivo 30% · Origen Contrato</h2>
         <div className="flex gap-2">
           <select className="input w-auto text-xs" value={fibra} onChange={(e) => setFibra(e.target.value)}>
             {fibras.map((f) => <option key={f} value={f}>{f === 'todas' ? 'Todas las fibras' : f}</option>)}
@@ -40,7 +40,7 @@ function TablaExclusivo() {
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-left text-slate-400 border-b border-bg-border bg-bg-surface2/40">
+            <tr className="text-left text-fg-muted border-b border-bg-border bg-bg-surface2/40">
               <th className="px-3 py-2 font-medium sticky left-0 bg-bg-surface z-10">Móvil</th>
               {OTT_COLS.map((c) => (
                 <th key={c.key} className="px-3 py-2 font-medium text-right whitespace-nowrap" title={c.grupo}>{c.label}</th>
@@ -52,13 +52,13 @@ function TablaExclusivo() {
               <tr key={i} className="border-b border-bg-border/50 hover:bg-bg-surface2/40">
                 <td className="px-3 py-2 sticky left-0 bg-bg-surface z-10">
                   <div className="flex items-center gap-2 whitespace-nowrap">
-                    <span className="text-white font-medium">{t.movil}</span>
+                    <span className="text-fg font-medium">{t.movil}</span>
                     {t.promo && <Badge tone="red">X3M</Badge>}
                   </div>
-                  <span className="text-[10px] text-slate-500">{t.fibra} · {t.lineas}</span>
+                  <span className="text-[10px] text-fg-muted">{t.fibra} · {t.lineas}</span>
                 </td>
                 {OTT_COLS.map((c) => (
-                  <td key={c.key} className={`px-3 py-2 text-right tabnum whitespace-nowrap ${t.promo ? 'text-vf-redLight' : 'text-slate-300'}`}>
+                  <td key={c.key} className={`px-3 py-2 text-right tabnum whitespace-nowrap ${t.promo ? 'text-vf-redLight' : 'text-fg-soft'}`}>
                     {t.precios[c.key] != null ? fmtEur(t.precios[c.key]) : '—'}
                   </td>
                 ))}
@@ -67,7 +67,7 @@ function TablaExclusivo() {
           </tbody>
         </table>
       </div>
-      <div className="p-4 text-[11px] text-slate-500 border-t border-bg-border">
+      <div className="p-4 text-[11px] text-fg-muted border-t border-bg-border">
         <Badge tone="red">X3M</Badge> = precio promocional durante 3 meses; luego pasa al precio normal.
         N = Netflix · P = Prime · Mx = Max · D+ = Disney+ · C/Anunc. = con anuncios.
       </div>
@@ -81,13 +81,13 @@ function PromoFlash() {
       {PROMO_FLASH.map((p, i) => (
         <Card key={i}>
           <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-white">{p.paquete}</h3>
+            <h3 className="font-semibold text-fg">{p.paquete}</h3>
             {p.promo && <Badge tone="red">X3 meses</Badge>}
           </div>
-          <p className="text-xs text-slate-500 mb-4">{p.detalle}</p>
+          <p className="text-xs text-fg-muted mb-4">{p.detalle}</p>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-slate-400 border-b border-bg-border">
+              <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
                 <th className="py-2 font-medium">OTT</th>
                 <th className="py-2 font-medium text-right">{p.promo ? 'X3 meses' : 'Precio'}</th>
                 {p.promo && <th className="py-2 font-medium text-right">Después</th>}
@@ -96,9 +96,9 @@ function PromoFlash() {
             <tbody>
               {FLASH_OTT.map((o) => (
                 <tr key={o.key} className="border-b border-bg-border/50">
-                  <td className="py-2 text-slate-300">{o.label}</td>
+                  <td className="py-2 text-fg-soft">{o.label}</td>
                   <td className="py-2 text-right tabnum text-gp-gold font-medium">{fmtEur(p.precios[o.key])}</td>
-                  {p.promo && <td className="py-2 text-right tabnum text-slate-400">{fmtEur(p.preciosNormal[o.key])}</td>}
+                  {p.promo && <td className="py-2 text-right tabnum text-fg-muted">{fmtEur(p.preciosNormal[o.key])}</td>}
                 </tr>
               ))}
             </tbody>
@@ -153,7 +153,7 @@ function MisTarifas() {
 
       <Card className="!p-0 overflow-hidden">
         <div className="p-5 border-b border-bg-border flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Mis tarifas</h2>
+          <h2 className="text-lg font-semibold text-fg">Mis tarifas</h2>
           <Badge tone="neutral">{tarifas.length}</Badge>
         </div>
         {tarifas.length === 0 ? (
@@ -161,7 +161,7 @@ function MisTarifas() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-slate-400 border-b border-bg-border">
+              <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
                 <th className="px-4 py-3 font-medium">Concepto</th>
                 <th className="px-4 py-3 font-medium">Descripción</th>
                 <th className="px-4 py-3 font-medium text-right">Precio</th>
@@ -172,12 +172,12 @@ function MisTarifas() {
             <tbody>
               {tarifas.map((t) => (
                 <tr key={t.id} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
-                  <td className="px-4 py-3 text-white font-medium">{t.concepto}</td>
-                  <td className="px-4 py-3 text-slate-400">{t.descripcion || '—'}</td>
+                  <td className="px-4 py-3 text-fg font-medium">{t.concepto}</td>
+                  <td className="px-4 py-3 text-fg-muted">{t.descripcion || '—'}</td>
                   <td className="px-4 py-3 text-right tabnum text-gp-gold">{fmtEur(t.precio)}</td>
                   <td className="px-4 py-3">{t.promo ? <Badge tone="red">{t.promo}</Badge> : '—'}</td>
                   <td className="px-4 py-3 text-right">
-                    <button className="p-2 rounded-lg hover:bg-vf-red/20 text-slate-400 hover:text-vf-redLight cursor-pointer" onClick={() => del(t.id)} aria-label="Eliminar"><Trash2 size={15} /></button>
+                    <button className="p-2 rounded-lg hover:bg-vf-red/20 text-fg-muted hover:text-vf-redLight cursor-pointer" onClick={() => del(t.id)} aria-label="Eliminar"><Trash2 size={15} /></button>
                   </td>
                 </tr>
               ))}
@@ -196,7 +196,7 @@ export default function Tarifas() {
       <div className="flex gap-2 flex-wrap">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`btn ${tab === t.id ? 'bg-vf-red text-white' : 'bg-bg-surface2 text-slate-300 border border-bg-border hover:bg-bg-border'}`}>
+            className={`btn ${tab === t.id ? 'bg-vf-red text-white' : 'bg-bg-surface2 text-fg-soft border border-bg-border hover:bg-bg-border'}`}>
             <t.icon size={16} /> {t.label}
           </button>
         ))}

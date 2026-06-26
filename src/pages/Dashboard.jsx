@@ -34,18 +34,19 @@ export default function Dashboard() {
             Puntos / GP Coins por incentivo
           </SectionTitle>
           {dataChart.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 text-sm">
+            <div className="py-16 text-center text-fg-muted text-sm">
               Aún no hay ventas registradas este mes. Añade ventas para ver tu progreso.
             </div>
           ) : (
             <div style={{ width: '100%', height: 300 }}>
               <ResponsiveContainer>
                 <BarChart data={dataChart} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2A38" />
-                  <XAxis dataKey="nombre" stroke="#94a3b8" fontSize={12} />
-                  <YAxis stroke="#94a3b8" fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" />
+                  <XAxis dataKey="nombre" stroke="var(--fg-muted)" fontSize={12} />
+                  <YAxis stroke="var(--fg-muted)" fontSize={12} />
                   <Tooltip
-                    contentStyle={{ background: '#15151E', border: '1px solid #2A2A38', borderRadius: 8, color: '#fff' }}
+                    cursor={{ fill: 'var(--bg-surface2)' }}
+                    contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8, color: 'var(--fg)' }}
                     formatter={(v, _n, p) => [fmtNum(v), p.payload.esGp ? 'GP Coins' : 'Puntos']}
                   />
                   <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
@@ -64,8 +65,8 @@ export default function Dashboard() {
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 rounded-lg bg-emerald-500/15 text-emerald-400"><Trophy size={22} /></div>
             <div>
-              <p className="text-2xl font-semibold text-white tabnum">{r.incentivosClasificados}/6</p>
-              <p className="text-xs text-slate-500">incentivos con todas las llaves</p>
+              <p className="text-2xl font-semibold text-fg tabnum">{r.incentivosClasificados}/6</p>
+              <p className="text-xs text-fg-muted">incentivos con todas las llaves</p>
             </div>
           </div>
           <div className="space-y-3">
@@ -74,8 +75,8 @@ export default function Dashboard() {
               return (
                 <div key={e.incentivoId}>
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-slate-300">{e.nombre}</span>
-                    <span className={e.clasifica ? 'text-emerald-400' : 'text-slate-500'}>
+                    <span className="text-fg-soft">{e.nombre}</span>
+                    <span className={e.clasifica ? 'text-emerald-400' : 'text-fg-muted'}>
                       {cumplidas}/{e.llaves.length} llaves
                     </span>
                   </div>
@@ -88,7 +89,7 @@ export default function Dashboard() {
       </div>
 
       <Card>
-        <SectionTitle right={<span className="text-xs text-slate-500">Mejor escenario si clasificas (1er puesto)</span>}>
+        <SectionTitle right={<span className="text-xs text-fg-muted">Mejor escenario si clasificas (1er puesto)</span>}>
           GP Coins potenciales por ranking
         </SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -97,11 +98,11 @@ export default function Dashboard() {
             return (
               <div key={e.incentivoId} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-white">{e.nombre}</span>
+                  <span className="font-medium text-fg">{e.nombre}</span>
                   {e.clasifica ? <Badge tone="green">Clasificas</Badge> : <Badge tone="red">No clasificas</Badge>}
                 </div>
-                <p className="text-sm text-slate-400 tabnum">{fmtNum(e.puntos)} pts acumulados</p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-sm text-fg-muted tabnum">{fmtNum(e.puntos)} pts acumulados</p>
+                <p className="text-xs text-fg-muted mt-1">
                   Top {inc.premiados} · 1º: {inc.premios[0].gpcoins} GP Coins
                 </p>
               </div>

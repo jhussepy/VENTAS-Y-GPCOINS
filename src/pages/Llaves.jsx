@@ -16,12 +16,12 @@ function LlaveRow({ ll }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-medium text-white text-sm">{ll.label}</p>
-            <span className="text-xs tabnum text-slate-400 shrink-0">
+            <p className="font-medium text-fg text-sm">{ll.label}</p>
+            <span className="text-xs tabnum text-fg-muted shrink-0">
               {ll.valor}{sufijo} / {ll.objetivo}{sufijo}
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">{ll.detalle}</p>
+          <p className="text-xs text-fg-muted mt-0.5">{ll.detalle}</p>
           <div className="mt-2"><Progress value={ll.pct} cumple={ll.cumple} /></div>
         </div>
       </div>
@@ -39,8 +39,8 @@ export default function Llaves() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-400">
-          Para clasificar en un incentivo debes cumplir <span className="text-white font-medium">todas</span> sus llaves.
+        <p className="text-sm text-fg-muted">
+          Para clasificar en un incentivo debes cumplir <span className="text-fg font-medium">todas</span> sus llaves.
         </p>
         <Badge tone="neutral">{PERIODO.etiquetas[mes]}</Badge>
       </div>
@@ -51,7 +51,7 @@ export default function Llaves() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <KeyRound size={18} className="text-vf-red" />
-                <h2 className="text-lg font-semibold text-white">{e.nombre}</h2>
+                <h2 className="text-lg font-semibold text-fg">{e.nombre}</h2>
               </div>
               {e.clasifica
                 ? <Badge tone="green">Clasificas</Badge>

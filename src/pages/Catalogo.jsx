@@ -34,13 +34,13 @@ export default function Catalogo() {
         <div className="flex gap-2 flex-wrap">
           {MARCAS.map((m) => (
             <button key={m} onClick={() => setMarca(m)}
-              className={`btn ${marca === m ? 'bg-vf-red text-white' : 'bg-bg-surface2 text-slate-300 border border-bg-border hover:bg-bg-border'}`}>
+              className={`btn ${marca === m ? 'bg-vf-red text-white' : 'bg-bg-surface2 text-fg-soft border border-bg-border hover:bg-bg-border'}`}>
               {CATALOGO[m].marca}
             </button>
           ))}
         </div>
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
           <input className="input pl-9 w-56" placeholder="Buscar modelo o SAP…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
@@ -50,12 +50,12 @@ export default function Catalogo() {
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-bg-surface2 text-vf-red"><Smartphone size={20} /></div>
             <div>
-              <h2 className="text-lg font-semibold text-white">{cat.marca}</h2>
+              <h2 className="text-lg font-semibold text-fg">{cat.marca}</h2>
               <Badge tone={ETIQ_MEC[cat.mecanica].tone}>{ETIQ_MEC[cat.mecanica].txt}</Badge>
             </div>
           </div>
-          <div className="text-xs text-slate-500">
-            Stock limitado por: <span className="text-slate-300">{cat.stockPor === 'familia' ? 'familia' : cat.stockPor === 'modelo' ? 'modelo' : 'sin límite'}</span>
+          <div className="text-xs text-fg-muted">
+            Stock limitado por: <span className="text-fg-soft">{cat.stockPor === 'familia' ? 'familia' : cat.stockPor === 'modelo' ? 'modelo' : 'sin límite'}</span>
           </div>
         </div>
 
@@ -65,7 +65,7 @@ export default function Catalogo() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-slate-400 border-b border-bg-border">
+                <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
                   <th className="px-4 py-3 font-medium">SAP</th>
                   <th className="px-4 py-3 font-medium">Modelo</th>
                   {cat.stockPor === 'familia' && <th className="px-4 py-3 font-medium">Familia</th>}
@@ -84,22 +84,22 @@ export default function Catalogo() {
                   const gp = gpDe(p, mes);
                   return (
                     <tr key={p.sap} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
-                      <td className="px-4 py-3 tabnum text-slate-400">{p.sap}</td>
-                      <td className="px-4 py-3 text-white">{p.modelo}</td>
-                      {cat.stockPor === 'familia' && <td className="px-4 py-3 text-slate-400">{p.familia}</td>}
+                      <td className="px-4 py-3 tabnum text-fg-muted">{p.sap}</td>
+                      <td className="px-4 py-3 text-fg">{p.modelo}</td>
+                      {cat.stockPor === 'familia' && <td className="px-4 py-3 text-fg-muted">{p.familia}</td>}
                       {tieneRanking && <td className="px-4 py-3 text-right tabnum text-vf-redLight font-medium">{ptsDe(p, mes) ? fmtNum(ptsDe(p, mes)) : '—'}</td>}
                       {tieneDirecto && <td className="px-4 py-3 text-right tabnum text-gp-gold font-medium">{gp ? `${gp} GP` : '—'}</td>}
                       {tieneDirecto && (
                         <td className="px-4 py-3 text-right tabnum">
                           {uds ? (
-                            <span className={vend >= uds ? 'text-vf-redLight' : 'text-slate-400'}>
+                            <span className={vend >= uds ? 'text-vf-redLight' : 'text-fg-muted'}>
                               {fmtNum(vend)} / {fmtNum(uds)}
                             </span>
                           ) : '—'}
                         </td>
                       )}
                       <td className="px-4 py-3 text-center">
-                        {estDe(p, mes) ? <EstrellaTag tipo={cat.mecanica === 'mixta' ? 'DESTACADO' : 'ESTRELLA'} /> : <span className="text-slate-600">—</span>}
+                        {estDe(p, mes) ? <EstrellaTag tipo={cat.mecanica === 'mixta' ? 'DESTACADO' : 'ESTRELLA'} /> : <span className="text-fg-muted">—</span>}
                       </td>
                     </tr>
                   );
@@ -111,7 +111,7 @@ export default function Catalogo() {
       </Card>
 
       {cat.notaStock && (
-        <p className="text-xs text-slate-500">{CATALOGO[marca].marca}: stock por {cat.stockPor}.</p>
+        <p className="text-xs text-fg-muted">{CATALOGO[marca].marca}: stock por {cat.stockPor}.</p>
       )}
     </div>
   );

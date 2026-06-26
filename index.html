@@ -8,6 +8,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <title>Ventas & GP Coins · Vodafone</title>
+    <script>
+      (function () {
+        try {
+          var t = JSON.parse(localStorage.getItem('vf_tema')) || 'dark';
+          document.documentElement.classList.remove('light', 'dark');
+          document.documentElement.classList.add(t);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
