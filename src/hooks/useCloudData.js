@@ -7,6 +7,7 @@ const DEBOUNCE_MS = 1500;
 export function useCloudData(user) {
   const uid = user?.uid;
   const [ventas, setVentasState] = useState([]);
+  const [ventasLowi, setVentasLowiState] = useState([]);
   const [tarifas, setTarifasState] = useState([]);
   const [tema, setTemaState] = useState('dark');
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,7 @@ export function useCloudData(user) {
       if (snap.exists()) {
         const d = snap.data();
         if (Array.isArray(d.ventas)) setVentasState(d.ventas);
+        if (Array.isArray(d.ventasLowi)) setVentasLowiState(d.ventasLowi);
         if (Array.isArray(d.tarifas)) setTarifasState(d.tarifas);
         if (d.tema) {
           setTemaState(d.tema);
@@ -62,6 +64,14 @@ export function useCloudData(user) {
     });
   };
 
+  const setVentasLowi = (fn) => {
+    setVentasLowiState((prev) => {
+      const next = typeof fn === 'function' ? fn(prev) : fn;
+      if (uid) persist('ventasLowi', next);
+      return next;
+    });
+  };
+
   const setTarifas = (fn) => {
     setTarifasState((prev) => {
       const next = typeof fn === 'function' ? fn(prev) : fn;
@@ -78,5 +88,5 @@ export function useCloudData(user) {
     if (uid) persist('tema', t);
   };
 
-  return { ventas, setVentas, tarifas, setTarifas, tema, setTema, loading, estadoGuardado };
+  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, tema, setTema, loading, estadoGuardado };
 }

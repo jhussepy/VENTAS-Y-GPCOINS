@@ -1,7 +1,7 @@
 import { useState, createContext, useContext } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
-  Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check,
+  Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -18,6 +18,8 @@ import Tarifas from './pages/Tarifas.jsx';
 import Catalogo from './pages/Catalogo.jsx';
 import Login from './pages/Login.jsx';
 import Admin from './pages/Admin.jsx';
+import LowiDashboard from './pages/LowiDashboard.jsx';
+import LowiVentas from './pages/LowiVentas.jsx';
 
 export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -34,6 +36,18 @@ const NAV = [
 
 const NAV_ADMIN = { id: 'admin', label: 'Supervisor', icon: ShieldCheck, Comp: Admin };
 
+// Menú del mundo Lowi (independiente, sin GP Coins)
+const NAV_LOWI = [
+  { id: 'lowi-dashboard', label: 'Dashboard', icon: LayoutDashboard, Comp: LowiDashboard },
+  { id: 'lowi-ventas', label: 'Ventas Lowi', icon: ShoppingCart, Comp: LowiVentas },
+];
+
+// Configuración visual de cada operador
+const OPERADORES = {
+  vodafone: { label: 'Vodafone', sub: 'Captación · GP Coins', logo: '/vodafone.svg', paginaInicial: 'dashboard' },
+  lowi: { label: 'Lowi', sub: 'Seguimiento de ventas', logo: null, paginaInicial: 'lowi-dashboard' },
+};
+
 function Spinner() {
   return (
     <div className="min-h-dvh flex items-center justify-center bg-bg-base">
@@ -47,10 +61,19 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, tarifas, setTarifas, tema, setTema, loading, estadoGuardado } = useCloudData(user);
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, tema, setTema, loading, estadoGuardado } = useCloudData(user);
+  const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
   const [mes, setMes] = useState('junio');
   const [open, setOpen] = useState(false);
+
+  // Cambia de operador y resetea a su página inicial
+  const cambiarOperador = (op) => {
+    if (op === operador) return;
+    setOperador(op);
+    setPage(OPERADORES[op].paginaInicial);
+    setOpen(false);
+  };
 
   // Auth loading
   if (user === undefined) return <Spinner />;
@@ -60,7 +83,9 @@ export default function App() {
   if (loading) return <Spinner />;
 
   const admin = esAdmin(user);
-  const nav = admin ? [...NAV, NAV_ADMIN] : NAV;
+  const esLowi = operador === 'lowi';
+  const nav = esLowi ? NAV_LOWI : (admin ? [...NAV, NAV_ADMIN] : NAV);
+  const opCfg = OPERADORES[operador];
 
   // Indicador de sincronización con la nube
   const guardado = {
@@ -68,8 +93,8 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, tarifas, setTarifas, mes, setMes, user, admin };
-  const Active = nav.find((n) => n.id === page)?.Comp ?? Dashboard;
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, mes, setMes, user, admin, operador };
+  const Active = nav.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   return (
     <AppCtx.Provider value={ctx}>
@@ -81,10 +106,31 @@ export default function App() {
                       ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         >
           <div className="h-16 flex items-center gap-3 px-5 border-b border-bg-border">
-            <img src="/vodafone.svg" alt="Vodafone" className="w-8 h-8" />
+            {opCfg.logo
+              ? <img src={opCfg.logo} alt={opCfg.label} className="w-8 h-8" />
+              : <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center"><Wifi size={18} className="text-white" /></div>}
             <div>
-              <p className="font-semibold text-fg leading-tight">Ventas & GP Coins</p>
-              <p className="text-[10px] text-fg-muted">Captación · Vodafone</p>
+              <p className="font-semibold text-fg leading-tight">{esLowi ? 'Ventas Lowi' : 'Ventas & GP Coins'}</p>
+              <p className="text-[10px] text-fg-muted">{opCfg.sub}</p>
+            </div>
+          </div>
+
+          {/* Conmutador de operador: Vodafone / Lowi */}
+          <div className="px-3 pt-3">
+            <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
+              {Object.entries(OPERADORES).map(([id, cfg]) => (
+                <button
+                  key={id}
+                  onClick={() => cambiarOperador(id)}
+                  className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer
+                              ${operador === id
+                                ? (id === 'lowi' ? 'bg-sky-600 text-white' : 'bg-vf-red text-white')
+                                : 'text-fg-muted hover:text-fg'}`}
+                  aria-pressed={operador === id}
+                >
+                  {cfg.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -96,7 +142,7 @@ export default function App() {
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                             transition-colors cursor-pointer
                             ${page === n.id
-                              ? 'bg-vf-red text-white'
+                              ? (esLowi ? 'bg-sky-600 text-white' : 'bg-vf-red text-white')
                               : 'text-fg-muted hover:text-fg hover:bg-bg-surface2'}`}
                 aria-current={page === n.id ? 'page' : undefined}
               >
@@ -124,9 +170,11 @@ export default function App() {
               <LogOut size={14} />
               Cerrar sesión
             </button>
-            <p className="text-[10px] text-fg-muted px-2">
-              Período {PERIODO.inicio} → {PERIODO.fin}
-            </p>
+            {!esLowi && (
+              <p className="text-[10px] text-fg-muted px-2">
+                Período {PERIODO.inicio} → {PERIODO.fin}
+              </p>
+            )}
           </div>
         </aside>
 
@@ -152,19 +200,23 @@ export default function App() {
                   {guardado.text}
                 </span>
               )}
-              <span className="text-xs text-fg-muted hidden sm:inline">Período activo:</span>
-              <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
-                {PERIODO.meses.map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMes(m)}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer
-                                ${mes === m ? 'bg-vf-red text-white' : 'text-fg-muted hover:text-fg'}`}
-                  >
-                    {PERIODO.etiquetas[m]}
-                  </button>
-                ))}
-              </div>
+              {!esLowi && (
+                <>
+                  <span className="text-xs text-fg-muted hidden sm:inline">Período activo:</span>
+                  <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
+                    {PERIODO.meses.map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => setMes(m)}
+                        className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer
+                                    ${mes === m ? 'bg-vf-red text-white' : 'text-fg-muted hover:text-fg'}`}
+                      >
+                        {PERIODO.etiquetas[m]}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
               <button
                 onClick={() => setTema(tema === 'dark' ? 'light' : 'dark')}
                 className="btn-ghost p-2"
