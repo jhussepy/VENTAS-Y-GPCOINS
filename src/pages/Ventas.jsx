@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import {
-  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle,
+  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { ventaVacia, mesDesdeFecha, unidadesVendidas } from '../lib/engine.js';
 import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js';
+import { avisosContacto } from '../lib/validacion.js';
 import { CATALOGO, PERIODO, udsDe } from '../data/incentivos.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
@@ -25,6 +26,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 
   // ¿La fecha de venta cae fuera del período del incentivo (1-jun → 31-jul 2026)?
   const fechaFuera = !!v.fechaVenta && (v.fechaVenta < PERIODO.inicio || v.fechaVenta > PERIODO.fin);
+  const avisosDatos = avisosContacto(v);
 
   return (
     <div className="space-y-4">
@@ -34,6 +36,16 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         <div><label className="label">DNI / NIE</label><input className="input" value={v.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></div>
         <div><label className="label">Teléfono de contacto</label><input type="tel" className="input" value={v.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></div>
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span></label><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></div>
+        <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></div>
+        <div><label className="label">Nº pedido / contrato <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
+      </div>
+
+      {avisosDatos.length > 0 && (
+        <p className="text-xs text-amber-400 -mt-1">{avisosDatos.join(' ')}</p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
@@ -139,10 +151,17 @@ export default function Ventas() {
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filtroMes, setFiltroMes] = useState('todos');
+  const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
 
-  const lista = ventas.filter((v) => filtroMes === 'todos' || v.mes === filtroMes);
+  const q = busqueda.trim().toLowerCase();
+  const lista = ventas.filter((v) => {
+    if (filtroMes !== 'todos' && v.mes !== filtroMes) return false;
+    if (!q) return true;
+    return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido]
+      .some((c) => String(c || '').toLowerCase().includes(q));
+  });
 
   const guardar = (venta) => {
     // 1) Validación: nombre y apellido obligatorios
@@ -158,6 +177,8 @@ export default function Ventas() {
     if (venta.fechaVenta && (venta.fechaVenta < PERIODO.inicio || venta.fechaVenta > PERIODO.fin)) {
       avisos.push('La fecha de venta está fuera del período del incentivo (1 jun → 31 jul 2026).');
     }
+
+    avisos.push(...avisosContacto(venta));
 
     // Aviso de stock: tope de unidades por modelo (y familia si aplica). Solo informativo.
     if (venta.marca && venta.sap) {
@@ -199,11 +220,14 @@ export default function Ventas() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { ventas: nuevas, duplicadas, fueraPeriodo } = await importarVentas(file);
+      const { ventas: nuevas, duplicadas, yaExistian, fueraPeriodo } = await importarVentas(file, ventas);
       setVentas((prev) => [...nuevas, ...prev]);
       let text = `${nuevas.length} ventas importadas`;
-      if (duplicadas > 0) text += ` (${duplicadas} duplicadas omitidas)`;
-      if (fueraPeriodo > 0) text += ` (${fueraPeriodo} fuera de período)`;
+      const omitidas = [];
+      if (yaExistian > 0) omitidas.push(`${yaExistian} ya existentes`);
+      if (duplicadas > 0) omitidas.push(`${duplicadas} duplicadas`);
+      if (omitidas.length) text += ` (${omitidas.join(', ')} omitidas)`;
+      if (fueraPeriodo > 0) text += ` · ${fueraPeriodo} fuera de período`;
       text += '.';
       setMsg({ tone: fueraPeriodo > 0 ? 'red' : 'green', text });
     } catch {
@@ -254,9 +278,20 @@ export default function Ventas() {
       )}
 
       <Card className="!p-0 overflow-hidden">
-        <div className="p-5 border-b border-bg-border flex items-center justify-between">
+        <div className="p-5 border-b border-bg-border flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-fg">Ventas registradas</h2>
-          <Badge tone="neutral">{lista.length} registros</Badge>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
+              <input
+                className="input pl-9 w-56"
+                placeholder="Buscar cliente, DNI, teléfono…"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </div>
+            <Badge tone="neutral">{lista.length} registros</Badge>
+          </div>
         </div>
         {lista.length === 0 ? (
           <EmptyState icon={ShoppingCart} title="Sin ventas registradas" hint="Añade una venta manualmente o importa tu Excel para empezar." />

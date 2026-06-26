@@ -1,28 +1,41 @@
-# Ventas & GP Coins · Vodafone Captación
+# Ventas & GP Coins · Vodafone + Lowi
 
 Dashboard para agentes de captación (Televenta Outbound) que registra ventas,
-calcula GP Coins y hace seguimiento de los incentivos de Vodafone.
-**Período cubierto: 1 de junio al 31 de julio de 2026.**
+calcula GP Coins, sigue los incentivos de Vodafone y, de forma independiente,
+hace seguimiento de las ventas de **Lowi**.
+**Período de incentivos cubierto: 1 de junio al 31 de julio de 2026.**
 
 ## Características
 
+### Vodafone (GP Coins)
 - **Dashboard**: KPIs (ventas, GP Coins directos, instalaciones activas, clientes
-  nuevos), gráfica de puntos/GP por incentivo y resumen de clasificación.
+  nuevos), gráfica de puntos/GP por incentivo, resumen de clasificación y
+  proyección/ritmo del mes.
 - **Ventas**: alta/edición manual + importación y exportación por **Excel**
-  (con plantilla descargable). Campos de cliente: nombre, apellido, fecha de
-  venta y fecha de instalación, además de todos los contadores de llaves.
-- **GP Coins**: desglose por incentivo, puntos de fibra por convergencia y
-  tabla de premios de ranking.
-- **Llaves**: progreso en tiempo real de cada requisito por incentivo.
-- **Incentivos**: los 6 incentivos (Cliente Nuevo, Xiaomi, Samsung, Honor,
-  Motorola, JBL) con mecánica (ranking / directo / mixta+sorteo) y premios.
-- **Tarifas**: tabla *Exclusivo 30% · Origen Contrato* (14 columnas de OTT),
-  *Promo Flash 1 OTT* y *Mis tarifas* (manual + Excel).
-- **Catálogo**: terminales por marca con código SAP, puntos/GP por mes,
-  unidades limitadas (stock por familia o por modelo) y marcadores Estrella/Destacado.
-- **Selector de mes** (Junio / Julio): recalcula puntos, GP Coins y stock.
+  (con plantilla descargable y deduplicación contra lo ya guardado). Datos de
+  cliente: nombre, apellido, DNI/NIE, teléfono, email, dirección, nº de pedido,
+  fechas y todos los contadores de llaves. Buscador por cliente.
+- **GP Coins / Llaves / Incentivos**: desglose por incentivo, progreso de llaves
+  y premios de ranking (Cliente Nuevo, Xiaomi, Samsung, Honor, Motorola, JBL).
+- **Tarifas** y **Catálogo** de terminales con stock por familia/modelo.
 
-Los datos se guardan en el navegador (localStorage); no requiere servidor.
+### Lowi (seguimiento, sin GP Coins)
+- Mundo independiente accesible desde el **conmutador Vodafone / Lowi**.
+- **Dashboard Lowi**: KPIs por estado, facturación activa, tasas de
+  activación/baja y motivos de baja.
+- **Ventas Lowi**: alta/edición, cambio rápido de estado, filtro por mes,
+  buscador e import/export/plantilla Excel.
+- Estados: pendiente, activa, dada de baja, cancelada.
+
+### Plataforma
+- **Login con Google** (Firebase Auth) y **sincronización en la nube**
+  (Cloud Firestore) en tiempo real entre dispositivos.
+- **Datos privados por usuario**: cada agente solo ve los suyos.
+- **Panel de Supervisor** (solo administradores): ranking del equipo, KPIs de
+  Vodafone y Lowi, y drill-down por agente.
+- **Modo claro/oscuro** persistido en la nube.
+- **Copia de seguridad** export/import en JSON (en el menú lateral).
+- **PWA**: instalable y con respuesta offline básica.
 
 ## Desarrollo
 
@@ -31,8 +44,16 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # genera dist/
 npm run preview
+npm test         # tests del motor de cálculo (Vitest)
 ```
+
+## Firebase
+
+- Autenticación: proveedor Google habilitado y dominios autorizados configurados.
+- Firestore: reglas en [`firestore.rules`](./firestore.rules). El correo admin se
+  define tanto ahí como en `src/lib/admin.js`.
 
 ## Stack
 
-React + Vite · Tailwind CSS · Recharts · SheetJS (xlsx) · Lucide icons.
+React + Vite · Tailwind CSS · Recharts · SheetJS (xlsx) · Firebase
+(Auth + Firestore) · Lucide icons.

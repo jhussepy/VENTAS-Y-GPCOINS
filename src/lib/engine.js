@@ -13,6 +13,9 @@ export const ventaVacia = () => ({
   apellido: '',
   dni: '',                 // DNI / NIE del cliente
   telefono: '',            // teléfono de contacto
+  email: '',               // email del cliente
+  direccion: '',           // dirección de instalación
+  pedido: '',              // nº de pedido / contrato
   fechaVenta: '',
   fechaInstalacion: '',
   mes: 'junio',            // junio | julio (se autodetecta de la fecha)

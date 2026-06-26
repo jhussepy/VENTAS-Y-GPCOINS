@@ -1,0 +1,18 @@
+{
+  "name": "Ventas & GP Coins",
+  "short_name": "Ventas GP",
+  "description": "Dashboard de ventas, GP Coins y seguimiento Lowi para captación Vodafone.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0F",
+  "theme_color": "#E60000",
+  "icons": [
+    {
+      "src": "/vodafone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

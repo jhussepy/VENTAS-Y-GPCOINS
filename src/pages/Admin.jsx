@@ -3,10 +3,11 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 import { useApp } from '../App.jsx';
 import { resumenGlobal } from '../lib/engine.js';
+import { resumenLowi } from '../lib/lowi.js';
 import { ORDEN_INCENTIVOS, CATALOGO } from '../data/incentivos.js';
 import { Card, StatCard, Badge, EmptyState, SectionTitle } from '../components/ui.jsx';
-import { fmtNum, fmtFecha } from '../lib/format.js';
-import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X } from 'lucide-react';
+import { fmtNum, fmtFecha, fmtEur } from '../lib/format.js';
+import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X, Wifi } from 'lucide-react';
 
 export default function Admin() {
   const { mes, admin } = useApp();
@@ -29,6 +30,7 @@ export default function Admin() {
           nombre: u.nombre || '',
           foto: u.foto || '',
           ventas: Array.isArray(u.ventas) ? u.ventas : [],
+          ventasLowi: Array.isArray(u.ventasLowi) ? u.ventasLowi : [],
           tarifas: Array.isArray(u.tarifas) ? u.tarifas : [],
           ultimoAcceso: u.ultimoAcceso || 0,
         };
@@ -51,7 +53,8 @@ export default function Admin() {
   // Resumen por agente en el mes activo
   const filas = agentes.map((a) => {
     const r = resumenGlobal(a.ventas, mes);
-    return { ...a, resumen: r };
+    const lowi = resumenLowi(a.ventasLowi);
+    return { ...a, resumen: r, lowi };
   }).sort((x, y) =>
     (y.resumen.gpDirectosTotal + y.resumen.gpPotencialRanking) -
     (x.resumen.gpDirectosTotal + x.resumen.gpPotencialRanking)
@@ -62,7 +65,10 @@ export default function Admin() {
     ventas: acc.ventas + f.resumen.totalVentas,
     gp: acc.gp + f.resumen.gpDirectosTotal,
     clientes: acc.clientes + f.resumen.clientesNuevos,
-  }), { ventas: 0, gp: 0, clientes: 0 });
+    lowiTotal: acc.lowiTotal + f.lowi.total,
+    lowiActivas: acc.lowiActivas + f.lowi.porEstado.activa,
+    lowiFact: acc.lowiFact + f.lowi.facturacionActiva,
+  }), { ventas: 0, gp: 0, clientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0 });
 
   return (
     <div className="space-y-6">
@@ -84,6 +90,13 @@ export default function Admin() {
         <StatCard icon={ShoppingCart} label="Ventas del equipo" value={fmtNum(tot.ventas)} accent="text-vf-red" />
         <StatCard icon={Coins} label="GP Coins directos (equipo)" value={fmtNum(tot.gp)} accent="text-gp-gold" />
         <StatCard icon={Trophy} label="Clientes nuevos (equipo)" value={fmtNum(tot.clientes)} accent="text-emerald-400" />
+      </div>
+
+      {/* KPIs de Lowi del equipo */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard icon={Wifi} label="Ventas Lowi (equipo)" value={fmtNum(tot.lowiTotal)} accent="text-sky-400" />
+        <StatCard icon={Wifi} label="Lowi activas (equipo)" value={fmtNum(tot.lowiActivas)} accent="text-emerald-400" />
+        <StatCard icon={Coins} label="Facturación Lowi activa" value={fmtEur(tot.lowiFact)} sub="Suma de cuotas mensuales activas" accent="text-sky-400" />
       </div>
 
       {/* Drill-down: detalle del agente seleccionado */}
@@ -111,6 +124,7 @@ export default function Admin() {
                   <th className="px-4 py-3 font-medium text-center">Instal. activas</th>
                   <th className="px-4 py-3 font-medium text-right">GP directos</th>
                   <th className="px-4 py-3 font-medium text-center">Incentivos OK</th>
+                  <th className="px-4 py-3 font-medium text-center">Lowi (act./tot.)</th>
                   <th className="px-4 py-3 font-medium text-right">Detalle</th>
                 </tr>
               </thead>
@@ -141,6 +155,10 @@ export default function Admin() {
                       <Badge tone={f.resumen.incentivosClasificados > 0 ? 'green' : 'neutral'}>
                         {f.resumen.incentivosClasificados}/{ORDEN_INCENTIVOS.length}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-center text-fg-soft tabnum">
+                      <span className="text-emerald-400">{fmtNum(f.lowi.porEstado.activa)}</span>
+                      <span className="text-fg-muted"> / {fmtNum(f.lowi.total)}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       {/* Evita que el click propague dos veces; igual abre el detalle */}
@@ -211,8 +229,12 @@ function DetalleAgente({ agente, mes, onCerrar }) {
           <p className="text-xl font-semibold text-gp-gold tabnum">{fmtNum(r.gpDirectosTotal)}</p>
         </div>
         <div className="rounded-lg bg-bg-surface2 p-4">
-          <p className="text-xs text-fg-muted">Tarifas propias</p>
-          <p className="text-xl font-semibold text-fg tabnum">{fmtNum((agente.tarifas || []).length)}</p>
+          <p className="text-xs text-fg-muted">Lowi · activas / total</p>
+          <p className="text-xl font-semibold text-fg tabnum">
+            <span className="text-emerald-400">{fmtNum(agente.lowi?.porEstado.activa || 0)}</span>
+            <span className="text-fg-muted"> / {fmtNum(agente.lowi?.total || 0)}</span>
+          </p>
+          <p className="text-[11px] text-fg-muted mt-0.5">{fmtEur(agente.lowi?.facturacionActiva || 0)} activos · {fmtNum((agente.tarifas || []).length)} tarifas</p>
         </div>
       </div>
 

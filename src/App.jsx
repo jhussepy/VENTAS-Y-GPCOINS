@@ -1,25 +1,28 @@
-import { useState, createContext, useContext } from 'react';
+import { useState, createContext, useContext, lazy, Suspense, useRef } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
+  Download, Upload,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useCloudData } from './hooks/useCloudData.js';
 import { cerrarSesion } from './lib/firebase.js';
 import { esAdmin } from './lib/admin.js';
+import { exportarBackup, leerBackup } from './lib/backup.js';
 
-import Dashboard from './pages/Dashboard.jsx';
-import Ventas from './pages/Ventas.jsx';
-import GPCoins from './pages/GPCoins.jsx';
-import Llaves from './pages/Llaves.jsx';
-import Incentivos from './pages/Incentivos.jsx';
-import Tarifas from './pages/Tarifas.jsx';
-import Catalogo from './pages/Catalogo.jsx';
+// Páginas con carga diferida (code-splitting) para aligerar el arranque
+const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
+const Ventas = lazy(() => import('./pages/Ventas.jsx'));
+const GPCoins = lazy(() => import('./pages/GPCoins.jsx'));
+const Llaves = lazy(() => import('./pages/Llaves.jsx'));
+const Incentivos = lazy(() => import('./pages/Incentivos.jsx'));
+const Tarifas = lazy(() => import('./pages/Tarifas.jsx'));
+const Catalogo = lazy(() => import('./pages/Catalogo.jsx'));
+const Admin = lazy(() => import('./pages/Admin.jsx'));
+const LowiDashboard = lazy(() => import('./pages/LowiDashboard.jsx'));
+const LowiVentas = lazy(() => import('./pages/LowiVentas.jsx'));
 import Login from './pages/Login.jsx';
-import Admin from './pages/Admin.jsx';
-import LowiDashboard from './pages/LowiDashboard.jsx';
-import LowiVentas from './pages/LowiVentas.jsx';
 
 export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -66,6 +69,24 @@ export default function App() {
   const [page, setPage] = useState('dashboard');
   const [mes, setMes] = useState('junio');
   const [open, setOpen] = useState(false);
+  const backupRef = useRef(null);
+
+  // Restaura datos desde un archivo de copia de seguridad (reemplaza los actuales)
+  const onRestaurar = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!confirm('Restaurar reemplazará TODOS tus datos actuales (ventas, Lowi y tarifas) por los del archivo. ¿Continuar?')) return;
+    try {
+      const d = await leerBackup(file);
+      setVentas(d.ventas);
+      setVentasLowi(d.ventasLowi);
+      setTarifas(d.tarifas);
+      alert('Copia restaurada correctamente.');
+    } catch {
+      alert('No se pudo leer el archivo de copia de seguridad.');
+    }
+  };
 
   // Cambia de operador y resetea a su página inicial
   const cambiarOperador = (op) => {
@@ -163,6 +184,24 @@ export default function App() {
                 <p className="text-[10px] text-fg-muted truncate">{user.email}</p>
               </div>
             </div>
+            {/* Copia de seguridad de todos los datos */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas })}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
+                title="Descargar copia de seguridad (JSON)"
+              >
+                <Download size={13} /> Copia
+              </button>
+              <button
+                onClick={() => backupRef.current?.click()}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
+                title="Restaurar desde copia de seguridad"
+              >
+                <Upload size={13} /> Restaurar
+              </button>
+              <input ref={backupRef} type="file" accept=".json" className="hidden" onChange={onRestaurar} />
+            </div>
             <button
               onClick={() => cerrarSesion()}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-fg-muted hover:text-vf-redLight hover:bg-vf-red/10 transition-colors cursor-pointer"
@@ -229,7 +268,9 @@ export default function App() {
           </header>
 
           <main className="flex-1 p-4 lg:p-8 max-w-[1600px] w-full mx-auto">
-            <Active />
+            <Suspense fallback={<div className="py-20 flex justify-center"><Loader2 size={28} className="text-vf-red animate-spin" /></div>}>
+              <Active />
+            </Suspense>
           </main>
         </div>
       </div>

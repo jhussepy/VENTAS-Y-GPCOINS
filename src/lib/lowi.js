@@ -41,6 +41,9 @@ export const ventaLowiVacia = () => ({
   apellido: '',
   dni: '',                 // DNI / NIE del cliente
   telefono: '',            // teléfono de contacto
+  email: '',               // email del cliente
+  direccion: '',           // dirección de instalación
+  pedido: '',              // nº de pedido / contrato
   fechaVenta: '',
   fechaInstalacion: '',
   producto: '',            // '' | 'fibra' | 'movil' | 'fibra_movil'
@@ -52,6 +55,18 @@ export const ventaLowiVacia = () => ({
   motivoBaja: '',          // motivo (solo si estado = baja/cancelada)
   notas: '',
 });
+
+// Mes (YYYY-MM) de una venta a partir de su fecha de venta
+export const mesLowi = (fecha) => (fecha ? String(fecha).slice(0, 7) : '');
+
+// Etiqueta legible de un mes YYYY-MM (ej. "junio 2026")
+const NOMBRES_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+export const etiquetaMesLowi = (ym) => {
+  if (!ym) return 'Sin fecha';
+  const [a, m] = ym.split('-');
+  const nombre = NOMBRES_MES[Number(m) - 1] || m;
+  return `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${a}`;
+};
 
 // Resumen global de ventas de Lowi
 export function resumenLowi(ventas) {

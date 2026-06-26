@@ -1,13 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
-  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, Wifi,
+  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, Wifi, Search,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import {
   ventaLowiVacia, ESTADOS_LOWI, ORDEN_ESTADOS, PRODUCTOS_LOWI,
-  VELOCIDADES_LOWI, MOTIVOS_BAJA,
+  VELOCIDADES_LOWI, MOTIVOS_BAJA, mesLowi, etiquetaMesLowi,
 } from '../lib/lowi.js';
 import { importarLowi, exportarLowi, plantillaLowi } from '../lib/excelLowi.js';
+import { avisosContacto } from '../lib/validacion.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtFecha, fmtEur } from '../lib/format.js';
 
@@ -17,6 +18,7 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
   const esBaja = v.estado === 'baja' || v.estado === 'cancelada';
   const llevaFibra = v.producto === 'fibra' || v.producto === 'fibra_movil';
   const llevaMovil = v.producto === 'movil' || v.producto === 'fibra_movil';
+  const avisosDatos = avisosContacto(v);
 
   return (
     <div className="space-y-4">
@@ -30,7 +32,15 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div><label className="label">Fecha de venta</label><input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></div>
         <div><label className="label">Fecha de instalación</label><input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} /></div>
+        <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span></label><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></div>
+        <div><label className="label">Nº pedido / contrato <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
       </div>
+
+      <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></div>
+
+      {avisosDatos.length > 0 && (
+        <p className="text-xs text-amber-400 -mt-1">{avisosDatos.join(' ')}</p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
@@ -93,10 +103,25 @@ export default function LowiVentas() {
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filtro, setFiltro] = useState('todos');
+  const [filtroMes, setFiltroMes] = useState('todos');
+  const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
 
-  const lista = ventasLowi.filter((v) => filtro === 'todos' || v.estado === filtro);
+  // Meses disponibles (de las fechas de venta) para el filtro
+  const meses = useMemo(() => {
+    const s = new Set(ventasLowi.map((v) => mesLowi(v.fechaVenta)).filter(Boolean));
+    return [...s].sort().reverse();
+  }, [ventasLowi]);
+
+  const q = busqueda.trim().toLowerCase();
+  const lista = ventasLowi.filter((v) => {
+    if (filtro !== 'todos' && v.estado !== filtro) return false;
+    if (filtroMes !== 'todos' && mesLowi(v.fechaVenta) !== filtroMes) return false;
+    if (!q) return true;
+    return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido]
+      .some((c) => String(c || '').toLowerCase().includes(q));
+  });
 
   const guardar = (venta) => {
     if (!venta.nombre.trim() || !venta.apellido.trim()) {
@@ -109,6 +134,11 @@ export default function LowiVentas() {
       return existe ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
     });
     setForm(false); setEditId(null);
+    const avisos = avisosContacto(venta);
+    if (avisos.length) {
+      setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
+      setTimeout(() => setMsg(null), 6000);
+    }
   };
 
   // Cambio rápido de estado desde la tabla (sin abrir el formulario)
@@ -124,10 +154,13 @@ export default function LowiVentas() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { ventas: nuevas, duplicadas } = await importarLowi(file);
+      const { ventas: nuevas, duplicadas, yaExistian } = await importarLowi(file, ventasLowi);
       setVentasLowi((prev) => [...nuevas, ...prev]);
       let text = `${nuevas.length} ventas importadas`;
-      if (duplicadas > 0) text += ` (${duplicadas} duplicadas omitidas)`;
+      const omitidas = [];
+      if (yaExistian > 0) omitidas.push(`${yaExistian} ya existentes`);
+      if (duplicadas > 0) omitidas.push(`${duplicadas} duplicadas`);
+      if (omitidas.length) text += ` (${omitidas.join(', ')} omitidas)`;
       setMsg({ tone: 'green', text: text + '.' });
     } catch {
       setMsg({ tone: 'red', text: 'Error al leer el Excel. Revisa el formato con la plantilla.' });
@@ -154,10 +187,16 @@ export default function LowiVentas() {
             <Download size={16} /> Exportar
           </button>
         </div>
-        <select className="input w-auto" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
-          <option value="todos">Todos los estados</option>
-          {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS_LOWI[k].label}</option>)}
-        </select>
+        <div className="flex flex-wrap gap-2">
+          <select className="input w-auto" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}>
+            <option value="todos">Todos los meses</option>
+            {meses.map((m) => <option key={m} value={m}>{etiquetaMesLowi(m)}</option>)}
+          </select>
+          <select className="input w-auto" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
+            <option value="todos">Todos los estados</option>
+            {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS_LOWI[k].label}</option>)}
+          </select>
+        </div>
       </div>
 
       {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
@@ -174,9 +213,20 @@ export default function LowiVentas() {
       )}
 
       <Card className="!p-0 overflow-hidden">
-        <div className="p-5 border-b border-bg-border flex items-center justify-between">
+        <div className="p-5 border-b border-bg-border flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-fg">Ventas Lowi</h2>
-          <Badge tone="neutral">{lista.length} registros</Badge>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
+              <input
+                className="input pl-9 w-56"
+                placeholder="Buscar cliente, DNI, teléfono…"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </div>
+            <Badge tone="neutral">{lista.length} registros</Badge>
+          </div>
         </div>
         {lista.length === 0 ? (
           <EmptyState icon={Wifi} title="Sin ventas de Lowi" hint="Añade una venta manualmente o importa tu Excel para empezar el seguimiento." />
