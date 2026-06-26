@@ -46,7 +46,7 @@ export default function App() {
                       ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         >
           <div className="h-16 flex items-center gap-3 px-5 border-b border-bg-border">
-            <img src="./vodafone.svg" alt="Vodafone" className="w-8 h-8" />
+            <img src="/vodafone.svg" alt="Vodafone" className="w-8 h-8" />
             <div>
               <p className="font-semibold text-white leading-tight">Ventas & GP Coins</p>
               <p className="text-[10px] text-slate-500">Captación · Vodafone</p>
