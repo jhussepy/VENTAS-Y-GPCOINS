@@ -4,6 +4,7 @@ import { db } from '../lib/firebase.js';
 import { useApp } from '../App.jsx';
 import { resumenGlobal } from '../lib/engine.js';
 import { resumenLowi } from '../lib/lowi.js';
+import { ESTADOS, estadoDe } from '../lib/estados.js';
 import { ORDEN_INCENTIVOS, CATALOGO } from '../data/incentivos.js';
 import { Card, StatCard, Badge, EmptyState, SectionTitle } from '../components/ui.jsx';
 import { fmtNum, fmtFecha, fmtEur } from '../lib/format.js';
@@ -252,7 +253,7 @@ function DetalleAgente({ agente, mes, onCerrar }) {
                   <th className="px-3 py-2 font-medium">Fecha venta</th>
                   <th className="px-3 py-2 font-medium">Convergencia</th>
                   <th className="px-3 py-2 font-medium">Terminal</th>
-                  <th className="px-3 py-2 font-medium text-center">Instalación</th>
+                  <th className="px-3 py-2 font-medium text-center">Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,8 +270,8 @@ function DetalleAgente({ agente, mes, onCerrar }) {
                     </td>
                     <td className="px-3 py-2 text-fg-soft">{terminalTexto(v)}</td>
                     <td className="px-3 py-2 text-center">
-                      <Badge tone={v.instalacionActiva ? 'green' : 'neutral'}>
-                        {v.instalacionActiva ? 'Sí' : 'No'}
+                      <Badge tone={ESTADOS[estadoDe(v)]?.tone || 'neutral'}>
+                        {ESTADOS[estadoDe(v)]?.label || '—'}
                       </Badge>
                     </td>
                   </tr>

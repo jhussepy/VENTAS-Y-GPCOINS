@@ -1,5 +1,17 @@
 import { ventaVacia, mesDesdeFecha } from './engine.js';
+import { ESTADOS } from './estados.js';
 import { PERIODO } from '../data/incentivos.js';
+
+// Normaliza el texto de estado a una clave válida
+const aEstado = (x) => {
+  const s = String(x ?? '').trim().toLowerCase();
+  if (ESTADOS[s]) return s;
+  if (s.startsWith('activ')) return 'activa';
+  if (s.startsWith('pend')) return 'pendiente';
+  if (s.startsWith('baj')) return 'baja';
+  if (s.startsWith('cancel')) return 'cancelada';
+  return '';
+};
 
 // xlsx se carga de forma diferida (solo cuando se importa/exporta) para aligerar el bundle inicial
 const cargarXLSX = () => import('xlsx');
@@ -9,7 +21,7 @@ export const COLUMNAS_VENTAS = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'pedido',
   'fechaVenta', 'fechaInstalacion', 'convergencia',
   'velocidad', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'cantidad',
-  'portasVoz', 'lineasVoz', 'til65', 'secureNet', 'instalacionActiva', 'notas',
+  'portasVoz', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
 ];
 
 const aBool = (x) => {
@@ -82,7 +94,12 @@ export async function importarVentas(file, existentes = []) {
     v.lineasVoz = aNum(r.lineasVoz ?? r['lineas voz']);
     v.til65 = aNum(r.til65 ?? r.TIL65);
     v.secureNet = aNum(r.secureNet ?? r['secure net']);
-    v.instalacionActiva = aBool(r.instalacionActiva ?? r['instalacion activa']);
+    // Estado: usa la columna 'estado' si existe; si no, dedúcelo de instalacionActiva (compatibilidad)
+    const instAntigua = aBool(r.instalacionActiva ?? r['instalacion activa']);
+    v.estado = aEstado(r.estado) || (instAntigua ? 'activa' : 'pendiente');
+    v.instalacionActiva = v.estado === 'activa';
+    v.fechaBaja = aFecha(XLSX, r.fechaBaja ?? r['fecha baja']);
+    v.motivoBaja = String(r.motivoBaja ?? r['motivo baja'] ?? '').trim();
     v.notas = String(r.notas ?? '').trim();
     v.mes = mesDesdeFecha(v.fechaVenta);
     return v;
@@ -116,7 +133,8 @@ export async function exportarVentas(ventas) {
     fibraActiva: v.fibraActiva ? 'SI' : 'NO', marca: v.marca, sap: v.sap,
     cantidad: v.cantidad, portasVoz: v.portasVoz, lineasVoz: v.lineasVoz,
     til65: v.til65, secureNet: v.secureNet,
-    instalacionActiva: v.instalacionActiva ? 'SI' : 'NO', notas: v.notas,
+    estado: ESTADOS[v.estado]?.label || (v.instalacionActiva ? 'Activa' : 'Pendiente'),
+    fechaBaja: v.fechaBaja || '', motivoBaja: v.motivoBaja || '', notas: v.notas,
   }));
   const ws = XLSX.utils.json_to_sheet(data, { header: COLUMNAS_VENTAS });
   const wb = XLSX.utils.book_new();
@@ -133,7 +151,7 @@ export async function plantillaVentas() {
     fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414',
     cantidad: 1, portasVoz: 2, lineasVoz: 2, til65: 1, secureNet: 1,
-    instalacionActiva: 'SI', notas: 'Ejemplo con terminal',
+    estado: 'Activa', fechaBaja: '', motivoBaja: '', notas: 'Ejemplo con terminal',
   }, {
     nombre: 'María', apellido: 'García', dni: '87654321X', telefono: '600333444',
     email: '', direccion: '', pedido: 'PED-002',
@@ -141,7 +159,7 @@ export async function plantillaVentas() {
     fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '',
     cantidad: '', portasVoz: 1, lineasVoz: 1, til65: 0, secureNet: 0,
-    instalacionActiva: 'SI', notas: 'Solo fibra y movil (sin terminal): deja marca y sap vacios',
+    estado: 'Pendiente', fechaBaja: '', motivoBaja: '', notas: 'Solo fibra y movil (sin terminal): deja marca y sap vacios',
   }];
   const ws = XLSX.utils.json_to_sheet(ejemplo, { header: COLUMNAS_VENTAS });
   const wb = XLSX.utils.book_new();

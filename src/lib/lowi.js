@@ -3,15 +3,11 @@
 //  Lowi no genera GP Coins: aquí solo registramos ventas y su estado.
 // ============================================================================
 
-// Estados posibles de una venta de Lowi
-export const ESTADOS_LOWI = {
-  pendiente: { id: 'pendiente', label: 'Pendiente', tone: 'gold', desc: 'Contratada, aún sin instalar' },
-  activa: { id: 'activa', label: 'Activa', tone: 'green', desc: 'Instalada y funcionando' },
-  baja: { id: 'baja', label: 'Dada de baja', tone: 'red', desc: 'El cliente canceló tras activarse' },
-  cancelada: { id: 'cancelada', label: 'Cancelada', tone: 'neutral', desc: 'Se cayó el pedido antes de instalar' },
-};
+import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA } from './estados.js';
 
-export const ORDEN_ESTADOS = ['pendiente', 'activa', 'baja', 'cancelada'];
+// Estados compartidos (se re-exportan con el nombre histórico ESTADOS_LOWI)
+export const ESTADOS_LOWI = ESTADOS;
+export { ORDEN_ESTADOS, MOTIVOS_BAJA };
 
 // Tipos de producto de Lowi
 export const PRODUCTOS_LOWI = {
@@ -22,17 +18,6 @@ export const PRODUCTOS_LOWI = {
 
 // Velocidades habituales de fibra en Lowi
 export const VELOCIDADES_LOWI = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
-
-// Motivos de baja frecuentes (para analizar después)
-export const MOTIVOS_BAJA = [
-  'Precio / competencia',
-  'Mala cobertura',
-  'Avería / incidencias',
-  'Mudanza',
-  'Atención al cliente',
-  'No usaba el servicio',
-  'Otro',
-];
 
 // Estructura de una venta de Lowi (todos los campos con valores por defecto)
 export const ventaLowiVacia = () => ({

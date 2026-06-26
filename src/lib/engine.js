@@ -5,6 +5,7 @@ import {
   CATALOGO, INCENTIVOS, ORDEN_INCENTIVOS, PUNTOS_CONVERGENCIA, PERIODO,
   ptsDe, gpDe, convPts,
 } from '../data/incentivos.js';
+import { estadoDe } from './estados.js';
 
 // Estructura de una venta (campos opcionales, todos los contadores por defecto 0)
 export const ventaVacia = () => ({
@@ -33,8 +34,11 @@ export const ventaVacia = () => ({
   lineasVoz: 0,            // total líneas de voz (denominador del %)
   til65: 0,                // líneas TIL65
   secureNet: 0,            // activaciones Secure Net
-  // Estado
-  instalacionActiva: false,
+  // Estado de la venta (pendiente | activa | baja | cancelada)
+  estado: 'pendiente',
+  instalacionActiva: false, // se mantiene sincronizado: true solo si estado === 'activa'
+  fechaBaja: '',            // fecha de baja (si estado = baja/cancelada)
+  motivoBaja: '',           // motivo de baja
   notas: '',
 });
 
@@ -198,7 +202,7 @@ export function resumenGlobal(ventas, mes) {
   return {
     estados,
     totalVentas: delMes.length,
-    instalacionesActivas: delMes.filter((v) => v.instalacionActiva).length,
+    instalacionesActivas: delMes.filter((v) => estadoDe(v) === 'activa').length,
     clientesNuevos: delMes.filter((v) => v.clienteNuevo).length,
     gpDirectosTotal,
     gpPotencialRanking,

@@ -8,6 +8,7 @@ import {
 import { useApp } from '../App.jsx';
 import { resumenGlobal } from '../lib/engine.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
+import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { StatCard, Card, SectionTitle, Badge, Progress } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
@@ -22,19 +23,17 @@ export default function Dashboard() {
   // Nº total de incentivos (dinámico, en vez de hardcodear 6)
   const totalIncentivos = ORDEN_INCENTIVOS.length;
 
-  // Distribución de ventas por estado de instalación (activa / pendiente)
+  // Distribución de ventas por estado (pendiente / activa / baja / cancelada)
   const distribucion = useMemo(() => {
-    const total = r.totalVentas;
-    const activa = r.instalacionesActivas;
-    const pendiente = Math.max(0, total - activa);
-    return {
-      total,
-      items: [
-        { id: 'activa', label: 'Instalación activa', n: activa, color: '#10B981' },
-        { id: 'pendiente', label: 'Pendiente de instalar', n: pendiente, color: '#FFB81C' },
-      ],
-    };
-  }, [r.totalVentas, r.instalacionesActivas]);
+    const delMes = ventas.filter((v) => v.mes === mes);
+    const items = ORDEN_ESTADOS.map((k) => ({
+      id: k,
+      label: ESTADOS[k].label,
+      color: ESTADOS[k].color,
+      n: delMes.filter((v) => estadoDe(v) === k).length,
+    }));
+    return { total: delMes.length, items };
+  }, [ventas, mes]);
 
   // --- Proyección / ritmo del mes activo --------------------------------------
   const proyeccion = useMemo(() => {
@@ -169,10 +168,10 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* Distribución de ventas por estado de instalación */}
+      {/* Distribución de ventas por estado */}
       <Card>
         <SectionTitle right={<Badge tone="neutral">{fmtNum(distribucion.total)} ventas</Badge>}>
-          Distribución por instalación
+          Distribución por estado
         </SectionTitle>
         {distribucion.total === 0 ? (
           <p className="py-6 text-center text-fg-muted text-sm">Aún no hay ventas este mes.</p>

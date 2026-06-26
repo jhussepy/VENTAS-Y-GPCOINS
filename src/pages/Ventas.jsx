@@ -6,6 +6,7 @@ import { useApp } from '../App.jsx';
 import { ventaVacia, mesDesdeFecha, unidadesVendidas } from '../lib/engine.js';
 import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js';
 import { avisosContacto } from '../lib/validacion.js';
+import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.js';
 import { CATALOGO, PERIODO, udsDe } from '../data/incentivos.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
@@ -19,8 +20,11 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
     const next = { ...p, [k]: val };
     if (k === 'fechaVenta') next.mes = mesDesdeFecha(val);
     if (k === 'marca') next.sap = '';
+    // El estado manda: "instalación activa" solo es cierto cuando el estado es 'activa'
+    if (k === 'estado') next.instalacionActiva = val === 'activa';
     return next;
   });
+  const esBaja = v.estado === 'baja' || v.estado === 'cancelada';
 
   const productos = v.marca ? CATALOGO[v.marca]?.productos ?? [] : [];
 
@@ -130,10 +134,27 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           <input type="checkbox" checked={v.fibraActiva} onChange={(e) => set('fibraActiva', e.target.checked)} className="accent-vf-red w-4 h-4" />
           Fibra activa (neba o fibra)
         </label>
-        <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
-          <input type="checkbox" checked={v.instalacionActiva} onChange={(e) => set('instalacionActiva', e.target.checked)} className="accent-emerald-500 w-4 h-4" />
-          Instalación activa
-        </label>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className="label">Estado de la venta</label>
+          <select className="input" value={v.estado} onChange={(e) => set('estado', e.target.value)}>
+            {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS[k].label}</option>)}
+          </select>
+        </div>
+        {esBaja && (
+          <>
+            <div><label className="label">Fecha de baja</label><input type="date" className="input" value={v.fechaBaja} onChange={(e) => set('fechaBaja', e.target.value)} /></div>
+            <div>
+              <label className="label">Motivo de baja</label>
+              <select className="input" value={v.motivoBaja} onChange={(e) => set('motivoBaja', e.target.value)}>
+                <option value="">—</option>
+                {MOTIVOS_BAJA.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </>
+        )}
       </div>
 
       <div><label className="label">Notas</label><input className="input" value={v.notas} onChange={(e) => set('notas', e.target.value)} /></div>
@@ -151,6 +172,7 @@ export default function Ventas() {
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filtroMes, setFiltroMes] = useState('todos');
+  const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
@@ -158,6 +180,7 @@ export default function Ventas() {
   const q = busqueda.trim().toLowerCase();
   const lista = ventas.filter((v) => {
     if (filtroMes !== 'todos' && v.mes !== filtroMes) return false;
+    if (filtroEstado !== 'todos' && estadoDe(v) !== filtroEstado) return false;
     if (!q) return true;
     return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido]
       .some((c) => String(c || '').toLowerCase().includes(q));
@@ -216,6 +239,13 @@ export default function Ventas() {
     if (confirm('¿Eliminar esta venta?')) setVentas((prev) => prev.filter((p) => p.id !== id));
   };
 
+  // Cambio rápido de estado desde la tabla (mantiene instalacionActiva en sync)
+  const cambiarEstado = (id, estado) => {
+    setVentas((prev) => prev.map((p) => (p.id === id
+      ? { ...p, estado, instalacionActiva: estado === 'activa' }
+      : p)));
+  };
+
   const onImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -257,11 +287,17 @@ export default function Ventas() {
             <Download size={16} /> Exportar
           </button>
         </div>
-        <select className="input w-auto" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}>
-          <option value="todos">Todos los meses</option>
-          <option value="junio">Junio</option>
-          <option value="julio">Julio</option>
-        </select>
+        <div className="flex flex-wrap gap-2">
+          <select className="input w-auto" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}>
+            <option value="todos">Todos los meses</option>
+            <option value="junio">Junio</option>
+            <option value="julio">Julio</option>
+          </select>
+          <select className="input w-auto" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+            <option value="todos">Todos los estados</option>
+            {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS[k].label}</option>)}
+          </select>
+        </div>
       </div>
 
       {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
@@ -338,8 +374,15 @@ export default function Ventas() {
                           : <span className="text-fg-muted italic">Sin terminal</span>}
                       </td>
                       <td className="px-4 py-3 text-center"><Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge></td>
-                      <td className="px-4 py-3 text-center">
-                        {v.instalacionActiva ? <Badge tone="green">Activa</Badge> : <Badge tone="neutral">Pendiente</Badge>}
+                      <td className="px-4 py-3">
+                        <select
+                          value={estadoDe(v)}
+                          onChange={(e) => cambiarEstado(v.id, e.target.value)}
+                          className="bg-bg-surface2 border border-bg-border rounded-md px-2 py-1 text-xs text-fg cursor-pointer focus:outline-none focus:ring-1 focus:ring-vf-red"
+                          title="Cambiar estado rápido"
+                        >
+                          {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS[k].label}</option>)}
+                        </select>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
