@@ -31,6 +31,11 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div><label className="label">Nombre</label><input className="input" value={v.nombre} onChange={(e) => set('nombre', e.target.value)} /></div>
         <div><label className="label">Apellido</label><input className="input" value={v.apellido} onChange={(e) => set('apellido', e.target.value)} /></div>
+        <div><label className="label">DNI / NIE</label><input className="input" value={v.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></div>
+        <div><label className="label">Teléfono de contacto</label><input type="tel" className="input" value={v.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
           <label className="label">Fecha de venta</label>
           <input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} />
@@ -277,6 +282,11 @@ export default function Ventas() {
                     <tr key={v.id} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
                       <td className="px-4 py-3">
                         <div className="font-medium text-fg">{v.nombre} {v.apellido}</div>
+                        {(v.dni || v.telefono) && (
+                          <div className="text-[11px] text-fg-muted mt-0.5">
+                            {[v.dni, v.telefono].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
                         <div className="flex gap-1 mt-1">
                           {v.clienteNuevo && <Badge tone="red">Nuevo</Badge>}
                           {v.fibraActiva && <Badge tone="neutral">Fibra</Badge>}

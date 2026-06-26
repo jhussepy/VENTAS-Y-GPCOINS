@@ -3,7 +3,7 @@ import { ventaLowiVacia, ESTADOS_LOWI, PRODUCTOS_LOWI } from './lowi.js';
 
 // Cabeceras del Excel de ventas Lowi (orden de plantilla)
 export const COLUMNAS_LOWI = [
-  'nombre', 'apellido', 'fechaVenta', 'fechaInstalacion', 'producto',
+  'nombre', 'apellido', 'dni', 'telefono', 'fechaVenta', 'fechaInstalacion', 'producto',
   'velocidad', 'lineas', 'cuota', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
 ];
 
@@ -66,6 +66,8 @@ export function importarLowi(file) {
           const v = ventaLowiVacia();
           v.nombre = String(r.nombre ?? r.Nombre ?? '').trim();
           v.apellido = String(r.apellido ?? r.Apellido ?? '').trim();
+          v.dni = String(r.dni ?? r.DNI ?? r.nie ?? r.NIE ?? '').trim();
+          v.telefono = String(r.telefono ?? r['telefono'] ?? r.movil ?? r['móvil'] ?? '').trim();
           v.fechaVenta = aFecha(r.fechaVenta ?? r['fecha venta'] ?? r.FechaVenta);
           v.fechaInstalacion = aFecha(r.fechaInstalacion ?? r['fecha instalacion']);
           v.producto = aProducto(r.producto);
@@ -99,7 +101,8 @@ export function importarLowi(file) {
 
 export function exportarLowi(ventas) {
   const data = ventas.map((v) => ({
-    nombre: v.nombre, apellido: v.apellido, fechaVenta: v.fechaVenta,
+    nombre: v.nombre, apellido: v.apellido, dni: v.dni, telefono: v.telefono,
+    fechaVenta: v.fechaVenta,
     fechaInstalacion: v.fechaInstalacion, producto: PRODUCTOS_LOWI[v.producto] || v.producto,
     velocidad: v.velocidad, lineas: v.lineas, cuota: v.cuota,
     estado: ESTADOS_LOWI[v.estado]?.label || v.estado,
@@ -113,17 +116,20 @@ export function exportarLowi(ventas) {
 
 export function plantillaLowi() {
   const ejemplo = [{
-    nombre: 'Juan', apellido: 'Pérez', fechaVenta: '2026-06-15',
+    nombre: 'Juan', apellido: 'Pérez', dni: '12345678A', telefono: '600111222',
+    fechaVenta: '2026-06-15',
     fechaInstalacion: '2026-06-20', producto: 'fibra_movil', velocidad: 'Fibra 600 MB',
     lineas: 2, cuota: 35, estado: 'activa', fechaBaja: '', motivoBaja: '',
     notas: 'Ejemplo activo',
   }, {
-    nombre: 'María', apellido: 'García', fechaVenta: '2026-06-18',
+    nombre: 'María', apellido: 'García', dni: '87654321B', telefono: '600333444',
+    fechaVenta: '2026-06-18',
     fechaInstalacion: '', producto: 'fibra', velocidad: 'Fibra 300 MB',
     lineas: 0, cuota: 22, estado: 'pendiente', fechaBaja: '', motivoBaja: '',
     notas: 'Pendiente de instalar',
   }, {
-    nombre: 'Luis', apellido: 'Soto', fechaVenta: '2026-05-30',
+    nombre: 'Luis', apellido: 'Soto', dni: '11223344C', telefono: '600555666',
+    fechaVenta: '2026-05-30',
     fechaInstalacion: '2026-06-05', producto: 'fibra_movil', velocidad: 'Fibra 1 GB',
     lineas: 1, cuota: 40, estado: 'baja', fechaBaja: '2026-06-22',
     motivoBaja: 'Precio / competencia', notas: 'Se fue a la competencia',

@@ -4,7 +4,7 @@ import { PERIODO } from '../data/incentivos.js';
 
 // Cabeceras esperadas en el Excel de ventas (orden de plantilla)
 export const COLUMNAS_VENTAS = [
-  'nombre', 'apellido', 'fechaVenta', 'fechaInstalacion', 'convergencia',
+  'nombre', 'apellido', 'dni', 'telefono', 'fechaVenta', 'fechaInstalacion', 'convergencia',
   'velocidad', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'cantidad',
   'portasVoz', 'lineasVoz', 'til65', 'secureNet', 'instalacionActiva', 'notas',
 ];
@@ -58,6 +58,8 @@ export function importarVentas(file) {
           const v = ventaVacia();
           v.nombre = String(r.nombre ?? r.Nombre ?? '').trim();
           v.apellido = String(r.apellido ?? r.Apellido ?? '').trim();
+          v.dni = String(r.dni ?? r.DNI ?? r.nie ?? r.NIE ?? '').trim();
+          v.telefono = String(r.telefono ?? r['telefono'] ?? r.movil ?? r['móvil'] ?? '').trim();
           v.fechaVenta = aFecha(r.fechaVenta ?? r['fecha venta'] ?? r.FechaVenta);
           v.fechaInstalacion = aFecha(r.fechaInstalacion ?? r['fecha instalacion'] ?? r.FechaInstalacion);
           v.convergencia = String(r.convergencia ?? '').trim().toUpperCase();
@@ -102,7 +104,8 @@ export function importarVentas(file) {
 
 export function exportarVentas(ventas) {
   const data = ventas.map((v) => ({
-    nombre: v.nombre, apellido: v.apellido, fechaVenta: v.fechaVenta,
+    nombre: v.nombre, apellido: v.apellido, dni: v.dni, telefono: v.telefono,
+    fechaVenta: v.fechaVenta,
     fechaInstalacion: v.fechaInstalacion, convergencia: v.convergencia,
     velocidad: v.velocidad, clienteNuevo: v.clienteNuevo ? 'SI' : 'NO',
     fibraActiva: v.fibraActiva ? 'SI' : 'NO', marca: v.marca, sap: v.sap,
@@ -118,13 +121,15 @@ export function exportarVentas(ventas) {
 
 export function plantillaVentas() {
   const ejemplo = [{
-    nombre: 'Juan', apellido: 'Pérez', fechaVenta: '2026-06-15',
+    nombre: 'Juan', apellido: 'Pérez', dni: '12345678A', telefono: '600111222',
+    fechaVenta: '2026-06-15',
     fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414',
     cantidad: 1, portasVoz: 2, lineasVoz: 2, til65: 1, secureNet: 1,
     instalacionActiva: 'SI', notas: 'Ejemplo con terminal',
   }, {
-    nombre: 'María', apellido: 'García', fechaVenta: '2026-06-18',
+    nombre: 'María', apellido: 'García', dni: '87654321B', telefono: '600333444',
+    fechaVenta: '2026-06-18',
     fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '',
     cantidad: '', portasVoz: 1, lineasVoz: 1, til65: 0, secureNet: 0,

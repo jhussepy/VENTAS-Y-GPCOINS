@@ -39,6 +39,8 @@ export const ventaLowiVacia = () => ({
   id: crypto.randomUUID(),
   nombre: '',
   apellido: '',
+  dni: '',                 // DNI / NIE del cliente
+  telefono: '',            // teléfono de contacto
   fechaVenta: '',
   fechaInstalacion: '',
   producto: '',            // '' | 'fibra' | 'movil' | 'fibra_movil'

@@ -11,6 +11,8 @@ export const ventaVacia = () => ({
   id: crypto.randomUUID(),
   nombre: '',
   apellido: '',
+  dni: '',                 // DNI / NIE del cliente
+  telefono: '',            // teléfono de contacto
   fechaVenta: '',
   fechaInstalacion: '',
   mes: 'junio',            // junio | julio (se autodetecta de la fecha)
