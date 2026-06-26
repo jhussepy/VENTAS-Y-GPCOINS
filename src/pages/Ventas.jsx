@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import {
-  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart,
+  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { ventaVacia, mesDesdeFecha } from '../lib/engine.js';
@@ -72,7 +72,18 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         <div><label className="label">Cantidad</label><input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', Number(e.target.value))} /></div>
         <div><label className="label">Portas voz</label><input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', Number(e.target.value))} /></div>
         <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', Number(e.target.value))} /></div>
-        <div><label className="label">TIL65</label><input type="number" min="0" className="input" value={v.til65} onChange={(e) => set('til65', Number(e.target.value))} /></div>
+        <div>
+          <label className="label flex items-center gap-1">
+            TIL65
+            <span
+              className="inline-flex"
+              title="Líneas TIL65 incluidas en esta venta. Solo cuentan las que van dentro de activaciones de cliente nuevo 3P o 4P. Llave: 4 mínimo en el mes."
+            >
+              <HelpCircle size={13} className="text-fg-muted cursor-help" />
+            </span>
+          </label>
+          <input type="number" min="0" className="input" value={v.til65} onChange={(e) => set('til65', Number(e.target.value))} />
+        </div>
         <div><label className="label">Secure Net</label><input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', Number(e.target.value))} /></div>
         <div>
           <label className="label">Mes (auto)</label>
