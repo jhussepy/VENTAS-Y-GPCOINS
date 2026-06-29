@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave } from './engine.js';
+import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo } from './engine.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
 import { resumenLowi, mesLowi, ventaLowiVacia } from './lowi.js';
 
@@ -126,6 +126,25 @@ describe('valorLlave solo cuenta ventas activas', () => {
     ];
     expect(valorLlave(ventas, 'xiaomi', 'fibra', 'junio')).toBe(1);
     expect(valorLlave(ventas, 'xiaomi', 'disp', 'junio')).toBe(2);
+  });
+});
+
+describe('puntos y GP solo cuentan ventas activas', () => {
+  it('una venta pendiente no aporta puntos de cliente nuevo', () => {
+    const base = { ...ventaVacia(), mes: 'junio', convergencia: '4P', velocidad: 'Fibra 1 GB' };
+    const soloActiva = puntosClienteNuevo([{ ...base, estado: 'activa' }], 'junio');
+    const conPendiente = puntosClienteNuevo(
+      [{ ...base, estado: 'activa' }, { ...base, estado: 'pendiente' }], 'junio'
+    );
+    expect(soloActiva).toBeGreaterThan(0);
+    expect(conPendiente).toBe(soloActiva); // la pendiente no suma
+  });
+  it('resumenGlobal: GP directos no cuentan ventas no activas', () => {
+    const v = [
+      { ...ventaVacia(), mes: 'junio', marca: 'samsung', sap: 'x', estado: 'pendiente' },
+    ];
+    const r = resumenGlobal(v, 'junio');
+    expect(r.gpDirectosTotal).toBe(0);
   });
 });
 

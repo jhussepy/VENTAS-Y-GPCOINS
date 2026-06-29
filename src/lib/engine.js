@@ -75,6 +75,7 @@ export function puntosClienteNuevo(ventas, mes) {
   let total = 0;
   for (const v of ventas) {
     if (v.mes !== mes) continue;
+    if (estadoDe(v) !== 'activa') continue; // solo ventas activadas puntúan
     if (!v.convergencia || !v.velocidad) continue;
     const row = PUNTOS_CONVERGENCIA.find(
       (r) => r.tipo === v.convergencia && r.velocidad === v.velocidad
@@ -89,6 +90,7 @@ export function puntosDispositivos(ventas, marca, mes) {
   let total = 0;
   for (const v of ventas) {
     if (v.mes !== mes || v.marca !== marca) continue;
+    if (estadoDe(v) !== 'activa') continue; // solo ventas activadas puntúan
     const prod = buscarProducto(marca, v.sap);
     if (prod) total += ptsDe(prod, mes) * (v.cantidad || 1);
   }
@@ -100,6 +102,7 @@ export function gpDirectos(ventas, marca, mes) {
   let total = 0;
   for (const v of ventas) {
     if (v.mes !== mes || v.marca !== marca) continue;
+    if (estadoDe(v) !== 'activa') continue; // GP solo se asegura con la venta activada
     const prod = buscarProducto(marca, v.sap);
     if (prod && prod[`gp_${mes}`]) total += gpDe(prod, mes) * (v.cantidad || 1);
   }
