@@ -22,6 +22,9 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
     if (k === 'marca') next.sap = '';
     // El estado manda: "instalación activa" solo es cierto cuando el estado es 'activa'
     if (k === 'estado') next.instalacionActiva = val === 'activa';
+    // Las portas activas no pueden superar las solicitadas
+    if (k === 'portasVoz') next.portasActivas = Math.min(next.portasActivas || 0, val || 0);
+    if (k === 'portasActivas') next.portasActivas = Math.min(val || 0, next.portasVoz || 0);
     return next;
   });
   const esBaja = v.estado === 'baja' || v.estado === 'cancelada';
@@ -103,6 +106,15 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div><label className="label">Cantidad</label><input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', Number(e.target.value))} /></div>
         <div><label className="label">Portas voz</label><input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', Number(e.target.value))} /></div>
+        <div>
+          <label className="label flex items-center gap-1">
+            Portas activas
+            <span className="inline-flex" title="De las portas solicitadas, cuántas ya se han activado. El resto se cuentan como pendientes.">
+              <HelpCircle size={13} className="text-fg-muted cursor-help" />
+            </span>
+          </label>
+          <input type="number" min="0" max={v.portasVoz} className="input" value={v.portasActivas} onChange={(e) => set('portasActivas', Number(e.target.value))} />
+        </div>
         <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', Number(e.target.value))} /></div>
         <div>
           <label className="label flex items-center gap-1">
@@ -343,6 +355,7 @@ export default function Ventas() {
                   <th className="px-4 py-3 font-medium">F. Instalación</th>
                   <th className="px-4 py-3 font-medium">Fibra</th>
                   <th className="px-4 py-3 font-medium">Terminal</th>
+                  <th className="px-4 py-3 font-medium text-center">Portas</th>
                   <th className="px-4 py-3 font-medium text-center">Mes</th>
                   <th className="px-4 py-3 font-medium text-center">Estado</th>
                   <th className="px-4 py-3 font-medium text-right">Acciones</th>
@@ -374,6 +387,14 @@ export default function Ventas() {
                         {prod
                           ? <span title={prod.modelo}>{nombreMarca(v.marca)} · {prod.modelo.slice(0, 22)}{prod.modelo.length > 22 ? '…' : ''}</span>
                           : <span className="text-fg-muted italic">Sin terminal</span>}
+                      </td>
+                      <td className="px-4 py-3 text-center tabnum">
+                        {Number(v.portasVoz) > 0 ? (
+                          <span title="Portas activas / solicitadas">
+                            <span className="text-emerald-400">{Math.min(Number(v.portasActivas) || 0, v.portasVoz)}</span>
+                            <span className="text-fg-muted"> / {v.portasVoz}</span>
+                          </span>
+                        ) : <span className="text-fg-muted">—</span>}
                       </td>
                       <td className="px-4 py-3 text-center"><Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge></td>
                       <td className="px-4 py-3">

@@ -30,7 +30,8 @@ export const ventaVacia = () => ({
   sap: '',                 // código SAP del dispositivo
   cantidad: 1,             // unidades del dispositivo
   // Contadores de llaves
-  portasVoz: 0,            // portas de voz individuales
+  portasVoz: 0,            // portas de voz solicitadas (total)
+  portasActivas: 0,        // portas que ya se han activado (≤ portasVoz)
   lineasVoz: 0,            // total líneas de voz (denominador del %)
   til65: 0,                // líneas TIL65
   secureNet: 0,            // activaciones Secure Net
@@ -199,11 +200,21 @@ export function resumenGlobal(ventas, mes) {
     }
   }
 
+  // Portabilidades móviles: total solicitadas, activas y pendientes
+  const portasTotales = delMes.reduce((a, v) => a + (Number(v.portasVoz) || 0), 0);
+  const portasActivas = delMes.reduce(
+    (a, v) => a + Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0), 0
+  );
+  const portasPendientes = Math.max(0, portasTotales - portasActivas);
+
   return {
     estados,
     totalVentas: delMes.length,
     instalacionesActivas: delMes.filter((v) => estadoDe(v) === 'activa').length,
     clientesNuevos: delMes.filter((v) => v.clienteNuevo).length,
+    portasTotales,
+    portasActivas,
+    portasPendientes,
     gpDirectosTotal,
     gpPotencialRanking,
     incentivosClasificados: estados.filter((e) => e.clasifica).length,

@@ -21,7 +21,7 @@ export const COLUMNAS_VENTAS = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'pedido',
   'fechaVenta', 'fechaInstalacion', 'convergencia',
   'velocidad', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'cantidad',
-  'portasVoz', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
+  'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
 ];
 
 const aBool = (x) => {
@@ -91,6 +91,7 @@ export async function importarVentas(file, existentes = []) {
     v.sap = String(r.sap ?? r.SAP ?? '').trim();
     v.cantidad = aNum(r.cantidad) || 1;
     v.portasVoz = aNum(r.portasVoz ?? r['portas voz']);
+    v.portasActivas = Math.min(aNum(r.portasActivas ?? r['portas activas']), v.portasVoz);
     v.lineasVoz = aNum(r.lineasVoz ?? r['lineas voz']);
     v.til65 = aNum(r.til65 ?? r.TIL65);
     v.secureNet = aNum(r.secureNet ?? r['secure net']);
@@ -131,8 +132,8 @@ export async function exportarVentas(ventas) {
     fechaInstalacion: v.fechaInstalacion, convergencia: v.convergencia,
     velocidad: v.velocidad, clienteNuevo: v.clienteNuevo ? 'SI' : 'NO',
     fibraActiva: v.fibraActiva ? 'SI' : 'NO', marca: v.marca, sap: v.sap,
-    cantidad: v.cantidad, portasVoz: v.portasVoz, lineasVoz: v.lineasVoz,
-    til65: v.til65, secureNet: v.secureNet,
+    cantidad: v.cantidad, portasVoz: v.portasVoz, portasActivas: v.portasActivas || 0,
+    lineasVoz: v.lineasVoz, til65: v.til65, secureNet: v.secureNet,
     estado: ESTADOS[v.estado]?.label || (v.instalacionActiva ? 'Activa' : 'Pendiente'),
     fechaBaja: v.fechaBaja || '', motivoBaja: v.motivoBaja || '', notas: v.notas,
   }));
@@ -150,7 +151,7 @@ export async function plantillaVentas() {
     fechaVenta: '2026-06-15',
     fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414',
-    cantidad: 1, portasVoz: 2, lineasVoz: 2, til65: 1, secureNet: 1,
+    cantidad: 1, portasVoz: 2, portasActivas: 1, lineasVoz: 2, til65: 1, secureNet: 1,
     estado: 'Activa', fechaBaja: '', motivoBaja: '', notas: 'Ejemplo con terminal',
   }, {
     nombre: 'María', apellido: 'García', dni: '87654321X', telefono: '600333444',
@@ -158,7 +159,7 @@ export async function plantillaVentas() {
     fechaVenta: '2026-06-18',
     fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '',
-    cantidad: '', portasVoz: 1, lineasVoz: 1, til65: 0, secureNet: 0,
+    cantidad: '', portasVoz: 1, portasActivas: 0, lineasVoz: 1, til65: 0, secureNet: 0,
     estado: 'Pendiente', fechaBaja: '', motivoBaja: '', notas: 'Solo fibra y movil (sin terminal): deja marca y sap vacios',
   }];
   const ws = XLSX.utils.json_to_sheet(ejemplo, { header: COLUMNAS_VENTAS });

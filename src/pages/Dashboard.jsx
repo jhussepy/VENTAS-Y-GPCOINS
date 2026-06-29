@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock,
+  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
@@ -195,6 +195,43 @@ export default function Dashboard() {
               );
             })}
           </div>
+        )}
+      </Card>
+
+      {/* Seguimiento de portabilidad móvil */}
+      <Card>
+        <SectionTitle right={<Badge tone="neutral">{fmtNum(r.portasTotales)} portas solicitadas</Badge>}>
+          <span className="flex items-center gap-2"><Repeat size={18} className="text-vf-red" /> Portabilidad móvil</span>
+        </SectionTitle>
+        {r.portasTotales === 0 ? (
+          <p className="py-6 text-center text-fg-muted text-sm">No hay portabilidades registradas este mes.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+              <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
+                <p className="text-xs text-fg-muted">Activas</p>
+                <p className="text-2xl font-semibold text-emerald-400 tabnum mt-1">{fmtNum(r.portasActivas)}</p>
+              </div>
+              <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
+                <p className="text-xs text-fg-muted">Pendientes</p>
+                <p className="text-2xl font-semibold text-gp-gold tabnum mt-1">{fmtNum(r.portasPendientes)}</p>
+              </div>
+              <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
+                <p className="text-xs text-fg-muted">% activadas</p>
+                <p className="text-2xl font-semibold text-fg tabnum mt-1">
+                  {r.portasTotales ? Math.round((r.portasActivas / r.portasTotales) * 100) : 0}%
+                </p>
+              </div>
+            </div>
+            <div className="flex w-full h-3 rounded-full overflow-hidden bg-bg-surface2">
+              <div className="h-full bg-emerald-500" style={{ width: `${(r.portasActivas / r.portasTotales) * 100}%` }} />
+              <div className="h-full bg-gp-gold" style={{ width: `${(r.portasPendientes / r.portasTotales) * 100}%` }} />
+            </div>
+            <div className="flex items-center gap-6 mt-3 text-xs text-fg-soft">
+              <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500" /> Activas</span>
+              <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm bg-gp-gold" /> Pendientes</span>
+            </div>
+          </>
         )}
       </Card>
 

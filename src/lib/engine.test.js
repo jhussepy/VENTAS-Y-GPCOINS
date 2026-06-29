@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, ventaVacia } from './engine.js';
+import { mesDesdeFecha, ventaVacia, resumenGlobal } from './engine.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
 import { resumenLowi, mesLowi, ventaLowiVacia } from './lowi.js';
 
@@ -70,6 +70,19 @@ describe('mesLowi', () => {
   it('extrae YYYY-MM de la fecha', () => {
     expect(mesLowi('2026-06-15')).toBe('2026-06');
     expect(mesLowi('')).toBe('');
+  });
+});
+
+describe('portabilidad en resumenGlobal', () => {
+  it('agrega portas totales, activas y pendientes (con clamp)', () => {
+    const ventas = [
+      { ...ventaVacia(), mes: 'junio', portasVoz: 3, portasActivas: 2 },
+      { ...ventaVacia(), mes: 'junio', portasVoz: 1, portasActivas: 5 }, // activas > solicitadas → clamp a 1
+    ];
+    const r = resumenGlobal(ventas, 'junio');
+    expect(r.portasTotales).toBe(4);
+    expect(r.portasActivas).toBe(3); // 2 + min(5,1)=1
+    expect(r.portasPendientes).toBe(1);
   });
 });
 

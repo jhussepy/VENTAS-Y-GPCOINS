@@ -8,7 +8,7 @@ import { ESTADOS, estadoDe } from '../lib/estados.js';
 import { ORDEN_INCENTIVOS, CATALOGO } from '../data/incentivos.js';
 import { Card, StatCard, Badge, EmptyState, SectionTitle } from '../components/ui.jsx';
 import { fmtNum, fmtFecha, fmtEur } from '../lib/format.js';
-import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X, Wifi } from 'lucide-react';
+import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X, Wifi, Repeat } from 'lucide-react';
 
 export default function Admin() {
   const { mes, admin } = useApp();
@@ -66,10 +66,12 @@ export default function Admin() {
     ventas: acc.ventas + f.resumen.totalVentas,
     gp: acc.gp + f.resumen.gpDirectosTotal,
     clientes: acc.clientes + f.resumen.clientesNuevos,
+    portasActivas: acc.portasActivas + f.resumen.portasActivas,
+    portasPendientes: acc.portasPendientes + f.resumen.portasPendientes,
     lowiTotal: acc.lowiTotal + f.lowi.total,
     lowiActivas: acc.lowiActivas + f.lowi.porEstado.activa,
     lowiFact: acc.lowiFact + f.lowi.facturacionActiva,
-  }), { ventas: 0, gp: 0, clientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0 });
+  }), { ventas: 0, gp: 0, clientes: 0, portasActivas: 0, portasPendientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0 });
 
   return (
     <div className="space-y-6">
@@ -91,6 +93,12 @@ export default function Admin() {
         <StatCard icon={ShoppingCart} label="Ventas del equipo" value={fmtNum(tot.ventas)} accent="text-vf-red" />
         <StatCard icon={Coins} label="GP Coins directos (equipo)" value={fmtNum(tot.gp)} accent="text-gp-gold" />
         <StatCard icon={Trophy} label="Clientes nuevos (equipo)" value={fmtNum(tot.clientes)} accent="text-emerald-400" />
+      </div>
+
+      {/* Portabilidad móvil del equipo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <StatCard icon={Repeat} label="Portas activas (equipo)" value={fmtNum(tot.portasActivas)} accent="text-emerald-400" />
+        <StatCard icon={Repeat} label="Portas pendientes (equipo)" value={fmtNum(tot.portasPendientes)} accent="text-gp-gold" />
       </div>
 
       {/* KPIs de Lowi del equipo */}
