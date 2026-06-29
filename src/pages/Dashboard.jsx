@@ -16,9 +16,22 @@ export default function Dashboard() {
   const { ventas, mes } = useApp();
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
 
+  // Todos los incentivos (panorama completo), aunque algunos estén a 0
   const dataChart = r.estados
-    .filter((e) => e.puntos > 0 || e.gp > 0)
     .map((e) => ({ nombre: e.nombre, valor: e.puntos || e.gp, esGp: e.mecanica === 'directo' }));
+
+  // Motivos de baja (ventas dadas de baja o canceladas con motivo)
+  const motivosBaja = useMemo(() => {
+    const m = {};
+    for (const v of ventas) {
+      if (v.mes !== mes) continue;
+      const est = estadoDe(v);
+      if ((est === 'baja' || est === 'cancelada') && v.motivoBaja) {
+        m[v.motivoBaja] = (m[v.motivoBaja] || 0) + 1;
+      }
+    }
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [ventas, mes]);
 
   // Nº total de incentivos (dinámico, en vez de hardcodear 6)
   const totalIncentivos = ORDEN_INCENTIVOS.length;
@@ -60,11 +73,13 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={ShoppingCart} label={`Ventas en ${PERIODO.etiquetas[mes]}`} value={fmtNum(r.totalVentas)} accent="text-vf-red" />
-        <StatCard icon={Coins} label="GP Coins directos (monedero)" value={fmtNum(r.gpDirectosTotal)} sub="Asegurados por venta" accent="text-gp-gold" />
+        <StatCard icon={Coins} label="GP Coins directos (monedero)" value={fmtNum(r.gpDirectosTotal)} sub={`+${fmtNum(r.gpPotencialRanking)} potenciales por ranking`} accent="text-gp-gold" />
         <StatCard icon={Wifi} label="Instalaciones activas" value={fmtNum(r.instalacionesActivas)} accent="text-emerald-400" />
         <StatCard icon={UserPlus} label="Clientes nuevos" value={fmtNum(r.clientesNuevos)} accent="text-sky-400" />
+        <StatCard icon={Repeat} label="Portas activas" value={fmtNum(r.portasActivas)} sub={`de ${fmtNum(r.portasTotales)} solicitadas`} accent="text-emerald-400" />
+        <StatCard icon={Repeat} label="Portas pendientes" value={fmtNum(r.portasPendientes)} sub="por activar" accent="text-gp-gold" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -72,7 +87,7 @@ export default function Dashboard() {
           <SectionTitle right={<Badge tone="neutral">{PERIODO.etiquetas[mes]}</Badge>}>
             Puntos / GP Coins por incentivo
           </SectionTitle>
-          {dataChart.length === 0 ? (
+          {r.totalVentas === 0 ? (
             <div className="py-16 text-center text-fg-muted text-sm">
               Aún no hay ventas registradas este mes. Añade ventas para ver tu progreso.
             </div>
@@ -154,7 +169,13 @@ export default function Dashboard() {
           <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
             <p className="text-xs text-fg-muted">Días restantes del mes</p>
             <p className="text-2xl font-semibold text-fg tabnum mt-1">{fmtNum(proyeccion.diasRestantes)}</p>
-            <p className="text-xs text-fg-muted mt-1">de {proyeccion.diasTotales} días totales</p>
+            {proyeccion.dentro && proyeccion.diasRestantes <= 3 ? (
+              <p className="text-xs text-vf-redLight font-medium mt-1">
+                {proyeccion.diasRestantes === 0 ? '¡Último día del mes!' : '¡Recta final del mes!'}
+              </p>
+            ) : (
+              <p className="text-xs text-fg-muted mt-1">de {proyeccion.diasTotales} días totales</p>
+            )}
           </div>
           <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
             <p className="text-xs text-fg-muted">Ventas actuales del mes</p>
@@ -199,6 +220,23 @@ export default function Dashboard() {
         )}
       </Card>
 
+      {/* Motivos de baja (solo si hay alguna baja/cancelada con motivo) */}
+      {motivosBaja.length > 0 && (
+        <Card>
+          <SectionTitle right={<Badge tone="red">{fmtNum(motivosBaja.reduce((a, [, n]) => a + n, 0))} bajas/canceladas</Badge>}>
+            Motivos de baja
+          </SectionTitle>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {motivosBaja.map(([motivo, n]) => (
+              <div key={motivo} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
+                <span className="text-sm text-fg-soft">{motivo}</span>
+                <span className="text-lg font-semibold text-fg tabnum">{n}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Seguimiento de portabilidad móvil */}
       <Card>
         <SectionTitle right={<Badge tone="neutral">{fmtNum(r.portasTotales)} portas solicitadas</Badge>}>
@@ -208,22 +246,11 @@ export default function Dashboard() {
           <p className="py-6 text-center text-fg-muted text-sm">No hay portabilidades registradas este mes.</p>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
-              <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
-                <p className="text-xs text-fg-muted">Activas</p>
-                <p className="text-2xl font-semibold text-emerald-400 tabnum mt-1">{fmtNum(r.portasActivas)}</p>
-              </div>
-              <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
-                <p className="text-xs text-fg-muted">Pendientes</p>
-                <p className="text-2xl font-semibold text-gp-gold tabnum mt-1">{fmtNum(r.portasPendientes)}</p>
-              </div>
-              <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
-                <p className="text-xs text-fg-muted">% activadas</p>
-                <p className="text-2xl font-semibold text-fg tabnum mt-1">
-                  {r.portasTotales ? Math.round((r.portasActivas / r.portasTotales) * 100) : 0}%
-                </p>
-              </div>
-            </div>
+            <p className="text-sm text-fg-soft mb-3">
+              <span className="text-emerald-400 font-semibold tabnum">{fmtNum(r.portasActivas)}</span> activas ·{' '}
+              <span className="text-gp-gold font-semibold tabnum">{fmtNum(r.portasPendientes)}</span> pendientes ·{' '}
+              <span className="font-semibold tabnum">{Math.round((r.portasActivas / r.portasTotales) * 100)}%</span> activadas
+            </p>
             <div className="flex w-full h-3 rounded-full overflow-hidden bg-bg-surface2">
               <div className="h-full bg-emerald-500" style={{ width: `${(r.portasActivas / r.portasTotales) * 100}%` }} />
               <div className="h-full bg-gp-gold" style={{ width: `${(r.portasPendientes / r.portasTotales) * 100}%` }} />
