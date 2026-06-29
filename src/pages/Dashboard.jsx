@@ -12,6 +12,17 @@ import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { StatCard, Card, SectionTitle, Badge, Progress } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
+// Etiquetas cortas para los chips de llaves del resumen de clasificación
+const ETIQUETA_LLAVE = {
+  clientes34: 'Cli 3P/4P',
+  clientes: 'Clientes',
+  portas: 'Portas',
+  til65: 'TIL65',
+  secureNet: 'SecNet',
+  fibra: 'Fibra',
+  disp: 'Disp',
+};
+
 export default function Dashboard() {
   const { ventas, mes } = useApp();
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
@@ -135,18 +146,33 @@ export default function Dashboard() {
               <p className="text-xs text-fg-muted">incentivos con todas las llaves</p>
             </div>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {r.estados.map((e) => {
               const cumplidas = e.llaves.filter((l) => l.cumple).length;
               return (
                 <div key={e.incentivoId}>
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-fg-soft">{e.nombre}</span>
+                    <span className="text-fg-soft font-medium">{e.nombre}</span>
                     <span className={e.clasifica ? 'text-emerald-400' : 'text-fg-muted'}>
-                      {cumplidas}/{e.llaves.length} llaves
+                      {e.clasifica ? '✓ Clasificas' : `${cumplidas}/${e.llaves.length} llaves`}
                     </span>
                   </div>
                   <Progress value={(cumplidas / e.llaves.length) * 100} cumple={e.clasifica} />
+                  {/* Detalle por llave: verde si cumple, gris con valor/objetivo si falta */}
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {e.llaves.map((l) => (
+                      <span
+                        key={l.id}
+                        title={l.label}
+                        className={`px-1.5 py-0.5 rounded text-[10px] border tabnum ${
+                          l.cumple
+                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                            : 'bg-bg-surface2 text-fg-muted border-bg-border'}`}
+                      >
+                        {ETIQUETA_LLAVE[l.id] || l.id} {l.tipo === 'porcentaje' ? `${l.valor}/${l.objetivo}%` : `${l.valor}/${l.objetivo}`}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               );
             })}

@@ -2,7 +2,7 @@ import { useState, createContext, useContext, lazy, Suspense, useRef } from 'rea
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload,
+  Download, Upload, Sparkles,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -10,6 +10,7 @@ import { useCloudData } from './hooks/useCloudData.js';
 import { cerrarSesion } from './lib/firebase.js';
 import { esAdmin } from './lib/admin.js';
 import { exportarBackup, leerBackup } from './lib/backup.js';
+import { ventasDemo, ventasLowiDemo } from './lib/demo.js';
 
 // Páginas con carga diferida (code-splitting) para aligerar el arranque
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
@@ -86,6 +87,13 @@ export default function App() {
     } catch {
       alert('No se pudo leer el archivo de copia de seguridad.');
     }
+  };
+
+  // Carga datos de demostración (para presentaciones)
+  const cargarDemo = () => {
+    if (!confirm('Cargar datos de DEMOSTRACIÓN reemplazará tus ventas actuales (Vodafone y Lowi). ¿Continuar?')) return;
+    setVentas(ventasDemo());
+    setVentasLowi(ventasLowiDemo());
   };
 
   // Cambia de operador y resetea a su página inicial
@@ -202,6 +210,13 @@ export default function App() {
               </button>
               <input ref={backupRef} type="file" accept=".json" className="hidden" onChange={onRestaurar} />
             </div>
+            <button
+              onClick={cargarDemo}
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
+              title="Cargar datos de demostración"
+            >
+              <Sparkles size={13} /> Datos de demostración
+            </button>
             <button
               onClick={() => cerrarSesion()}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-fg-muted hover:text-vf-redLight hover:bg-vf-red/10 transition-colors cursor-pointer"

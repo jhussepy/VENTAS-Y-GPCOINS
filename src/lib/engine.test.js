@@ -166,6 +166,16 @@ describe('GP directos respetan el tope de stock', () => {
   });
 });
 
+describe('datos de demostración', () => {
+  it('generan un panel con al menos un incentivo clasificado y GP > 0', async () => {
+    const { ventasDemo } = await import('./demo.js');
+    const r = resumenGlobal(ventasDemo(), 'junio');
+    expect(r.totalVentas).toBeGreaterThan(0);
+    expect(r.incentivosClasificados).toBeGreaterThanOrEqual(1);
+    expect(r.gpDirectosTotal).toBeGreaterThan(0);
+  });
+});
+
 describe('ventaVacia', () => {
   it('incluye los campos de contacto nuevos', () => {
     const v = ventaVacia();
