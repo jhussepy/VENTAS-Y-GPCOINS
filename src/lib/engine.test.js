@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle } from './engine.js';
+import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave } from './engine.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
 import { resumenLowi, mesLowi, ventaLowiVacia } from './lowi.js';
 
@@ -107,6 +107,25 @@ describe('gpPotencialMax', () => {
   it('existe y es el techo teórico (>= asegurado por ranking)', () => {
     const r = resumenGlobal([], 'junio');
     expect(r.gpPotencialMax).toBeGreaterThanOrEqual(r.gpPotencialRanking);
+  });
+});
+
+describe('valorLlave solo cuenta ventas activas', () => {
+  it('cliente nuevo pendiente no suma; activo sí', () => {
+    const ventas = [
+      { ...ventaVacia(), mes: 'junio', clienteNuevo: true, estado: 'activa' },
+      { ...ventaVacia(), mes: 'junio', clienteNuevo: true, estado: 'pendiente' },
+      { ...ventaVacia(), mes: 'junio', clienteNuevo: true, estado: 'baja' },
+    ];
+    expect(valorLlave(ventas, 'xiaomi', 'clientes', 'junio')).toBe(1);
+  });
+  it('fibra y dispositivos solo cuentan en ventas activas', () => {
+    const ventas = [
+      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', cantidad: 2, estado: 'activa' },
+      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', cantidad: 5, estado: 'pendiente' },
+    ];
+    expect(valorLlave(ventas, 'xiaomi', 'fibra', 'junio')).toBe(1);
+    expect(valorLlave(ventas, 'xiaomi', 'disp', 'junio')).toBe(2);
   });
 });
 

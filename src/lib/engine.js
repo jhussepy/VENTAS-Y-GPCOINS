@@ -124,11 +124,13 @@ export function unidadesVendidas(ventas, marca, mes) {
 // --- Progreso de una llave concreta -----------------------------------------
 export function valorLlave(ventas, incentivoId, llaveId, mes) {
   const delMes = ventas.filter((v) => v.mes === mes);
+  // Las llaves exigen "venta Y activación": solo cuentan las ventas en estado Activa
+  const activas = delMes.filter((v) => estadoDe(v) === 'activa');
   switch (llaveId) {
     case 'clientes34': // clientes nuevos 3P y 4P
-      return delMes.filter((v) => v.clienteNuevo && (v.convergencia === '3P' || v.convergencia === '4P')).length;
+      return activas.filter((v) => v.clienteNuevo && (v.convergencia === '3P' || v.convergencia === '4P')).length;
     case 'clientes': // clientes nuevos genéricos
-      return delMes.filter((v) => v.clienteNuevo).length;
+      return activas.filter((v) => v.clienteNuevo).length;
     case 'portas': {
       // Solo cuentan las portas ya ACTIVADAS (no las solo solicitadas)
       const portas = delMes.reduce((a, v) => a + Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0), 0);
@@ -136,15 +138,15 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
       return lineas > 0 ? Math.round((portas / lineas) * 100) : 0;
     }
     case 'til65':
-      return delMes.reduce((a, v) => a + (Number(v.til65) || 0), 0);
+      return activas.reduce((a, v) => a + (Number(v.til65) || 0), 0);
     case 'secureNet':
-      return delMes.reduce((a, v) => a + (Number(v.secureNet) || 0), 0);
+      return activas.reduce((a, v) => a + (Number(v.secureNet) || 0), 0);
     case 'fibra':
-      return delMes.filter((v) => v.fibraActiva).length;
+      return activas.filter((v) => v.fibraActiva).length;
     case 'disp': {
       const inc = INCENTIVOS[incentivoId];
       const marca = inc.catalogo;
-      return delMes.filter((v) => v.marca === marca).reduce((a, v) => a + (v.cantidad || 1), 0);
+      return activas.filter((v) => v.marca === marca).reduce((a, v) => a + (v.cantidad || 1), 0);
     }
     default:
       return 0;
