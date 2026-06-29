@@ -3,7 +3,7 @@
 // ============================================================================
 import {
   CATALOGO, INCENTIVOS, ORDEN_INCENTIVOS, PUNTOS_CONVERGENCIA, PERIODO,
-  ptsDe, gpDe, convPts,
+  ptsDe, gpDe, udsDe, convPts,
 } from '../data/incentivos.js';
 import { estadoDe } from './estados.js';
 import { nuevoId } from './id.js';
@@ -98,14 +98,56 @@ export function puntosDispositivos(ventas, marca, mes) {
 }
 
 // --- GP Coins directos al monedero (Samsung, Honor, JBL, Motorola directos) --
+// Solo cuentan ventas ACTIVADAS y se respeta el tope de stock (uds) por
+// familia o por modelo según `stockPor` del catálogo.
 export function gpDirectos(ventas, marca, mes) {
-  let total = 0;
+  const cat = CATALOGO[marca];
+  if (!cat) return 0;
+
+  // Unidades activadas por SAP en el mes
+  const unidadesPorSap = {};
   for (const v of ventas) {
     if (v.mes !== mes || v.marca !== marca) continue;
-    if (estadoDe(v) !== 'activa') continue; // GP solo se asegura con la venta activada
-    const prod = buscarProducto(marca, v.sap);
-    if (prod && prod[`gp_${mes}`]) total += gpDe(prod, mes) * (v.cantidad || 1);
+    if (estadoDe(v) !== 'activa') continue;
+    if (!v.sap) continue;
+    unidadesPorSap[v.sap] = (unidadesPorSap[v.sap] || 0) + (v.cantidad || 1);
   }
+
+  let total = 0;
+
+  if (cat.stockPor === 'familia') {
+    // Agrupamos por familia y capamos las unidades de la familia a su stock (uds)
+    const grupos = {};
+    for (const prod of cat.productos) {
+      const u = unidadesPorSap[prod.sap] || 0;
+      if (u === 0) continue;
+      const fam = prod.familia || prod.sap;
+      if (!grupos[fam]) grupos[fam] = { cap: udsDe(prod, mes), saps: [] };
+      grupos[fam].saps.push({ gp: gpDe(prod, mes), unidades: u });
+    }
+    for (const fam in grupos) {
+      const g = grupos[fam];
+      // Acreditamos primero las de mayor GP dentro del tope de la familia
+      g.saps.sort((a, b) => b.gp - a.gp);
+      let restante = g.cap > 0 ? g.cap : Infinity;
+      for (const s of g.saps) {
+        const aplica = Math.min(s.unidades, restante);
+        total += aplica * s.gp;
+        restante -= aplica;
+        if (restante <= 0) break;
+      }
+    }
+  } else {
+    // Stock por modelo (o sin límite): capamos cada modelo a su propio uds
+    for (const prod of cat.productos) {
+      const u = unidadesPorSap[prod.sap] || 0;
+      if (u === 0 || !gpDe(prod, mes)) continue;
+      const uds = udsDe(prod, mes);
+      const unidades = uds > 0 ? Math.min(u, uds) : u; // sin uds definido → sin tope
+      total += unidades * gpDe(prod, mes);
+    }
+  }
+
   return total;
 }
 

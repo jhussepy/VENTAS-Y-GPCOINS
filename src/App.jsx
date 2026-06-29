@@ -269,7 +269,9 @@ export default function App() {
 
           <main className="flex-1 p-4 lg:p-8 max-w-[1600px] w-full mx-auto">
             <Suspense fallback={<div className="py-20 flex justify-center"><Loader2 size={28} className="text-vf-red animate-spin" /></div>}>
-              <Active />
+              <div key={`${operador}-${page}`} className="fade-in">
+                <Active />
+              </div>
             </Suspense>
           </main>
         </div>

@@ -148,6 +148,24 @@ describe('puntos y GP solo cuentan ventas activas', () => {
   });
 });
 
+describe('GP directos respetan el tope de stock', () => {
+  it('capa las unidades de una familia a su stock (uds)', () => {
+    // Samsung S26+ (sap 316396): gp 28, uds_junio 20, familia "S26+"
+    const ventas = [
+      { ...ventaVacia(), mes: 'junio', marca: 'samsung', sap: '316396', cantidad: 25, estado: 'activa' },
+    ];
+    const r = resumenGlobal(ventas, 'junio');
+    expect(r.gpDirectosTotal).toBe(20 * 28); // 25 vendidas → capadas a 20
+  });
+  it('por debajo del tope acredita todo', () => {
+    const ventas = [
+      { ...ventaVacia(), mes: 'junio', marca: 'honor', sap: '316351', cantidad: 3, estado: 'activa' },
+    ];
+    const r = resumenGlobal(ventas, 'junio');
+    expect(r.gpDirectosTotal).toBe(3 * 14); // honor uds 300, sin cap
+  });
+});
+
 describe('ventaVacia', () => {
   it('incluye los campos de contacto nuevos', () => {
     const v = ventaVacia();

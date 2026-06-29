@@ -31,8 +31,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-bg-base px-4">
-      <div className="card p-8 w-full max-w-sm text-center space-y-6">
+    <div className="min-h-dvh flex items-center justify-center px-4 relative overflow-hidden bg-bg-base">
+      {/* Fondo con halos de marca (Vodafone rojo + Lowi azul) */}
+      <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-vf-red/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-sky-600/20 blur-3xl" />
+
+      <div className="card fade-in p-8 w-full max-w-sm text-center space-y-6 relative z-10">
         <div className="flex justify-center">
           <div className="w-20 h-20 rounded-2xl bg-bg-surface2 border border-bg-border flex items-center justify-center">
             <img src="/vodafone.svg" alt="Vodafone" className="w-12 h-12" />
@@ -41,7 +45,11 @@ export default function Login() {
 
         <div>
           <h1 className="text-2xl font-bold text-fg">Ventas & GP Coins</h1>
-          <p className="text-fg-muted text-sm mt-1">Captación · Vodafone Outbound</p>
+          <p className="text-fg-muted text-sm mt-1">Captación · Vodafone + Lowi</p>
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-vf-red/15 text-vf-redLight border border-vf-red/30">Vodafone</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-600/15 text-sky-400 border border-sky-600/30">Lowi</span>
+          </div>
         </div>
 
         <div className="h-px bg-bg-border" />
