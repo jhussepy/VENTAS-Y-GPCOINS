@@ -2,7 +2,7 @@ import { useState, createContext, useContext, lazy, Suspense, useRef } from 'rea
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Sparkles,
+  Download, Upload, Sparkles, Trash2,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -94,6 +94,13 @@ export default function App() {
     if (!confirm('Cargar datos de DEMOSTRACIÓN reemplazará tus ventas actuales (Vodafone y Lowi). ¿Continuar?')) return;
     setVentas(ventasDemo());
     setVentasLowi(ventasLowiDemo());
+  };
+
+  // Limpia todas las ventas (Vodafone y Lowi) — para dejar la app a cero
+  const limpiarDatos = () => {
+    if (!confirm('Esto borrará TODAS tus ventas de Vodafone y Lowi. ¿Continuar?')) return;
+    setVentas([]);
+    setVentasLowi([]);
   };
 
   // Cambia de operador y resetea a su página inicial
@@ -210,13 +217,22 @@ export default function App() {
               </button>
               <input ref={backupRef} type="file" accept=".json" className="hidden" onChange={onRestaurar} />
             </div>
-            <button
-              onClick={cargarDemo}
-              className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
-              title="Cargar datos de demostración"
-            >
-              <Sparkles size={13} /> Datos de demostración
-            </button>
+            <div className="flex gap-1">
+              <button
+                onClick={cargarDemo}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
+                title="Cargar datos de demostración"
+              >
+                <Sparkles size={13} /> Demo
+              </button>
+              <button
+                onClick={limpiarDatos}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-vf-redLight hover:bg-vf-red/10 transition-colors cursor-pointer"
+                title="Borrar todas las ventas (Vodafone y Lowi)"
+              >
+                <Trash2 size={13} /> Limpiar
+              </button>
+            </div>
             <button
               onClick={() => cerrarSesion()}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-fg-muted hover:text-vf-redLight hover:bg-vf-red/10 transition-colors cursor-pointer"
