@@ -29,7 +29,8 @@ export const ventaLowiVacia = () => ({
   telefono: '',            // teléfono de contacto
   email: '',               // email del cliente
   direccion: '',           // dirección de instalación
-  pedido: '',              // nº de pedido / contrato
+  pedido: '',              // ID Smart (antes "nº de pedido / contrato")
+  idWeb: '',               // ID Web
   fechaVenta: '',
   fechaInstalacion: '',
   producto: '',            // '' | 'fibra' | 'movil' | 'fibra_movil'

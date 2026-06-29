@@ -18,7 +18,7 @@ const cargarXLSX = () => import('xlsx');
 
 // Cabeceras esperadas en el Excel de ventas (orden de plantilla)
 export const COLUMNAS_VENTAS = [
-  'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'pedido',
+  'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'convergencia',
   'velocidad', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'cantidad',
   'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
@@ -80,7 +80,8 @@ export async function importarVentas(file, existentes = []) {
     v.telefono = String(r.telefono ?? r['telefono'] ?? r.movil ?? r['móvil'] ?? '').trim();
     v.email = String(r.email ?? r.correo ?? '').trim();
     v.direccion = String(r.direccion ?? r['dirección'] ?? '').trim();
-    v.pedido = String(r.pedido ?? r.contrato ?? '').trim();
+    v.pedido = String(r.idSmart ?? r['id smart'] ?? r.pedido ?? r.contrato ?? '').trim();
+    v.idWeb = String(r.idWeb ?? r['id web'] ?? '').trim();
     v.fechaVenta = aFecha(XLSX, r.fechaVenta ?? r['fecha venta'] ?? r.FechaVenta);
     v.fechaInstalacion = aFecha(XLSX, r.fechaInstalacion ?? r['fecha instalacion'] ?? r.FechaInstalacion);
     v.convergencia = String(r.convergencia ?? '').trim().toUpperCase();
@@ -127,7 +128,7 @@ export async function exportarVentas(ventas) {
   const XLSX = await cargarXLSX();
   const data = ventas.map((v) => ({
     nombre: v.nombre, apellido: v.apellido, dni: v.dni, telefono: v.telefono,
-    email: v.email, direccion: v.direccion, pedido: v.pedido,
+    email: v.email, direccion: v.direccion, idSmart: v.pedido, idWeb: v.idWeb,
     fechaVenta: v.fechaVenta,
     fechaInstalacion: v.fechaInstalacion, convergencia: v.convergencia,
     velocidad: v.velocidad, clienteNuevo: v.clienteNuevo ? 'SI' : 'NO',
@@ -147,7 +148,7 @@ export async function plantillaVentas() {
   const XLSX = await cargarXLSX();
   const ejemplo = [{
     nombre: 'Juan', apellido: 'Pérez', dni: '12345678Z', telefono: '600111222',
-    email: 'juan@email.com', direccion: 'C/ Mayor 1, Madrid', pedido: 'PED-001',
+    email: 'juan@email.com', direccion: 'C/ Mayor 1, Madrid', idSmart: 'SM-001', idWeb: 'WEB-001',
     fechaVenta: '2026-06-15',
     fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414',
@@ -155,7 +156,7 @@ export async function plantillaVentas() {
     estado: 'Activa', fechaBaja: '', motivoBaja: '', notas: 'Ejemplo con terminal',
   }, {
     nombre: 'María', apellido: 'García', dni: '87654321X', telefono: '600333444',
-    email: '', direccion: '', pedido: 'PED-002',
+    email: '', direccion: '', idSmart: 'SM-002', idWeb: '',
     fechaVenta: '2026-06-18',
     fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '',

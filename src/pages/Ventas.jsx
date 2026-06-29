@@ -47,7 +47,8 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span></label><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></div>
         <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></div>
-        <div><label className="label">Nº pedido / contrato <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
+        <div><label className="label">ID Smart <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
+        <div><label className="label">ID Web <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.idWeb} onChange={(e) => set('idWeb', e.target.value)} /></div>
       </div>
 
       {avisosDatos.length > 0 && (
@@ -200,7 +201,7 @@ export default function Ventas() {
     if (filtroMes !== 'todos' && v.mes !== filtroMes) return false;
     if (filtroEstado !== 'todos' && estadoDe(v) !== filtroEstado) return false;
     if (!q) return true;
-    return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido]
+    return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido, v.idWeb]
       .some((c) => String(c || '').toLowerCase().includes(q));
   });
 

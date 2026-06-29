@@ -5,7 +5,7 @@ const cargarXLSX = () => import('xlsx');
 
 // Cabeceras del Excel de ventas Lowi (orden de plantilla)
 export const COLUMNAS_LOWI = [
-  'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'pedido',
+  'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'producto',
   'velocidad', 'lineas', 'cuota', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
 ];
@@ -69,7 +69,8 @@ export async function importarLowi(file, existentes = []) {
     v.telefono = String(r.telefono ?? r['telefono'] ?? r.movil ?? r['móvil'] ?? '').trim();
     v.email = String(r.email ?? r.correo ?? '').trim();
     v.direccion = String(r.direccion ?? r['dirección'] ?? '').trim();
-    v.pedido = String(r.pedido ?? r.contrato ?? '').trim();
+    v.pedido = String(r.idSmart ?? r['id smart'] ?? r.pedido ?? r.contrato ?? '').trim();
+    v.idWeb = String(r.idWeb ?? r['id web'] ?? '').trim();
     v.fechaVenta = aFecha(XLSX, r.fechaVenta ?? r['fecha venta'] ?? r.FechaVenta);
     v.fechaInstalacion = aFecha(XLSX, r.fechaInstalacion ?? r['fecha instalacion']);
     v.producto = aProducto(r.producto);
@@ -102,7 +103,7 @@ export async function exportarLowi(ventas) {
   const XLSX = await cargarXLSX();
   const data = ventas.map((v) => ({
     nombre: v.nombre, apellido: v.apellido, dni: v.dni, telefono: v.telefono,
-    email: v.email, direccion: v.direccion, pedido: v.pedido,
+    email: v.email, direccion: v.direccion, idSmart: v.pedido, idWeb: v.idWeb,
     fechaVenta: v.fechaVenta,
     fechaInstalacion: v.fechaInstalacion, producto: PRODUCTOS_LOWI[v.producto] || v.producto,
     velocidad: v.velocidad, lineas: v.lineas, cuota: v.cuota,
@@ -119,21 +120,21 @@ export async function plantillaLowi() {
   const XLSX = await cargarXLSX();
   const ejemplo = [{
     nombre: 'Juan', apellido: 'Pérez', dni: '12345678Z', telefono: '600111222',
-    email: 'juan@email.com', direccion: 'C/ Mayor 1, Madrid', pedido: 'LW-001',
+    email: 'juan@email.com', direccion: 'C/ Mayor 1, Madrid', idSmart: 'SM-001', idWeb: 'WEB-001',
     fechaVenta: '2026-06-15',
     fechaInstalacion: '2026-06-20', producto: 'fibra_movil', velocidad: 'Fibra 600 MB',
     lineas: 2, cuota: 35, estado: 'activa', fechaBaja: '', motivoBaja: '',
     notas: 'Ejemplo activo',
   }, {
     nombre: 'María', apellido: 'García', dni: '87654321X', telefono: '600333444',
-    email: '', direccion: '', pedido: 'LW-002',
+    email: '', direccion: '', idSmart: 'SM-002', idWeb: '',
     fechaVenta: '2026-06-18',
     fechaInstalacion: '', producto: 'fibra', velocidad: 'Fibra 300 MB',
     lineas: 0, cuota: 22, estado: 'pendiente', fechaBaja: '', motivoBaja: '',
     notas: 'Pendiente de instalar',
   }, {
     nombre: 'Luis', apellido: 'Soto', dni: '11223344A', telefono: '600555666',
-    email: '', direccion: '', pedido: 'LW-003',
+    email: '', direccion: '', idSmart: 'SM-003', idWeb: '',
     fechaVenta: '2026-05-30',
     fechaInstalacion: '2026-06-05', producto: 'fibra_movil', velocidad: 'Fibra 1 GB',
     lineas: 1, cuota: 40, estado: 'baja', fechaBaja: '2026-06-22',

@@ -33,7 +33,11 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
         <div><label className="label">Fecha de venta</label><input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></div>
         <div><label className="label">Fecha de instalación</label><input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} /></div>
         <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span></label><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></div>
-        <div><label className="label">Nº pedido / contrato <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
+        <div><label className="label">ID Smart <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label className="label">ID Web <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.idWeb} onChange={(e) => set('idWeb', e.target.value)} /></div>
       </div>
 
       <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></div>
@@ -119,7 +123,7 @@ export default function LowiVentas() {
     if (filtro !== 'todos' && v.estado !== filtro) return false;
     if (filtroMes !== 'todos' && mesLowi(v.fechaVenta) !== filtroMes) return false;
     if (!q) return true;
-    return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido]
+    return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido, v.idWeb]
       .some((c) => String(c || '').toLowerCase().includes(q));
   });
 
