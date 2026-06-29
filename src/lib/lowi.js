@@ -4,6 +4,7 @@
 // ============================================================================
 
 import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA } from './estados.js';
+import { nuevoId } from './id.js';
 
 // Estados compartidos (se re-exportan con el nombre histórico ESTADOS_LOWI)
 export const ESTADOS_LOWI = ESTADOS;
@@ -21,7 +22,7 @@ export const VELOCIDADES_LOWI = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
 
 // Estructura de una venta de Lowi (todos los campos con valores por defecto)
 export const ventaLowiVacia = () => ({
-  id: crypto.randomUUID(),
+  id: nuevoId(),
   nombre: '',
   apellido: '',
   dni: '',                 // DNI / NIE del cliente

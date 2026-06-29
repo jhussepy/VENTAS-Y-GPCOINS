@@ -6,10 +6,11 @@ import {
   ptsDe, gpDe, convPts,
 } from '../data/incentivos.js';
 import { estadoDe } from './estados.js';
+import { nuevoId } from './id.js';
 
 // Estructura de una venta (campos opcionales, todos los contadores por defecto 0)
 export const ventaVacia = () => ({
-  id: crypto.randomUUID(),
+  id: nuevoId(),
   nombre: '',
   apellido: '',
   dni: '',                 // DNI / NIE del cliente
@@ -45,9 +46,11 @@ export const ventaVacia = () => ({
 
 export const mesDesdeFecha = (fecha) => {
   if (!fecha) return 'junio';
-  const m = new Date(fecha).getMonth(); // 0=ene, 5=junio, 6=julio
-  if (m === 5) return 'junio';
-  if (m === 6) return 'julio';
+  // Leemos el mes directamente de la cadena YYYY-MM-DD para evitar desfases de zona horaria
+  const s = fecha instanceof Date ? fecha.toISOString().slice(0, 10) : String(fecha);
+  const m = Number(s.slice(5, 7)); // 1=ene … 6=junio, 7=julio
+  if (m === 6) return 'junio';
+  if (m === 7) return 'julio';
   return 'junio'; // fallback: siempre devolvemos 'junio' o 'julio', nunca null
 };
 

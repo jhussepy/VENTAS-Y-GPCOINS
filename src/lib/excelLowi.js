@@ -47,7 +47,7 @@ const aProducto = (x) => {
   return '';
 };
 
-const claveLowi = (v) => [v.nombre, v.apellido, v.fechaVenta]
+const claveLowi = (v) => [v.nombre, v.apellido, v.fechaVenta, v.pedido]
   .map((x) => String(x ?? '').trim().toLowerCase()).join('|');
 
 export async function importarLowi(file, existentes = []) {

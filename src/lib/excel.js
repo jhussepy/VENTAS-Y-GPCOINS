@@ -49,7 +49,7 @@ const aFecha = (XLSX, x) => {
 };
 
 // Clave de deduplicación de una venta
-const claveVenta = (v) => [v.nombre, v.apellido, v.fechaVenta, v.sap]
+const claveVenta = (v) => [v.nombre, v.apellido, v.fechaVenta, v.sap, v.pedido]
   .map((x) => String(x ?? '').trim().toLowerCase())
   .join('|');
 

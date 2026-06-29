@@ -59,11 +59,11 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
         </div>
         <div>
           <label className="label">Líneas móvil</label>
-          <input type="number" min="0" className="input" value={v.lineas} onChange={(e) => set('lineas', Number(e.target.value))} disabled={!llevaMovil} />
+          <input type="number" min="0" className="input" value={v.lineas} onChange={(e) => set('lineas', (Number(e.target.value) || 0))} disabled={!llevaMovil} />
         </div>
         <div>
           <label className="label">Cuota mensual (€)</label>
-          <input type="number" min="0" step="0.01" className="input" value={v.cuota} onChange={(e) => set('cuota', Number(e.target.value))} />
+          <input type="number" min="0" step="0.01" className="input" value={v.cuota} onChange={(e) => set('cuota', (Number(e.target.value) || 0))} />
         </div>
       </div>
 

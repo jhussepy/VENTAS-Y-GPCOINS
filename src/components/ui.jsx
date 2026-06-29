@@ -20,11 +20,13 @@ export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red'
 }
 
 export function Progress({ value, cumple }) {
+  // Protegemos contra NaN / negativos / >100 (p. ej. divisiones por cero)
+  const v = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
   return (
     <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden">
       <div
         className={`h-full rounded-full transition-all duration-300 ${cumple ? 'bg-emerald-500' : 'bg-vf-red'}`}
-        style={{ width: `${Math.min(100, value)}%` }}
+        style={{ width: `${v}%` }}
       />
     </div>
   );

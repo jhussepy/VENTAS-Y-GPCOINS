@@ -11,6 +11,10 @@ describe('mesDesdeFecha', () => {
   it('por defecto junio si no hay fecha', () => {
     expect(mesDesdeFecha('')).toBe('junio');
   });
+  it('no se desfasa por zona horaria en límites de mes', () => {
+    expect(mesDesdeFecha('2026-06-30')).toBe('junio');
+    expect(mesDesdeFecha('2026-07-01')).toBe('julio');
+  });
 });
 
 describe('validación de DNI', () => {

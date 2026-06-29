@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { nuevoId } from './id.js';
 
 export function importarTarifas(file) {
   return new Promise((resolve, reject) => {
@@ -9,7 +10,7 @@ export function importarTarifas(file) {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
         const tarifas = rows.map((r) => ({
-          id: crypto.randomUUID(),
+          id: nuevoId(),
           concepto: String(r.concepto ?? r.Concepto ?? r.nombre ?? '').trim(),
           descripcion: String(r.descripcion ?? r.Descripcion ?? '').trim(),
           precio: Number(r.precio ?? r.Precio ?? 0) || 0,

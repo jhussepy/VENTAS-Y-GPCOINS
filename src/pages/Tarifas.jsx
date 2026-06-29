@@ -5,6 +5,7 @@ import {
   TARIFAS_EXCLUSIVO, OTT_COLS, PROMO_FLASH, FLASH_OTT,
 } from '../data/tarifas.js';
 import { importarTarifas, plantillaTarifas } from '../lib/excelTarifas.js';
+import { nuevoId } from '../lib/id.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtEur } from '../lib/format.js';
 
@@ -116,7 +117,7 @@ function MisTarifas() {
 
   const add = () => {
     if (!form.concepto) return;
-    setTarifas((p) => [{ id: crypto.randomUUID(), ...form, precio: Number(form.precio) || 0 }, ...p]);
+    setTarifas((p) => [{ id: nuevoId(), ...form, precio: Number(form.precio) || 0 }, ...p]);
     setForm({ concepto: '', descripcion: '', precio: '', promo: '' });
   };
   const del = (id) => setTarifas((p) => p.filter((t) => t.id !== id));

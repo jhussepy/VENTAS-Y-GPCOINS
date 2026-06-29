@@ -104,8 +104,8 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div><label className="label">Cantidad</label><input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', Number(e.target.value))} /></div>
-        <div><label className="label">Portas voz</label><input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', Number(e.target.value))} /></div>
+        <div><label className="label">Cantidad</label><input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', (Number(e.target.value) || 0))} /></div>
+        <div><label className="label">Portas voz</label><input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', (Number(e.target.value) || 0))} /></div>
         <div>
           <label className="label flex items-center gap-1">
             Portas activas
@@ -113,9 +113,9 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
               <HelpCircle size={13} className="text-fg-muted cursor-help" />
             </span>
           </label>
-          <input type="number" min="0" max={v.portasVoz} className="input" value={v.portasActivas} onChange={(e) => set('portasActivas', Number(e.target.value))} />
+          <input type="number" min="0" max={v.portasVoz} className="input" value={v.portasActivas} onChange={(e) => set('portasActivas', (Number(e.target.value) || 0))} />
         </div>
-        <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', Number(e.target.value))} /></div>
+        <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', (Number(e.target.value) || 0))} /></div>
         <div>
           <label className="label flex items-center gap-1">
             TIL65
@@ -126,9 +126,9 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
               <HelpCircle size={13} className="text-fg-muted cursor-help" />
             </span>
           </label>
-          <input type="number" min="0" className="input" value={v.til65} onChange={(e) => set('til65', Number(e.target.value))} />
+          <input type="number" min="0" className="input" value={v.til65} onChange={(e) => set('til65', (Number(e.target.value) || 0))} />
         </div>
-        <div><label className="label">Secure Net</label><input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', Number(e.target.value))} /></div>
+        <div><label className="label">Secure Net</label><input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', (Number(e.target.value) || 0))} /></div>
         <div>
           <label className="label">Mes (auto)</label>
           <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!v.fechaVenta} title={v.fechaVenta ? 'Se autodetecta desde la fecha de venta' : undefined}>

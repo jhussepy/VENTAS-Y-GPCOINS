@@ -16,6 +16,11 @@ export function useCloudData(user) {
 
   useEffect(() => {
     if (!uid) { setLoading(false); return; }
+    // Al cambiar de usuario: reinicia el estado para no mostrar datos del anterior
+    setLoading(true);
+    setVentasState([]);
+    setVentasLowiState([]);
+    setTarifasState([]);
     const ref = doc(db, 'usuarios', uid);
     // Guarda/actualiza el perfil para que el admin pueda identificar al agente
     setDoc(ref, {
@@ -23,7 +28,7 @@ export function useCloudData(user) {
       nombre: user.displayName || '',
       foto: user.photoURL || '',
       ultimoAcceso: Date.now(),
-    }, { merge: true }).catch(() => {});
+    }, { merge: true }).catch((e) => console.error('No se pudo guardar el perfil:', e));
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
         const d = snap.data();
@@ -32,6 +37,7 @@ export function useCloudData(user) {
         if (Array.isArray(d.tarifas)) setTarifasState(d.tarifas);
         if (d.tema) {
           setTemaState(d.tema);
+          try { localStorage.setItem('vf_tema', JSON.stringify(d.tema)); } catch { /* ignore */ }
           const root = document.documentElement;
           root.classList.remove('light', 'dark');
           root.classList.add(d.tema);
@@ -39,7 +45,12 @@ export function useCloudData(user) {
       }
       setLoading(false);
     });
-    return unsub;
+    // Cleanup: cancela el listener y los timers de guardado pendientes del usuario saliente
+    const timersRef = timers.current;
+    return () => {
+      unsub();
+      Object.values(timersRef).forEach(clearTimeout);
+    };
   }, [uid]);
 
   const persist = (field, value) => {
@@ -52,7 +63,7 @@ export function useCloudData(user) {
           // Tras 2s volvemos a estado de reposo
           setTimeout(() => setEstadoGuardado('idle'), 2000);
         })
-        .catch(() => setEstadoGuardado('error'));
+        .catch((e) => { console.error('Error al guardar en la nube:', e); setEstadoGuardado('error'); });
     }, DEBOUNCE_MS);
   };
 
@@ -82,6 +93,8 @@ export function useCloudData(user) {
 
   const setTema = (t) => {
     setTemaState(t);
+    // Persistimos también en localStorage para el anti-parpadeo de index.html
+    try { localStorage.setItem('vf_tema', JSON.stringify(t)); } catch { /* ignore */ }
     const root = document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(t);
