@@ -137,6 +137,12 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         </div>
       </div>
 
+      {Number(v.portasVoz) > 0 && (
+        <p className="text-xs text-fg-muted -mt-1">
+          Solo las <span className="text-fg-soft">portas activadas</span> suman a la llave del incentivo. Las solicitadas que aún no se activen cuentan como pendientes.
+        </p>
+      )}
+
       <div className="flex flex-wrap gap-4 pt-1">
         <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
           <input type="checkbox" checked={v.clienteNuevo} onChange={(e) => set('clienteNuevo', e.target.checked)} className="accent-vf-red w-4 h-4" />
