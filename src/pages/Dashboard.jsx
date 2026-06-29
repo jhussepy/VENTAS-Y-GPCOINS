@@ -3,7 +3,7 @@ import {
   ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat,
 } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList,
 } from 'recharts';
 import { useApp } from '../App.jsx';
 import { resumenGlobal } from '../lib/engine.js';
@@ -79,7 +79,7 @@ export default function Dashboard() {
           ) : (
             <div style={{ width: '100%', height: 300 }}>
               <ResponsiveContainer>
-                <BarChart data={dataChart} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <BarChart data={dataChart} margin={{ top: 24, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" />
                   <XAxis dataKey="nombre" stroke="var(--fg-muted)" fontSize={12} />
                   <YAxis stroke="var(--fg-muted)" fontSize={12} />
@@ -88,7 +88,8 @@ export default function Dashboard() {
                     contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8, color: 'var(--fg)' }}
                     formatter={(v, _n, p) => [fmtNum(v), p.payload.esGp ? 'GP Coins' : 'Puntos']}
                   />
-                  <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
+                  <Bar dataKey="valor" radius={[6, 6, 0, 0]} maxBarSize={90}>
+                    <LabelList dataKey="valor" position="top" fill="var(--fg-soft)" fontSize={12} formatter={(v) => fmtNum(v)} />
                     {dataChart.map((d, i) => (
                       <Cell key={i} fill={d.esGp ? '#FFB81C' : '#E60000'} />
                     ))}
