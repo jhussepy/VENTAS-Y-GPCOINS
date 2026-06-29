@@ -166,6 +166,26 @@ describe('GP directos respetan el tope de stock', () => {
   });
 });
 
+describe('estados no activos NO generan puntos ni GP', () => {
+  const conv = { convergencia: '4P', velocidad: 'Fibra 1 GB', clienteNuevo: true, mes: 'junio' };
+  it('cancelada → 0 puntos de cliente nuevo', () => {
+    expect(puntosClienteNuevo([{ ...ventaVacia(), ...conv, estado: 'cancelada' }], 'junio')).toBe(0);
+  });
+  it('baja y pendiente → 0 puntos', () => {
+    expect(puntosClienteNuevo([{ ...ventaVacia(), ...conv, estado: 'baja' }], 'junio')).toBe(0);
+    expect(puntosClienteNuevo([{ ...ventaVacia(), ...conv, estado: 'pendiente' }], 'junio')).toBe(0);
+  });
+  it('resumenGlobal: una cancelada no aporta puntos ni clasifica', () => {
+    const r = resumenGlobal([{ ...ventaVacia(), ...conv, estado: 'cancelada' }], 'junio');
+    const cn = r.estados.find((e) => e.incentivoId === 'clienteNuevo');
+    expect(cn.puntos).toBe(0);
+    expect(r.incentivosClasificados).toBe(0);
+  });
+  it('la misma venta activa SÍ genera puntos (control)', () => {
+    expect(puntosClienteNuevo([{ ...ventaVacia(), ...conv, estado: 'activa' }], 'junio')).toBeGreaterThan(0);
+  });
+});
+
 describe('datos de demostración', () => {
   it('generan un panel con al menos un incentivo clasificado y GP > 0', async () => {
     const { ventasDemo } = await import('./demo.js');
