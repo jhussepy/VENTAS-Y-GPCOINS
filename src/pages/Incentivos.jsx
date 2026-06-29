@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Trophy, Coins, Gift, Ticket } from 'lucide-react';
+import { Trophy, Coins, Gift, Ticket, Info } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { estadoIncentivo } from '../lib/engine.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
@@ -20,6 +20,17 @@ export default function Incentivos() {
       <div className="flex items-center justify-between">
         <p className="text-sm text-fg-muted">Los 6 incentivos activos del período. Cambia el mes arriba para ver puntos y premios de cada periodo.</p>
         <Badge tone="neutral">{PERIODO.etiquetas[mes]}</Badge>
+      </div>
+
+      {/* Aclaración del criterio de portas: solo cuentan las activadas */}
+      <div className="flex items-start gap-2 text-xs text-fg-soft bg-bg-surface2 border border-bg-border rounded-lg p-3">
+        <Info size={15} className="text-vf-red shrink-0 mt-0.5" />
+        <span>
+          La llave de <span className="font-medium">Portas voz</span> cuenta únicamente las portabilidades
+          <span className="font-medium"> activadas</span>, no las solo solicitadas. Marca cada porta como activa
+          en la venta (campo <span className="font-medium">Portas activas</span>) cuando se complete la portabilidad
+          para que sume a la clasificación.
+        </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
