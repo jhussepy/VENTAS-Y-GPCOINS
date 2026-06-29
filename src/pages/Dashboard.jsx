@@ -75,7 +75,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={ShoppingCart} label={`Ventas en ${PERIODO.etiquetas[mes]}`} value={fmtNum(r.totalVentas)} accent="text-vf-red" />
-        <StatCard icon={Coins} label="GP Coins directos (monedero)" value={fmtNum(r.gpDirectosTotal)} sub={`+${fmtNum(r.gpPotencialRanking)} potenciales por ranking`} accent="text-gp-gold" />
+        <StatCard icon={Coins} label="GP Coins directos (monedero)" value={fmtNum(r.gpDirectosTotal)} sub={`hasta ${fmtNum(r.gpPotencialMax)} por ranking si clasificas 1º`} accent="text-gp-gold" />
         <StatCard icon={Wifi} label="Instalaciones activas" value={fmtNum(r.instalacionesActivas)} accent="text-emerald-400" />
         <StatCard icon={UserPlus} label="Clientes nuevos" value={fmtNum(r.clientesNuevos)} accent="text-sky-400" />
         <StatCard icon={Repeat} label="Portas activas" value={fmtNum(r.portasActivas)} sub={`de ${fmtNum(r.portasTotales)} solicitadas`} accent="text-emerald-400" />

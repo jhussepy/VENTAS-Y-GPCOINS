@@ -44,8 +44,8 @@ export default function GPCoins() {
           <p className={`text-3xl font-semibold tabnum ${portas.pct >= objetivoPortas ? 'text-emerald-400' : 'text-fg'}`}>
             {portas.pct}%
           </p>
-          <span className="text-sm text-fg-soft tabnum">{portas.portas}/{portas.lineas} portas</span>
-          <span className="text-xs text-fg-muted">objetivo {objetivoPortas}%</span>
+          <span className="text-sm text-fg-soft tabnum">{portas.portas}/{portas.lineas} portas activas</span>
+          <span className="text-xs text-fg-muted">objetivo {objetivoPortas}% · {portas.solicitadas} solicitadas</span>
         </div>
       </Card>
 

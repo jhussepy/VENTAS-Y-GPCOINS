@@ -21,7 +21,7 @@ function LlaveRow({ ll, portas }) {
             <p className="font-medium text-fg text-sm">{ll.label}</p>
             <span className="text-xs tabnum text-fg-muted shrink-0">
               {esPortas && portas && (
-                <span className="text-fg-soft mr-1">{portas.portas}/{portas.lineas} portas · </span>
+                <span className="text-fg-soft mr-1">{portas.portas}/{portas.lineas} portas activas · </span>
               )}
               {ll.valor}{sufijo} / {ll.objetivo}{sufijo}
             </span>

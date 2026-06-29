@@ -127,7 +127,8 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
     case 'clientes': // clientes nuevos genéricos
       return delMes.filter((v) => v.clienteNuevo).length;
     case 'portas': {
-      const portas = delMes.reduce((a, v) => a + (Number(v.portasVoz) || 0), 0);
+      // Solo cuentan las portas ya ACTIVADAS (no las solo solicitadas)
+      const portas = delMes.reduce((a, v) => a + Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0), 0);
       const lineas = delMes.reduce((a, v) => a + (Number(v.lineasVoz) || 0), 0);
       return lineas > 0 ? Math.round((portas / lineas) * 100) : 0;
     }
@@ -147,13 +148,15 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
   }
 }
 
-// --- Detalle de portas de voz del mes (portas, líneas y % redondeado) --------
+// --- Detalle de portas de voz del mes (portas activas, líneas y % redondeado) -
+// El % de la llave se calcula sobre portas ACTIVADAS (no solo solicitadas).
 export function portasDetalle(ventas, mes) {
   const delMes = ventas.filter((v) => v.mes === mes);
-  const portas = delMes.reduce((a, v) => a + (Number(v.portasVoz) || 0), 0);
+  const portas = delMes.reduce((a, v) => a + Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0), 0);
+  const solicitadas = delMes.reduce((a, v) => a + (Number(v.portasVoz) || 0), 0);
   const lineas = delMes.reduce((a, v) => a + (Number(v.lineasVoz) || 0), 0);
   const pct = lineas > 0 ? Math.round((portas / lineas) * 100) : 0;
-  return { portas, lineas, pct };
+  return { portas, solicitadas, lineas, pct };
 }
 
 // --- Estado completo de un incentivo ----------------------------------------
@@ -191,12 +194,16 @@ export function resumenGlobal(ventas, mes) {
   // GP Coins directos asegurados (Samsung, Honor, JBL, Motorola directos)
   const gpDirectosTotal = estados.reduce((a, e) => a + e.gp, 0);
 
-  // GP Coins potenciales de ranking: si clasifica, premio del 1er tramo como tope teórico
+  // GP Coins de ranking:
+  //  - gpPotencialRanking: ya asegurados si cerrara hoy (solo incentivos clasificados)
+  //  - gpPotencialMax: mejor escenario teórico (1er puesto en TODOS los incentivos con premio)
   let gpPotencialRanking = 0;
+  let gpPotencialMax = 0;
   for (const e of estados) {
     const inc = INCENTIVOS[e.incentivoId];
-    if (inc.premios.length && e.clasifica) {
-      gpPotencialRanking += inc.premios[0].gpcoins; // mejor escenario (1er puesto)
+    if (inc.premios.length) {
+      gpPotencialMax += inc.premios[0].gpcoins;
+      if (e.clasifica) gpPotencialRanking += inc.premios[0].gpcoins;
     }
   }
 
@@ -217,6 +224,7 @@ export function resumenGlobal(ventas, mes) {
     portasPendientes,
     gpDirectosTotal,
     gpPotencialRanking,
+    gpPotencialMax,
     incentivosClasificados: estados.filter((e) => e.clasifica).length,
   };
 }

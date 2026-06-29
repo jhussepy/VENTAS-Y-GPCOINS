@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, ventaVacia, resumenGlobal } from './engine.js';
+import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle } from './engine.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
 import { resumenLowi, mesLowi, ventaLowiVacia } from './lowi.js';
 
@@ -83,6 +83,26 @@ describe('portabilidad en resumenGlobal', () => {
     expect(r.portasTotales).toBe(4);
     expect(r.portasActivas).toBe(3); // 2 + min(5,1)=1
     expect(r.portasPendientes).toBe(1);
+  });
+});
+
+describe('portasDetalle usa portas activas para el %', () => {
+  it('el porcentaje se calcula sobre activas, no solicitadas', () => {
+    const ventas = [
+      { ...ventaVacia(), mes: 'junio', portasVoz: 4, portasActivas: 0, lineasVoz: 4 },
+    ];
+    const d = portasDetalle(ventas, 'junio');
+    expect(d.portas).toBe(0);        // activas
+    expect(d.solicitadas).toBe(4);   // solicitadas aparte
+    expect(d.lineas).toBe(4);
+    expect(d.pct).toBe(0);           // 0 activas → 0%
+  });
+});
+
+describe('gpPotencialMax', () => {
+  it('existe y es el techo teórico (>= asegurado por ranking)', () => {
+    const r = resumenGlobal([], 'junio');
+    expect(r.gpPotencialMax).toBeGreaterThanOrEqual(r.gpPotencialRanking);
   });
 });
 
