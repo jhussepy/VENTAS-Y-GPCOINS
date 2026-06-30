@@ -202,6 +202,26 @@ describe('resumenLineas (líneas móviles)', () => {
   });
 });
 
+describe('líneas móviles → portas activas suman en el Dashboard', () => {
+  it('2 portas activas vía líneas se reflejan en resumenGlobal', async () => {
+    const { resumenLineas } = await import('../data/movil.js');
+    const lineasMoviles = [
+      { tarifa: 'ilim60', tipo: 'porta', operador: 'Movistar', activa: true },
+      { tarifa: 'ilim160', tipo: 'porta', operador: 'Orange', activa: true },
+      { tarifa: 'basica', tipo: 'nueva', activa: false },
+    ];
+    // Así construye la venta el formulario al guardar (aggregates derivados de las líneas)
+    const venta = { ...ventaVacia(), mes: 'junio', estado: 'activa', lineasMoviles, ...resumenLineas(lineasMoviles) };
+    const r = resumenGlobal([venta], 'junio');
+    expect(venta.portasActivas).toBe(2);
+    expect(venta.portasVoz).toBe(2);
+    expect(venta.lineasVoz).toBe(3);
+    expect(r.portasActivas).toBe(2);   // ✅ suman al Dashboard
+    expect(r.portasTotales).toBe(2);
+    expect(r.portasPendientes).toBe(0);
+  });
+});
+
 describe('datos de demostración', () => {
   it('generan un panel con al menos un incentivo clasificado y GP > 0', async () => {
     const { ventasDemo } = await import('./demo.js');
