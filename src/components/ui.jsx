@@ -1,7 +1,69 @@
 import { Star } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export function Card({ children, className = '', accent = false }) {
   return <div className={`card p-5 ${accent ? 'card-accent' : ''} ${className}`}>{children}</div>;
+}
+
+// Cuenta ascendente animada (respeta prefers-reduced-motion)
+export function useCountUp(target, duration = 900) {
+  const [val, setVal] = useState(0);
+  const ref = useRef(0);
+  useEffect(() => {
+    const fin = Number(target) || 0;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { setVal(fin); return; }
+    const ini = ref.current;
+    const t0 = performance.now();
+    let raf;
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3); // ease-out cúbico
+      const cur = ini + (fin - ini) * eased;
+      setVal(cur);
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else ref.current = fin;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
+
+export function AnimatedNumber({ value, format = (n) => Math.round(n).toLocaleString('es-ES') }) {
+  const v = useCountUp(value);
+  return <span>{format(v)}</span>;
+}
+
+// Banner de cabecera con degradado de marca y métricas destacadas
+export function HeroBanner({ saludo, titulo, subtitulo, chip, highlights = [], accent = 'vf' }) {
+  const grad = accent === 'lowi'
+    ? 'from-sky-600 via-sky-500 to-emerald-500'
+    : 'from-vf-redDark via-vf-red to-vf-redLight';
+  return (
+    <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${grad} text-white p-6 shadow-lg`}>
+      <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
+      <div className="absolute -bottom-20 right-24 w-40 h-40 rounded-full bg-white/5 blur-2xl" aria-hidden="true" />
+      <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+        <div className="min-w-0">
+          {saludo && <p className="text-xs font-medium uppercase tracking-wider text-white/70">{saludo}</p>}
+          <h2 className="text-2xl font-bold tracking-tight mt-0.5">{titulo}</h2>
+          {subtitulo && <p className="text-sm text-white/80 mt-1 max-w-xl">{subtitulo}</p>}
+          {chip && <span className="inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur text-xs font-semibold">{chip}</span>}
+        </div>
+        {highlights.length > 0 && (
+          <div className="flex gap-3 shrink-0">
+            {highlights.map((h) => (
+              <div key={h.label} className="rounded-xl bg-white/12 backdrop-blur px-4 py-3 min-w-[88px] text-center ring-1 ring-white/15">
+                <p className="text-2xl font-bold tabnum leading-tight"><AnimatedNumber value={h.value} format={h.format} /></p>
+                <p className="text-[11px] text-white/75 mt-0.5">{h.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red' }) {

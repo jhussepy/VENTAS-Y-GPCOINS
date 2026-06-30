@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat, Smartphone,
+  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat, Smartphone, Tv,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList,
@@ -12,7 +12,7 @@ import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { TARIFAS_MOVIL } from '../data/movil.js';
 
 const VELOCIDADES_FIBRA = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
-import { StatCard, Card, SectionTitle, Badge, Progress } from '../components/ui.jsx';
+import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
 // Etiquetas cortas para los chips de llaves del resumen de clasificación
@@ -27,8 +27,16 @@ const ETIQUETA_LLAVE = {
 };
 
 export default function Dashboard() {
-  const { ventas, mes } = useApp();
+  const { ventas, mes, user } = useApp();
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
+
+  // Saludo según la hora del día
+  const saludo = useMemo(() => {
+    const h = new Date().getHours();
+    const momento = h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
+    const nombre = (user?.displayName || '').split(' ')[0];
+    return nombre ? `${momento}, ${nombre}` : momento;
+  }, [user]);
 
   // Todos los incentivos (panorama completo), aunque algunos estén a 0
   const dataChart = r.estados
@@ -120,6 +128,19 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <HeroBanner
+        saludo={saludo}
+        titulo={`Tu progreso de ${PERIODO.etiquetas[mes]}`}
+        subtitulo="Resumen en tiempo real de ventas, GP Coins y clasificación del período activo."
+        chip={`Período ${PERIODO.inicio} → ${PERIODO.fin}`}
+        accent="vf"
+        highlights={[
+          { label: 'Ventas', value: r.totalVentas },
+          { label: 'Activas', value: r.instalacionesActivas },
+          { label: 'GP Coins', value: r.gpDirectosTotal },
+        ]}
+      />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={ShoppingCart} label={`Ventas en ${PERIODO.etiquetas[mes]}`} value={fmtNum(r.totalVentas)} accent="text-vf-red" />
         <StatCard icon={Coins} label="GP Coins directos (monedero)" value={fmtNum(r.gpDirectosTotal)} sub={`hasta ${fmtNum(r.gpPotencialMax)} por ranking si clasificas 1º`} accent="text-gp-gold" />
@@ -142,18 +163,28 @@ export default function Dashboard() {
             <div style={{ width: '100%', height: 300 }}>
               <ResponsiveContainer>
                 <BarChart data={dataChart} margin={{ top: 24, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" />
-                  <XAxis dataKey="nombre" stroke="var(--fg-muted)" fontSize={12} />
-                  <YAxis stroke="var(--fg-muted)" fontSize={12} />
+                  <defs>
+                    <linearGradient id="gradPuntos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FF4D4D" />
+                      <stop offset="100%" stopColor="#E60000" />
+                    </linearGradient>
+                    <linearGradient id="gradGp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FFD166" />
+                      <stop offset="100%" stopColor="#FFB81C" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" vertical={false} />
+                  <XAxis dataKey="nombre" stroke="var(--fg-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--fg-muted)" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
-                    cursor={{ fill: 'var(--bg-surface2)' }}
-                    contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8, color: 'var(--fg)' }}
+                    cursor={{ fill: 'var(--bg-surface2)', radius: 6 }}
+                    contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
                     formatter={(v, _n, p) => [fmtNum(v), p.payload.esGp ? 'GP Coins' : 'Puntos']}
                   />
-                  <Bar dataKey="valor" radius={[6, 6, 0, 0]} maxBarSize={90}>
-                    <LabelList dataKey="valor" position="top" fill="var(--fg-soft)" fontSize={12} formatter={(v) => fmtNum(v)} />
+                  <Bar dataKey="valor" radius={[8, 8, 0, 0]} maxBarSize={84} animationDuration={700}>
+                    <LabelList dataKey="valor" position="top" fill="var(--fg-soft)" fontSize={12} fontWeight={600} formatter={(v) => (v ? fmtNum(v) : '')} />
                     {dataChart.map((d, i) => (
-                      <Cell key={i} fill={d.esGp ? '#FFB81C' : '#E60000'} />
+                      <Cell key={i} fill={d.esGp ? 'url(#gradGp)' : 'url(#gradPuntos)'} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -308,7 +339,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {contenidosTV.map(([nombre, n]) => (
               <div key={nombre} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
-                <span className="text-sm text-fg-soft">📺 {nombre}</span>
+                <span className="flex items-center gap-2 text-sm text-fg-soft"><Tv size={15} className="text-vf-red shrink-0" /> {nombre}</span>
                 <span className="text-lg font-semibold text-fg tabnum">{n}</span>
               </div>
             ))}

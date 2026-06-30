@@ -5,10 +5,10 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
 } from 'recharts';
-import { Repeat, Smartphone } from 'lucide-react';
+import { Repeat, Smartphone, Tv } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS, VELOCIDADES_LOWI, TARIFAS_MOVIL_LOWI } from '../lib/lowi.js';
-import { StatCard, Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
+import { StatCard, Card, SectionTitle, Badge, EmptyState, HeroBanner } from '../components/ui.jsx';
 import { fmtNum, fmtEur } from '../lib/format.js';
 
 const COLORES_ESTADO = {
@@ -82,6 +82,17 @@ export default function LowiDashboard() {
 
   return (
     <div className="space-y-6">
+      <HeroBanner
+        saludo="Panel Lowi"
+        titulo="Seguimiento de ventas Lowi"
+        subtitulo="Estado de instalaciones, facturación activa y portabilidad en un vistazo."
+        accent="lowi"
+        highlights={[
+          { label: 'Ventas', value: r.total },
+          { label: 'Activas', value: r.porEstado.activa },
+          { label: '€/mes', value: r.facturacionActiva, format: (n) => `${Math.round(n)}€` },
+        ]}
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard icon={ShoppingCart} label="Ventas totales" value={fmtNum(r.total)} accent="text-fg" />
         <StatCard icon={Wifi} label="Activas" value={fmtNum(r.porEstado.activa)} accent="text-emerald-400" />
@@ -196,7 +207,7 @@ export default function LowiDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {contenidosTV.map(([nombre, n]) => (
               <div key={nombre} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
-                <span className="text-sm text-fg-soft">📺 {nombre}</span>
+                <span className="flex items-center gap-2 text-sm text-fg-soft"><Tv size={15} className="text-sky-400 shrink-0" /> {nombre}</span>
                 <span className="text-lg font-semibold text-fg tabnum">{n}</span>
               </div>
             ))}
