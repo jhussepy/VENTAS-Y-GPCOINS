@@ -136,6 +136,22 @@ export function SectionTitle({ children, right }) {
   );
 }
 
+// Esqueleto de carga que imita el layout del panel (mejor percepción que un spinner)
+export function PageSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Cargando contenido">
+      <div className="skeleton h-28 rounded-2xl" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton h-24 rounded-2xl" />)}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="skeleton h-80 rounded-2xl lg:col-span-2" />
+        <div className="skeleton h-80 rounded-2xl" />
+      </div>
+    </div>
+  );
+}
+
 export function EmptyState({ icon: Icon, title, hint }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">

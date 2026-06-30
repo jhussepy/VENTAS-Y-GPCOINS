@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { loginConGoogle } from '../lib/firebase.js';
 
 function GoogleIcon() {
@@ -63,7 +64,7 @@ export default function Login() {
             disabled={loading}
             className="btn w-full justify-center bg-bg-surface2 border border-bg-border hover:bg-bg-border text-fg-soft disabled:opacity-60"
           >
-            <GoogleIcon />
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
             {loading ? 'Iniciando sesión…' : 'Continuar con Google'}
           </button>
           {error && (

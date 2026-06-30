@@ -6,7 +6,7 @@ import { resumenGlobal } from '../lib/engine.js';
 import { resumenLowi } from '../lib/lowi.js';
 import { ESTADOS, estadoDe } from '../lib/estados.js';
 import { ORDEN_INCENTIVOS, CATALOGO } from '../data/incentivos.js';
-import { Card, StatCard, Badge, EmptyState, SectionTitle } from '../components/ui.jsx';
+import { Card, StatCard, Badge, EmptyState, SectionTitle, PageSkeleton } from '../components/ui.jsx';
 import { fmtNum, fmtFecha, fmtEur } from '../lib/format.js';
 import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X, Wifi, Repeat } from 'lucide-react';
 
@@ -126,33 +126,35 @@ export default function Admin() {
           <SectionTitle>Ranking de agentes ({mes})</SectionTitle>
         </div>
         {loading ? (
-          <EmptyState icon={RefreshCw} title="Cargando agentes…" />
+          <div className="p-5"><PageSkeleton /></div>
         ) : filas.length === 0 ? (
           <EmptyState icon={Users} title="Sin agentes" hint="Aún no hay usuarios con datos registrados." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
-                  <th className="px-4 py-3 font-medium">#</th>
-                  <th className="px-4 py-3 font-medium">Agente</th>
-                  <th className="px-4 py-3 font-medium text-center">Ventas</th>
-                  <th className="px-4 py-3 font-medium text-center">Clientes nuevos</th>
-                  <th className="px-4 py-3 font-medium text-center">Instal. activas</th>
-                  <th className="px-4 py-3 font-medium text-right">GP directos</th>
-                  <th className="px-4 py-3 font-medium text-center">Incentivos OK</th>
-                  <th className="px-4 py-3 font-medium text-center">Lowi (act./tot.)</th>
-                  <th className="px-4 py-3 font-medium text-right">Detalle</th>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
+                  <th className="px-4 py-3 font-semibold">#</th>
+                  <th className="px-4 py-3 font-semibold">Agente</th>
+                  <th className="px-4 py-3 font-semibold text-center">Ventas</th>
+                  <th className="px-4 py-3 font-semibold text-center">Clientes nuevos</th>
+                  <th className="px-4 py-3 font-semibold text-center">Instal. activas</th>
+                  <th className="px-4 py-3 font-semibold text-right">GP directos</th>
+                  <th className="px-4 py-3 font-semibold text-center">Incentivos OK</th>
+                  <th className="px-4 py-3 font-semibold text-center">Lowi (act./tot.)</th>
+                  <th className="px-4 py-3 font-semibold text-right">Detalle</th>
                 </tr>
               </thead>
               <tbody>
-                {filas.map((f, i) => (
+                {filas.map((f, i) => {
+                  const medalla = ['text-gp-gold', 'text-slate-300', 'text-amber-600'][i];
+                  return (
                   <tr
                     key={f.uid}
                     onClick={() => setAgenteSel(f)}
-                    className={`border-b border-bg-border/60 hover:bg-bg-surface2/50 cursor-pointer ${agenteSel?.uid === f.uid ? 'bg-bg-surface2/60' : ''}`}
+                    className={`border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors cursor-pointer ${agenteSel?.uid === f.uid ? '!bg-bg-surface2/70' : ''}`}
                   >
-                    <td className="px-4 py-3 tabnum text-fg-muted">{i + 1}</td>
+                    <td className={`px-4 py-3 tabnum font-semibold ${medalla || 'text-fg-muted'}`}>{i + 1}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {f.foto
@@ -187,7 +189,8 @@ export default function Admin() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -264,17 +267,17 @@ function DetalleAgente({ agente, mes, onCerrar }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
-                  <th className="px-3 py-2 font-medium">Cliente</th>
-                  <th className="px-3 py-2 font-medium">Fecha venta</th>
-                  <th className="px-3 py-2 font-medium">Convergencia</th>
-                  <th className="px-3 py-2 font-medium">Terminal</th>
-                  <th className="px-3 py-2 font-medium text-center">Estado</th>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
+                  <th className="px-3 py-2 font-semibold">Cliente</th>
+                  <th className="px-3 py-2 font-semibold">Fecha venta</th>
+                  <th className="px-3 py-2 font-semibold">Convergencia</th>
+                  <th className="px-3 py-2 font-semibold">Terminal</th>
+                  <th className="px-3 py-2 font-semibold text-center">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {ventasMes.map((v) => (
-                  <tr key={v.id} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
+                  <tr key={v.id} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                     <td className="px-3 py-2 text-fg">
                       {[v.nombre, v.apellido].filter(Boolean).join(' ') || '—'}
                     </td>

@@ -25,6 +25,7 @@ const LowiDashboard = lazy(() => import('./pages/LowiDashboard.jsx'));
 const LowiVentas = lazy(() => import('./pages/LowiVentas.jsx'));
 const Ajustes = lazy(() => import('./pages/Ajustes.jsx'));
 import Login from './pages/Login.jsx';
+import { PageSkeleton } from './components/ui.jsx';
 
 export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -329,7 +330,7 @@ export default function App() {
                 Haz una <span className="font-semibold">Copia</span> de seguridad y avísame para migrar a almacenamiento ampliado antes de llegar al 100%.
               </div>
             )}
-            <Suspense fallback={<div className="py-20 flex justify-center"><Loader2 size={28} className="text-vf-red animate-spin" /></div>}>
+            <Suspense fallback={<PageSkeleton />}>
               <div key={`${operador}-${page}`} className="fade-in">
                 <Active />
               </div>
