@@ -44,5 +44,6 @@ export const lineaMovilVacia = () => ({
   numero: '',          // número de teléfono
   tipo: 'nueva',       // 'nueva' | 'porta'
   operador: '',        // operador de origen (solo si porta)
+  ventanaPorta: '',    // fecha/hora de la ventana de portabilidad (solo si porta)
   activa: false,       // porta ya activada (solo si porta)
 });

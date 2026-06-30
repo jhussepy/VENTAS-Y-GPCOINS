@@ -46,7 +46,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
   const updLinea = (id, k, val) => setLineas(lineas.map((l) => {
     if (l.id !== id) return l;
     const nl = { ...l, [k]: val };
-    if (k === 'tipo' && val === 'nueva') { nl.operador = ''; nl.activa = false; }
+    if (k === 'tipo' && val === 'nueva') { nl.operador = ''; nl.activa = false; nl.ventanaPorta = ''; }
     return nl;
   }));
   const delLinea = (id) => setLineas(lineas.filter((l) => l.id !== id));
@@ -186,6 +186,10 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
                         Act.
                       </label>
                       <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
+                    </div>
+                    <div className="sm:col-span-5">
+                      <label className="label">Fecha ventana portabilidad</label>
+                      <input type="datetime-local" className="input" value={l.ventanaPorta || ''} onChange={(e) => updLinea(l.id, 'ventanaPorta', e.target.value)} />
                     </div>
                   </>
                 ) : (
