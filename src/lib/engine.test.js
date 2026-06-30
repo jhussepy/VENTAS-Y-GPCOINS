@@ -119,13 +119,25 @@ describe('valorLlave solo cuenta ventas activas', () => {
     ];
     expect(valorLlave(ventas, 'xiaomi', 'clientes', 'junio')).toBe(1);
   });
-  it('fibra y dispositivos solo cuentan en ventas activas', () => {
+  it('fibra y dispositivos solo cuentan en ventas activas (con SAP válido)', () => {
     const ventas = [
-      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', cantidad: 2, estado: 'activa' },
-      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', cantidad: 5, estado: 'pendiente' },
+      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', sap: '316512', cantidad: 2, estado: 'activa' },
+      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', sap: '316512', cantidad: 5, estado: 'pendiente' },
     ];
     expect(valorLlave(ventas, 'xiaomi', 'fibra', 'junio')).toBe(1);
     expect(valorLlave(ventas, 'xiaomi', 'disp', 'junio')).toBe(2);
+  });
+  it('dispositivos: un SAP inexistente no cuenta', () => {
+    const ventas = [{ ...ventaVacia(), mes: 'junio', marca: 'xiaomi', sap: 'NO-EXISTE', cantidad: 3, estado: 'activa' }];
+    expect(valorLlave(ventas, 'xiaomi', 'disp', 'junio')).toBe(0);
+  });
+  it('TIL65 solo cuenta en cliente nuevo 3P/4P', () => {
+    const ventas = [
+      { ...ventaVacia(), mes: 'junio', estado: 'activa', clienteNuevo: true, convergencia: '4P', til65: 2 },
+      { ...ventaVacia(), mes: 'junio', estado: 'activa', clienteNuevo: false, convergencia: '4P', til65: 5 }, // no cliente nuevo
+      { ...ventaVacia(), mes: 'junio', estado: 'activa', clienteNuevo: true, convergencia: '', til65: 4 },     // sin 3P/4P
+    ];
+    expect(valorLlave(ventas, 'clienteNuevo', 'til65', 'junio')).toBe(2);
   });
 });
 

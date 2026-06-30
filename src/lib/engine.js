@@ -126,7 +126,9 @@ export function gpDirectos(ventas, marca, mes) {
       const u = unidadesPorSap[prod.sap] || 0;
       if (u === 0) continue;
       const fam = prod.familia || prod.sap;
-      if (!grupos[fam]) grupos[fam] = { cap: udsDe(prod, mes), saps: [] };
+      if (!grupos[fam]) grupos[fam] = { cap: 0, saps: [] };
+      // El tope de la familia es el mayor uds entre sus miembros (robusto si difieren)
+      grupos[fam].cap = Math.max(grupos[fam].cap, udsDe(prod, mes));
       grupos[fam].saps.push({ gp: gpDe(prod, mes), unidades: u });
     }
     for (const fam in grupos) {
@@ -189,7 +191,10 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
       return lineas > 0 ? Math.round((portas / lineas) * 100) : 0;
     }
     case 'til65':
-      return activas.reduce((a, v) => a + (Number(v.til65) || 0), 0);
+      // Según bases: TIL65 cuenta en activaciones de cliente nuevo 3P o 4P
+      return activas
+        .filter((v) => v.clienteNuevo && (v.convergencia === '3P' || v.convergencia === '4P'))
+        .reduce((a, v) => a + (Number(v.til65) || 0), 0);
     case 'secureNet':
       return activas.reduce((a, v) => a + (Number(v.secureNet) || 0), 0);
     case 'fibra':
@@ -197,7 +202,10 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
     case 'disp': {
       const inc = INCENTIVOS[incentivoId];
       const marca = inc.catalogo;
-      return activas.filter((v) => v.marca === marca).reduce((a, v) => a + (v.cantidad || 1), 0);
+      // Solo dispositivos válidos del catálogo (un SAP inexistente no cuenta)
+      return activas
+        .filter((v) => v.marca === marca && buscarProducto(marca, v.sap))
+        .reduce((a, v) => a + (v.cantidad || 1), 0);
     }
     default:
       return 0;

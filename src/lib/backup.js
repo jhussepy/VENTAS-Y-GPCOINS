@@ -5,13 +5,14 @@
 const VERSION = 1;
 
 // Descarga un .json con todos los datos
-export function exportarBackup({ ventas, ventasLowi, tarifas }) {
+export function exportarBackup({ ventas, ventasLowi, tarifas, precios }) {
   const data = {
     version: VERSION,
     generado: new Date().toISOString(),
     ventas: ventas || [],
     ventasLowi: ventasLowi || [],
     tarifas: tarifas || [],
+    precios: precios || {},
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -33,6 +34,7 @@ export function leerBackup(file) {
           ventas: Array.isArray(d.ventas) ? d.ventas : [],
           ventasLowi: Array.isArray(d.ventasLowi) ? d.ventasLowi : [],
           tarifas: Array.isArray(d.tarifas) ? d.tarifas : [],
+          precios: (d.precios && typeof d.precios === 'object') ? d.precios : {},
         });
       } catch (err) {
         reject(err);

@@ -65,7 +65,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, tema, setTema, loading, estadoGuardado } = useCloudData(user);
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
   const [mes, setMes] = useState('junio');
@@ -92,6 +92,7 @@ export default function App() {
       setVentas(d.ventas);
       setVentasLowi(d.ventasLowi);
       setTarifas(d.tarifas);
+      setPrecios(d.precios);
       alert('Copia restaurada correctamente.');
     } catch {
       alert('No se pudo leer el archivo de copia de seguridad.');
@@ -211,7 +212,7 @@ export default function App() {
             {/* Copia de seguridad de todos los datos */}
             <div className="flex gap-1">
               <button
-                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas })}
+                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas, precios })}
                 className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
                 title="Descargar copia de seguridad (JSON)"
               >

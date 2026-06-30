@@ -1,5 +1,6 @@
 import { ventaVacia, mesDesdeFecha } from './engine.js';
 import { ESTADOS } from './estados.js';
+import { resumenLineas } from '../data/movil.js';
 import { PERIODO } from '../data/incentivos.js';
 
 // Normaliza el texto de estado a una clave válida
@@ -21,7 +22,7 @@ export const COLUMNAS_VENTAS = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'convergencia',
   'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'cantidad',
-  'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
+  'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
 ];
 
 const aBool = (x) => {
@@ -43,9 +44,15 @@ const aFecha = (XLSX, x) => {
     const d = XLSX.SSF.parse_date_code(x);
     if (d) return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`;
   }
-  const d = new Date(x);
+  const s = String(x).trim();
+  // Formato español dd/mm/yyyy o dd-mm-yyyy
+  const m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  // Ya en ISO yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
   if (!isNaN(d)) return d.toISOString().slice(0, 10);
-  return String(x);
+  return s;
 };
 
 // Clave de deduplicación de una venta
@@ -104,6 +111,14 @@ export async function importarVentas(file, existentes = []) {
     v.fechaBaja = aFecha(XLSX, r.fechaBaja ?? r['fecha baja']);
     v.motivoBaja = String(r.motivoBaja ?? r['motivo baja'] ?? '').trim();
     v.notas = String(r.notas ?? '').trim();
+    // Líneas móviles detalladas (JSON serializado). Si las hay, recalculamos contadores.
+    try {
+      const lm = r.lineasMoviles ? JSON.parse(r.lineasMoviles) : null;
+      if (Array.isArray(lm) && lm.length) {
+        v.lineasMoviles = lm;
+        Object.assign(v, resumenLineas(lm));
+      }
+    } catch { /* ignora JSON inválido */ }
     v.mes = mesDesdeFecha(v.fechaVenta);
     return v;
   }).filter((v) => v.nombre || v.apellido || v.sap || v.convergencia);
@@ -138,6 +153,7 @@ export async function exportarVentas(ventas) {
     lineasVoz: v.lineasVoz, til65: v.til65, secureNet: v.secureNet,
     estado: ESTADOS[v.estado]?.label || (v.instalacionActiva ? 'Activa' : 'Pendiente'),
     fechaBaja: v.fechaBaja || '', motivoBaja: v.motivoBaja || '', notas: v.notas,
+    lineasMoviles: (v.lineasMoviles && v.lineasMoviles.length) ? JSON.stringify(v.lineasMoviles) : '',
   }));
   const ws = XLSX.utils.json_to_sheet(data, { header: COLUMNAS_VENTAS });
   const wb = XLSX.utils.book_new();

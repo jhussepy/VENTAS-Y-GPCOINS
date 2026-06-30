@@ -63,8 +63,9 @@ export function useCloudData(user) {
       setDoc(doc(db, 'usuarios', uid), { [field]: value }, { merge: true })
         .then(() => {
           setEstadoGuardado('guardado');
-          // Tras 2s volvemos a estado de reposo
-          setTimeout(() => setEstadoGuardado('idle'), 2000);
+          // Tras 2s volvemos a reposo (registrado para poder limpiarlo en el cleanup)
+          clearTimeout(timers.current._idle);
+          timers.current._idle = setTimeout(() => setEstadoGuardado('idle'), 2000);
         })
         .catch((e) => { console.error('Error al guardar en la nube:', e); setEstadoGuardado('error'); });
     }, DEBOUNCE_MS);
@@ -94,6 +95,13 @@ export function useCloudData(user) {
     });
   };
 
+  // Reemplaza todo el objeto de precios (usado al restaurar copia de seguridad)
+  const setPrecios = (obj) => {
+    const next = obj && typeof obj === 'object' ? obj : {};
+    setPreciosState(next);
+    if (uid) persist('precios', next);
+  };
+
   // Guarda el precio de un terminal por SAP y mes: precios[sap][mes] = valor
   const guardarPrecio = (sap, mes, valor) => {
     setPreciosState((prev) => {
@@ -113,5 +121,5 @@ export function useCloudData(user) {
     if (uid) persist('tema', t);
   };
 
-  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, tema, setTema, loading, estadoGuardado };
+  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, tema, setTema, loading, estadoGuardado };
 }
