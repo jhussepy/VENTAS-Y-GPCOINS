@@ -198,14 +198,15 @@ export default function App() {
               <button
                 key={n.id}
                 onClick={() => { setPage(n.id); setOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                            transition-colors cursor-pointer
+                className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                            transition-all duration-200 cursor-pointer
                             ${page === n.id
-                              ? (esLowi ? 'bg-sky-600 text-white' : 'bg-vf-red text-white')
+                              ? (esLowi ? 'bg-sky-600 text-white shadow-md' : 'bg-vf-red text-white shadow-md')
                               : 'text-fg-muted hover:text-fg hover:bg-bg-surface2'}`}
                 aria-current={page === n.id ? 'page' : undefined}
               >
-                <n.icon size={18} aria-hidden="true" />
+                {page === n.id && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-white/80" />}
+                <n.icon size={18} aria-hidden="true" className={page === n.id ? '' : 'group-hover:scale-110 transition-transform'} />
                 {n.label}
               </button>
             ))}
