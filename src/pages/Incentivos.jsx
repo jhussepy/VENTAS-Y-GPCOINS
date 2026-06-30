@@ -26,11 +26,11 @@ export default function Incentivos() {
       <div className="flex items-start gap-2 text-xs text-fg-soft bg-bg-surface2 border border-bg-border rounded-lg p-3">
         <Info size={15} className="text-vf-red shrink-0 mt-0.5" />
         <span>
-          Las llaves cuentan solo ventas en estado <span className="font-medium">Activa</span> (exigen venta
-          <span className="font-medium"> y activación</span>): las pendientes, bajas o canceladas no suman.
-          Además, la llave de <span className="font-medium">Portas voz</span> solo cuenta las portabilidades
-          <span className="font-medium"> activadas</span> (campo <span className="font-medium">Portas activas</span>),
-          no las solo solicitadas.
+          La mayoría de llaves (clientes, fibra, dispositivos, TIL65, Secure Net) cuentan solo ventas en estado
+          <span className="font-medium"> Activa</span>; las pendientes, bajas o canceladas no suman.
+          La llave de <span className="font-medium">Portas voz</span> es la excepción: cuenta las portabilidades
+          <span className="font-medium"> activadas</span> (campo <span className="font-medium">Portas activas</span>)
+          aunque la venta siga pendiente, porque la portabilidad móvil se completa por su cuenta.
         </span>
       </div>
 

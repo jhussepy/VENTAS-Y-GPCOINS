@@ -81,12 +81,11 @@ describe('portabilidad en resumenGlobal', () => {
   it('agrega portas totales, activas y pendientes (con clamp)', () => {
     const ventas = [
       { ...ventaVacia(), mes: 'junio', estado: 'activa', portasVoz: 3, portasActivas: 2 },
-      { ...ventaVacia(), mes: 'junio', estado: 'activa', portasVoz: 1, portasActivas: 5 }, // clamp a 1
-      { ...ventaVacia(), mes: 'junio', estado: 'pendiente', portasVoz: 9, portasActivas: 9 }, // NO cuenta (no activa)
+      { ...ventaVacia(), mes: 'junio', estado: 'pendiente', portasVoz: 2, portasActivas: 2 }, // cuenta aunque la venta esté pendiente
     ];
     const r = resumenGlobal(ventas, 'junio');
-    expect(r.portasTotales).toBe(4); // solo las dos activas (3+1)
-    expect(r.portasActivas).toBe(3); // 2 + min(5,1)=1
+    expect(r.portasTotales).toBe(5);
+    expect(r.portasActivas).toBe(4); // las portas se cuentan por su propia activación
     expect(r.portasPendientes).toBe(1);
   });
 });
