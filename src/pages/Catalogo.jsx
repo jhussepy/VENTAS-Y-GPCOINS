@@ -256,6 +256,7 @@ export default function Catalogo() {
                   {tieneRanking && <th className="px-4 py-3 font-medium text-right">Puntos</th>}
                   {tieneDirecto && <th className="px-4 py-3 font-medium text-right">GP directo</th>}
                   {tieneDirecto && <th className="px-4 py-3 font-medium">Stock</th>}
+                  <th className="px-4 py-3 font-medium text-right">Precio ({PERIODO.etiquetas[mes]})</th>
                   <th className="px-4 py-3 font-medium text-center">Destacado</th>
                   <th className="px-4 py-3 font-medium text-right">Acción</th>
                 </tr>
@@ -302,6 +303,12 @@ export default function Catalogo() {
                           ) : <span className="text-fg-muted">—</span>}
                         </td>
                       )}
+                      <td className="px-4 py-3 text-right tabnum">
+                        {(() => {
+                          const precio = precios?.[p.sap]?.[mes] ?? p.precio;
+                          return precio != null ? <span className="text-fg-soft font-medium">{fmtEur(precio)}</span> : <span className="text-fg-muted">—</span>;
+                        })()}
+                      </td>
                       <td className="px-4 py-3 text-center">
                         {estDe(p, mes) ? <EstrellaTag tipo={cat.mecanica === 'mixta' ? 'DESTACADO' : 'ESTRELLA'} /> : <span className="text-fg-muted">—</span>}
                       </td>
