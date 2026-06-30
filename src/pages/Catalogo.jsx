@@ -12,7 +12,7 @@ function DetalleTerminal({ producto, marca, mes, precioGuardado, onGuardarPrecio
   const [precio, setPrecio] = useState(precioGuardado ?? producto.precio ?? '');
   const [guardado, setGuardado] = useState(false);
   const [seguro, setSeguro] = useState('desprotegido');
-  const [meses, setMeses] = useState(36);
+  const [meses, setMeses] = useState(24);
   const [catalogo, setCatalogo] = useState(CATALOGOS_FIN[0]);
   const [oferta, setOferta] = useState(OFERTAS_FIN[0]);
   const [contado, setContado] = useState(false);
@@ -138,7 +138,7 @@ export default function Catalogo() {
   const [soloEstrella, setSoloEstrella] = useState(false);
   const [soloStock, setSoloStock] = useState(false);
   const [detalle, setDetalle] = useState(null); // producto en ficha de financiación
-  const [plazoFin, setPlazoFin] = useState(36); // plazo de financiación mostrado en la tabla
+  const [plazoFin, setPlazoFin] = useState(24); // plazo de financiación mostrado en la tabla
 
   const cat = CATALOGO[marca];
   const vendidas = useMemo(() => unidadesVendidas(ventas, marca, mes), [ventas, marca, mes]);

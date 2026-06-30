@@ -10,8 +10,8 @@ export const SEGUROS = [
   { id: 'protegido_plus', label: 'Protegido Plus', extra: 10 },
 ];
 
-// Plazos de financiación disponibles (meses)
-export const PLAZOS = [36, 24];
+// Plazos de financiación disponibles (meses) — 24 primero
+export const PLAZOS = [24, 36];
 
 // Catálogos comerciales (informativo)
 export const CATALOGOS_FIN = [
