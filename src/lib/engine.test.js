@@ -80,11 +80,12 @@ describe('mesLowi', () => {
 describe('portabilidad en resumenGlobal', () => {
   it('agrega portas totales, activas y pendientes (con clamp)', () => {
     const ventas = [
-      { ...ventaVacia(), mes: 'junio', portasVoz: 3, portasActivas: 2 },
-      { ...ventaVacia(), mes: 'junio', portasVoz: 1, portasActivas: 5 }, // activas > solicitadas → clamp a 1
+      { ...ventaVacia(), mes: 'junio', estado: 'activa', portasVoz: 3, portasActivas: 2 },
+      { ...ventaVacia(), mes: 'junio', estado: 'activa', portasVoz: 1, portasActivas: 5 }, // clamp a 1
+      { ...ventaVacia(), mes: 'junio', estado: 'pendiente', portasVoz: 9, portasActivas: 9 }, // NO cuenta (no activa)
     ];
     const r = resumenGlobal(ventas, 'junio');
-    expect(r.portasTotales).toBe(4);
+    expect(r.portasTotales).toBe(4); // solo las dos activas (3+1)
     expect(r.portasActivas).toBe(3); // 2 + min(5,1)=1
     expect(r.portasPendientes).toBe(1);
   });
@@ -93,7 +94,7 @@ describe('portabilidad en resumenGlobal', () => {
 describe('portasDetalle usa portas activas para el %', () => {
   it('el porcentaje se calcula sobre activas, no solicitadas', () => {
     const ventas = [
-      { ...ventaVacia(), mes: 'junio', portasVoz: 4, portasActivas: 0, lineasVoz: 4 },
+      { ...ventaVacia(), mes: 'junio', estado: 'activa', portasVoz: 4, portasActivas: 0, lineasVoz: 4 },
     ];
     const d = portasDetalle(ventas, 'junio');
     expect(d.portas).toBe(0);        // activas
