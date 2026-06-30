@@ -100,11 +100,17 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
 
       {/* Líneas móviles detalladas */}
       {llevaMovil && (
-        <div className="border border-bg-border rounded-lg p-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-fg">Líneas móviles {tieneLineas && <span className="text-fg-muted font-normal">({lineas.length})</span>}</span>
-            <button type="button" className="btn-ghost text-xs py-1" onClick={addLinea}><Plus size={14} /> Añadir línea</button>
+        <div className="border border-sky-500/30 bg-sky-500/[0.04] rounded-lg p-3 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-fg flex items-center gap-2">
+              Líneas móviles {tieneLineas && <span className="text-fg-muted font-normal">({lineas.length})</span>}
+              <Badge tone="neutral">Recomendado</Badge>
+            </span>
+            <button type="button" className="btn-lowi text-xs py-1" onClick={addLinea}><Plus size={14} /> Añadir línea</button>
           </div>
+          <p className="text-[11px] text-sky-300/90 -mt-1">
+            Registra cada línea con su tarifa: los contadores se rellenan solos y el desglose por tarifa del panel se calcula automáticamente.
+          </p>
           {tieneLineas ? (
             <div className="space-y-2">
               {lineas.map((l, i) => (
