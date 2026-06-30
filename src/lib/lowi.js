@@ -17,8 +17,20 @@ export const PRODUCTOS_LOWI = {
   fibra_movil: 'Fibra + móvil',
 };
 
-// Velocidades habituales de fibra en Lowi
-export const VELOCIDADES_LOWI = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
+// Velocidades de fibra en Lowi
+export const VELOCIDADES_LOWI = ['Fibra 300 Mb', 'Fibra 600 Mb', 'Fibra 1 Gb'];
+
+// Tarifas móviles propias de Lowi (por GB)
+export const TARIFAS_MOVIL_LOWI = [
+  { id: '10gb', label: '10 GB' },
+  { id: '50gb', label: '50 GB' },
+  { id: '100gb', label: '100 GB' },
+  { id: '150gb', label: '150 GB' },
+  { id: '300gb', label: '300 GB' },
+];
+
+// Contenidos de TV de Lowi (complemento)
+export const TV_LOWI = ['Lowi TV', 'Pack Deportes', 'Netflix', 'Disney+', 'HBO Max', 'Prime'];
 
 // Estructura de una venta de Lowi (todos los campos con valores por defecto)
 export const ventaLowiVacia = () => ({
@@ -35,6 +47,7 @@ export const ventaLowiVacia = () => ({
   fechaInstalacion: '',
   producto: '',            // '' | 'fibra' | 'movil' | 'fibra_movil'
   velocidad: '',           // velocidad de fibra (si aplica)
+  tv: '',                  // contenido TV de Lowi (opcional)
   lineasMoviles: [],       // detalle de líneas (tarifa, número, nueva/porta, operador, activa)
   lineas: 0,               // nº de líneas móviles (se autocalcula si hay detalle)
   cuota: 0,                // cuota mensual del cliente (€)

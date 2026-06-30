@@ -6,8 +6,9 @@ import { useApp } from '../App.jsx';
 import {
   ventaLowiVacia, ESTADOS_LOWI, ORDEN_ESTADOS, PRODUCTOS_LOWI,
   VELOCIDADES_LOWI, MOTIVOS_BAJA, mesLowi, etiquetaMesLowi, resumenLineasLowi,
+  TARIFAS_MOVIL_LOWI, TV_LOWI,
 } from '../lib/lowi.js';
-import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia } from '../data/movil.js';
+import { OPERADORES_PORTA, lineaMovilVacia } from '../data/movil.js';
 import { nuevoId } from '../lib/id.js';
 import { importarLowi, exportarLowi, plantillaLowi } from '../lib/excelLowi.js';
 import { avisosContacto } from '../lib/validacion.js';
@@ -88,6 +89,13 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
           <label className="label">Cuota mensual (€)</label>
           <input type="number" min="0" step="0.01" className="input" value={v.cuota} onChange={(e) => set('cuota', (Number(e.target.value) || 0))} />
         </div>
+        <div>
+          <label className="label">TV <span className="text-fg-muted font-normal">(opcional)</span></label>
+          <select className="input" value={v.tv} onChange={(e) => set('tv', e.target.value)}>
+            <option value="">Sin TV</option>
+            {TV_LOWI.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* Líneas móviles detalladas */}
@@ -105,7 +113,7 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
                     <label className="label">Tarifa línea {i + 1}</label>
                     <select className="input" value={l.tarifa} onChange={(e) => updLinea(l.id, 'tarifa', e.target.value)}>
                       <option value="">—</option>
-                      {TARIFAS_MOVIL.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                      {TARIFAS_MOVIL_LOWI.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                     </select>
                   </div>
                   <div className="sm:col-span-3">

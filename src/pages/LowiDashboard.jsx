@@ -7,8 +7,7 @@ import {
 } from 'recharts';
 import { Repeat, Smartphone } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS, VELOCIDADES_LOWI } from '../lib/lowi.js';
-import { TARIFAS_MOVIL } from '../data/movil.js';
+import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS, VELOCIDADES_LOWI, TARIFAS_MOVIL_LOWI } from '../lib/lowi.js';
 import { StatCard, Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtNum, fmtEur } from '../lib/format.js';
 
@@ -57,7 +56,16 @@ export default function LowiDashboard() {
         cuenta[l.tarifa] = (cuenta[l.tarifa] || 0) + 1; total += 1;
       }
     }
-    return { items: TARIFAS_MOVIL.map((t) => ({ label: t.label, n: cuenta[t.id] || 0 })), total };
+    return { items: TARIFAS_MOVIL_LOWI.map((t) => ({ label: t.label, n: cuenta[t.id] || 0 })), total };
+  }, [ventasLowi]);
+
+  // Contenidos TV vendidos (ventas activas con TV)
+  const contenidosTV = useMemo(() => {
+    const m = {};
+    for (const v of ventasLowi) {
+      if (v.estado === 'activa' && v.tv) m[v.tv] = (m[v.tv] || 0) + 1;
+    }
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
   }, [ventasLowi]);
 
   if (ventasLowi.length === 0) {
@@ -178,6 +186,23 @@ export default function LowiDashboard() {
           )}
         </Card>
       </div>
+
+      {/* Contenidos TV vendidos */}
+      {contenidosTV.length > 0 && (
+        <Card>
+          <SectionTitle right={<Badge tone="neutral">{fmtNum(contenidosTV.reduce((a, [, n]) => a + n, 0))} con TV</Badge>}>
+            Contenidos TV vendidos
+          </SectionTitle>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {contenidosTV.map(([nombre, n]) => (
+              <div key={nombre} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
+                <span className="text-sm text-fg-soft">📺 {nombre}</span>
+                <span className="text-lg font-semibold text-fg tabnum">{n}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Portabilidad móvil */}
       {r.portasTotales > 0 && (

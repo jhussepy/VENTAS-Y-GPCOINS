@@ -7,7 +7,7 @@ const cargarXLSX = () => import('xlsx');
 export const COLUMNAS_LOWI = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'producto',
-  'velocidad', 'lineas', 'cuota', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
+  'velocidad', 'tv', 'lineas', 'cuota', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
 ];
 
 const aNum = (x) => {
@@ -75,6 +75,7 @@ export async function importarLowi(file, existentes = []) {
     v.fechaInstalacion = aFecha(XLSX, r.fechaInstalacion ?? r['fecha instalacion']);
     v.producto = aProducto(r.producto);
     v.velocidad = String(r.velocidad ?? '').trim();
+    v.tv = String(r.tv ?? r.TV ?? '').trim();
     v.lineas = aNum(r.lineas ?? r['lineas']);
     v.cuota = aNum(r.cuota);
     v.estado = aEstado(r.estado);
@@ -110,7 +111,7 @@ export async function exportarLowi(ventas) {
     email: v.email, direccion: v.direccion, idSmart: v.pedido, idWeb: v.idWeb,
     fechaVenta: v.fechaVenta,
     fechaInstalacion: v.fechaInstalacion, producto: PRODUCTOS_LOWI[v.producto] || v.producto,
-    velocidad: v.velocidad, lineas: v.lineas, cuota: v.cuota,
+    velocidad: v.velocidad, tv: v.tv || '', lineas: v.lineas, cuota: v.cuota,
     estado: ESTADOS_LOWI[v.estado]?.label || v.estado,
     fechaBaja: v.fechaBaja, motivoBaja: v.motivoBaja, notas: v.notas,
     lineasMoviles: (v.lineasMoviles && v.lineasMoviles.length) ? JSON.stringify(v.lineasMoviles) : '',
