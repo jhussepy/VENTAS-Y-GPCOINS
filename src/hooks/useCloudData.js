@@ -9,6 +9,7 @@ export function useCloudData(user) {
   const [ventas, setVentasState] = useState([]);
   const [ventasLowi, setVentasLowiState] = useState([]);
   const [tarifas, setTarifasState] = useState([]);
+  const [precios, setPreciosState] = useState({}); // { [sap]: { junio, julio } }
   const [tema, setTemaState] = useState('dark');
   const [loading, setLoading] = useState(true);
   const [estadoGuardado, setEstadoGuardado] = useState('idle'); // idle | guardando | guardado | error
@@ -21,6 +22,7 @@ export function useCloudData(user) {
     setVentasState([]);
     setVentasLowiState([]);
     setTarifasState([]);
+    setPreciosState({});
     const ref = doc(db, 'usuarios', uid);
     // Guarda/actualiza el perfil para que el admin pueda identificar al agente
     setDoc(ref, {
@@ -35,6 +37,7 @@ export function useCloudData(user) {
         if (Array.isArray(d.ventas)) setVentasState(d.ventas);
         if (Array.isArray(d.ventasLowi)) setVentasLowiState(d.ventasLowi);
         if (Array.isArray(d.tarifas)) setTarifasState(d.tarifas);
+        if (d.precios && typeof d.precios === 'object') setPreciosState(d.precios);
         if (d.tema) {
           setTemaState(d.tema);
           try { localStorage.setItem('vf_tema', JSON.stringify(d.tema)); } catch { /* ignore */ }
@@ -91,6 +94,15 @@ export function useCloudData(user) {
     });
   };
 
+  // Guarda el precio de un terminal por SAP y mes: precios[sap][mes] = valor
+  const guardarPrecio = (sap, mes, valor) => {
+    setPreciosState((prev) => {
+      const next = { ...prev, [sap]: { ...(prev[sap] || {}), [mes]: Number(valor) || 0 } };
+      if (uid) persist('precios', next);
+      return next;
+    });
+  };
+
   const setTema = (t) => {
     setTemaState(t);
     // Persistimos también en localStorage para el anti-parpadeo de index.html
@@ -101,5 +113,5 @@ export function useCloudData(user) {
     if (uid) persist('tema', t);
   };
 
-  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, tema, setTema, loading, estadoGuardado };
+  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, tema, setTema, loading, estadoGuardado };
 }

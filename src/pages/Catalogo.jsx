@@ -8,13 +8,20 @@ import { Card, Badge, EstrellaTag, EmptyState } from '../components/ui.jsx';
 import { fmtNum, fmtEur } from '../lib/format.js';
 
 // --- Ficha/configurador de financiación de un terminal ----------------------
-function DetalleTerminal({ producto, marca, onVender, onClose }) {
-  const [precio, setPrecio] = useState(producto.precio || '');
+function DetalleTerminal({ producto, marca, mes, precioGuardado, onGuardarPrecio, onVender, onClose }) {
+  const [precio, setPrecio] = useState(precioGuardado ?? producto.precio ?? '');
+  const [guardado, setGuardado] = useState(false);
   const [seguro, setSeguro] = useState('desprotegido');
   const [meses, setMeses] = useState(36);
   const [catalogo, setCatalogo] = useState(CATALOGOS_FIN[0]);
   const [oferta, setOferta] = useState(OFERTAS_FIN[0]);
   const [contado, setContado] = useState(false);
+
+  const guardar = () => {
+    onGuardarPrecio(Number(precio) || 0);
+    setGuardado(true);
+    setTimeout(() => setGuardado(false), 2000);
+  };
 
   const seguroExtra = SEGUROS.find((s) => s.id === seguro)?.extra || 0;
   const r = calcFinanciacion({ precio, meses, contado, seguroExtra });
@@ -31,10 +38,20 @@ function DetalleTerminal({ producto, marca, onVender, onClose }) {
           <button className="btn-ghost p-2" onClick={onClose} aria-label="Cerrar"><X size={16} /></button>
         </div>
 
-        {/* Precio del terminal (editable si no está en el catálogo) */}
+        {/* Precio del terminal: editable y guardable por mes */}
         <div>
-          <label className="label">Precio del terminal (€)</label>
-          <input type="number" min="0" step="0.01" className="input" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="Introduce el precio" />
+          <label className="label">Precio del terminal · {mes.toUpperCase()} (€)</label>
+          <div className="flex gap-2">
+            <input type="number" min="0" step="0.01" className="input" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="Introduce el precio" />
+            <button className="btn-primary shrink-0" onClick={guardar} title="Guardar este precio para el mes activo">
+              {guardado ? '✓ Guardado' : 'Guardar'}
+            </button>
+          </div>
+          <p className="text-[11px] text-fg-muted mt-1">
+            {precioGuardado != null
+              ? `Guardado para ${mes}: ${fmtEur(precioGuardado)}. Cámbialo cada mes si varía.`
+              : 'Introduce el precio y pulsa Guardar (se guarda por mes y en la nube).'}
+          </p>
         </div>
 
         <div>
@@ -114,7 +131,7 @@ const ETIQ_MEC = {
 };
 
 export default function Catalogo() {
-  const { ventas, mes, venderModelo } = useApp();
+  const { ventas, mes, venderModelo, precios, guardarPrecio } = useApp();
   const [marca, setMarca] = useState('xiaomi');
   const [q, setQ] = useState('');
   const [orden, setOrden] = useState('desc');       // desc | asc por valor
@@ -319,6 +336,9 @@ export default function Catalogo() {
         <DetalleTerminal
           producto={detalle}
           marca={marca}
+          mes={mes}
+          precioGuardado={precios?.[detalle.sap]?.[mes]}
+          onGuardarPrecio={(valor) => guardarPrecio(detalle.sap, mes, valor)}
           onVender={(m, s) => { venderModelo(m, s); setDetalle(null); }}
           onClose={() => setDetalle(null)}
         />

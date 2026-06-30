@@ -65,7 +65,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, tema, setTema, loading, estadoGuardado } = useCloudData(user);
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
   const [mes, setMes] = useState('junio');
@@ -138,7 +138,7 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
   const Active = nav.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   return (
