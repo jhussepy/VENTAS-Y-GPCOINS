@@ -21,7 +21,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
   const set = (k, val) => setV((p) => {
     const next = { ...p, [k]: val };
     if (k === 'fechaVenta') next.mes = mesDesdeFecha(val);
-    if (k === 'marca') next.sap = '';
+    if (k === 'marca') { next.sap = ''; if (!val) next.dispositivoEntregado = false; }
     // El estado manda: "instalación activa" solo es cierto cuando el estado es 'activa'
     if (k === 'estado') next.instalacionActiva = val === 'activa';
     // El contenido de TV solo aplica en 4P; si deja de ser 4P, se limpia
