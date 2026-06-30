@@ -1,4 +1,4 @@
-import { ventaLowiVacia, ESTADOS_LOWI, PRODUCTOS_LOWI } from './lowi.js';
+import { ventaLowiVacia, ESTADOS_LOWI, PRODUCTOS_LOWI, resumenLineasLowi } from './lowi.js';
 
 // xlsx se carga de forma diferida para aligerar el bundle inicial
 const cargarXLSX = () => import('xlsx');
@@ -7,7 +7,7 @@ const cargarXLSX = () => import('xlsx');
 export const COLUMNAS_LOWI = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'producto',
-  'velocidad', 'lineas', 'cuota', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
+  'velocidad', 'lineas', 'cuota', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
 ];
 
 const aNum = (x) => {
@@ -81,6 +81,10 @@ export async function importarLowi(file, existentes = []) {
     v.fechaBaja = aFecha(XLSX, r.fechaBaja ?? r['fecha baja']);
     v.motivoBaja = String(r.motivoBaja ?? r['motivo baja'] ?? '').trim();
     v.notas = String(r.notas ?? '').trim();
+    try {
+      const lm = r.lineasMoviles ? JSON.parse(r.lineasMoviles) : null;
+      if (Array.isArray(lm) && lm.length) { v.lineasMoviles = lm; Object.assign(v, resumenLineasLowi(lm)); }
+    } catch { /* ignora JSON inválido */ }
     return v;
   }).filter((v) => v.nombre || v.apellido || v.producto);
 
@@ -109,6 +113,7 @@ export async function exportarLowi(ventas) {
     velocidad: v.velocidad, lineas: v.lineas, cuota: v.cuota,
     estado: ESTADOS_LOWI[v.estado]?.label || v.estado,
     fechaBaja: v.fechaBaja, motivoBaja: v.motivoBaja, notas: v.notas,
+    lineasMoviles: (v.lineasMoviles && v.lineasMoviles.length) ? JSON.stringify(v.lineasMoviles) : '',
   }));
   const ws = XLSX.utils.json_to_sheet(data, { header: COLUMNAS_LOWI });
   const wb = XLSX.utils.book_new();

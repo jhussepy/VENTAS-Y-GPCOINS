@@ -5,8 +5,10 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
 } from 'recharts';
+import { Repeat, Smartphone } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS } from '../lib/lowi.js';
+import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS, VELOCIDADES_LOWI } from '../lib/lowi.js';
+import { TARIFAS_MOVIL } from '../data/movil.js';
 import { StatCard, Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtNum, fmtEur } from '../lib/format.js';
 
@@ -36,6 +38,26 @@ export default function LowiDashboard() {
       }
     }
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [ventasLowi]);
+
+  // Fibra activa por velocidad (ventas activas con fibra)
+  const fibraVel = useMemo(() => {
+    const act = ventasLowi.filter((v) => v.estado === 'activa' && (v.producto === 'fibra' || v.producto === 'fibra_movil'));
+    const items = VELOCIDADES_LOWI.map((vel) => ({ label: vel, n: act.filter((v) => v.velocidad === vel).length }));
+    return { items, total: act.length };
+  }, [ventasLowi]);
+
+  // Líneas móviles activas por tarifa (del detalle de líneas)
+  const movilTarifa = useMemo(() => {
+    const cuenta = {}; let total = 0;
+    for (const v of ventasLowi) {
+      if (v.estado !== 'activa') continue;
+      for (const l of v.lineasMoviles || []) {
+        if (!l.tarifa) continue;
+        cuenta[l.tarifa] = (cuenta[l.tarifa] || 0) + 1; total += 1;
+      }
+    }
+    return { items: TARIFAS_MOVIL.map((t) => ({ label: t.label, n: cuenta[t.id] || 0 })), total };
   }, [ventasLowi]);
 
   if (ventasLowi.length === 0) {
@@ -111,6 +133,69 @@ export default function LowiDashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Fibra activa por velocidad y líneas móviles por tarifa */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <SectionTitle right={<Badge tone="neutral">{fmtNum(fibraVel.total)} fibras activas</Badge>}>
+            <span className="flex items-center gap-2"><Wifi size={18} className="text-emerald-400" /> Fibra activa por velocidad</span>
+          </SectionTitle>
+          {fibraVel.total === 0 ? (
+            <p className="py-4 text-center text-fg-muted text-sm">Sin fibras activas.</p>
+          ) : (
+            <div className="space-y-3">
+              {fibraVel.items.map((it) => {
+                const pct = fibraVel.total ? (it.n / fibraVel.total) * 100 : 0;
+                return (
+                  <div key={it.label}>
+                    <div className="flex items-center justify-between text-xs mb-1"><span className="text-fg-soft">{it.label}</span><span className="text-fg-muted tabnum">{it.n}</span></div>
+                    <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} /></div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <SectionTitle right={<Badge tone="neutral">{fmtNum(movilTarifa.total)} líneas activas</Badge>}>
+            <span className="flex items-center gap-2"><Smartphone size={18} className="text-sky-400" /> Líneas móviles por tarifa</span>
+          </SectionTitle>
+          {movilTarifa.total === 0 ? (
+            <p className="py-4 text-center text-fg-muted text-sm">Sin líneas detalladas. Añádelas en el alta de venta.</p>
+          ) : (
+            <div className="space-y-3">
+              {movilTarifa.items.map((it) => {
+                const pct = movilTarifa.total ? (it.n / movilTarifa.total) * 100 : 0;
+                return (
+                  <div key={it.label}>
+                    <div className="flex items-center justify-between text-xs mb-1"><span className="text-fg-soft">{it.label}</span><span className="text-fg-muted tabnum">{it.n}</span></div>
+                    <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden"><div className="h-full rounded-full bg-sky-500" style={{ width: `${pct}%` }} /></div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Portabilidad móvil */}
+      {r.portasTotales > 0 && (
+        <Card>
+          <SectionTitle right={<Badge tone="neutral">{fmtNum(r.portasTotales)} portas</Badge>}>
+            <span className="flex items-center gap-2"><Repeat size={18} className="text-sky-400" /> Portabilidad móvil</span>
+          </SectionTitle>
+          <p className="text-sm text-fg-soft mb-3">
+            <span className="text-emerald-400 font-semibold tabnum">{fmtNum(r.portasActivas)}</span> activas ·{' '}
+            <span className="text-gp-gold font-semibold tabnum">{fmtNum(r.portasPendientes)}</span> pendientes ·{' '}
+            <span className="font-semibold tabnum">{Math.round((r.portasActivas / r.portasTotales) * 100)}%</span> activadas
+          </p>
+          <div className="flex w-full h-3 rounded-full overflow-hidden bg-bg-surface2">
+            <div className="h-full bg-emerald-500" style={{ width: `${(r.portasActivas / r.portasTotales) * 100}%` }} />
+            <div className="h-full bg-gp-gold" style={{ width: `${(r.portasPendientes / r.portasTotales) * 100}%` }} />
+          </div>
+        </Card>
+      )}
 
       {motivos.length > 0 && (
         <Card>

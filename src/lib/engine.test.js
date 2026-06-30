@@ -70,6 +70,22 @@ describe('resumenLowi', () => {
   });
 });
 
+describe('resumenLowi: portabilidad desde líneas móviles', () => {
+  it('cuenta portas activas/pendientes de ventas activas', async () => {
+    const { resumenLowi, ventaLowiVacia } = await import('./lowi.js');
+    const ventas = [
+      { ...ventaLowiVacia(), estado: 'activa', lineasMoviles: [
+        { tipo: 'porta', activa: true }, { tipo: 'porta', activa: false }, { tipo: 'nueva', activa: false },
+      ] },
+      { ...ventaLowiVacia(), estado: 'pendiente', lineasMoviles: [{ tipo: 'porta', activa: true }] }, // no activa → no cuenta
+    ];
+    const r = resumenLowi(ventas);
+    expect(r.portasTotales).toBe(2);
+    expect(r.portasActivas).toBe(1);
+    expect(r.portasPendientes).toBe(1);
+  });
+});
+
 describe('mesLowi', () => {
   it('extrae YYYY-MM de la fecha', () => {
     expect(mesLowi('2026-06-15')).toBe('2026-06');

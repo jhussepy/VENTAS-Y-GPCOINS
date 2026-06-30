@@ -35,7 +35,8 @@ export const ventaLowiVacia = () => ({
   fechaInstalacion: '',
   producto: '',            // '' | 'fibra' | 'movil' | 'fibra_movil'
   velocidad: '',           // velocidad de fibra (si aplica)
-  lineas: 0,               // nº de líneas móviles
+  lineasMoviles: [],       // detalle de líneas (tarifa, número, nueva/porta, operador, activa)
+  lineas: 0,               // nº de líneas móviles (se autocalcula si hay detalle)
   cuota: 0,                // cuota mensual del cliente (€)
   estado: 'pendiente',     // pendiente | activa | baja | cancelada
   fechaBaja: '',           // fecha en la que se dio de baja
@@ -61,10 +62,22 @@ export function resumenLowi(ventas) {
   const porEstado = { pendiente: 0, activa: 0, baja: 0, cancelada: 0 };
   let facturacionActiva = 0;
 
+  // Portabilidad móvil (de las líneas de ventas activas)
+  let portasTotales = 0;
+  let portasActivas = 0;
+
   for (const v of ventas) {
     const e = porEstado[v.estado] != null ? v.estado : 'pendiente';
     porEstado[e] += 1;
-    if (e === 'activa') facturacionActiva += Number(v.cuota) || 0;
+    if (e === 'activa') {
+      facturacionActiva += Number(v.cuota) || 0;
+      for (const l of v.lineasMoviles || []) {
+        if (l.tipo === 'porta') {
+          portasTotales += 1;
+          if (l.activa) portasActivas += 1;
+        }
+      }
+    }
   }
 
   // Tasa de activación: activas sobre las que llegaron a instalarse (activas + bajas)
@@ -72,6 +85,16 @@ export function resumenLowi(ventas) {
   const tasaActivacion = instaladas > 0 ? (porEstado.activa / instaladas) * 100 : 0;
   // Tasa de baja: bajas sobre instaladas
   const tasaBaja = instaladas > 0 ? (porEstado.baja / instaladas) * 100 : 0;
+  const portasPendientes = Math.max(0, portasTotales - portasActivas);
 
-  return { total, porEstado, facturacionActiva, tasaActivacion, tasaBaja };
+  return { total, porEstado, facturacionActiva, tasaActivacion, tasaBaja, portasTotales, portasActivas, portasPendientes };
+}
+
+// Resumen de contadores derivados de una lista de líneas móviles de Lowi
+export function resumenLineasLowi(lm = []) {
+  return {
+    lineas: lm.length,
+    portas: lm.filter((l) => l.tipo === 'porta').length,
+    portasActivas: lm.filter((l) => l.tipo === 'porta' && l.activa).length,
+  };
 }
