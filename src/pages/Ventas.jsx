@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search,
 } from 'lucide-react';
@@ -187,14 +187,25 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function Ventas() {
-  const { ventas, setVentas, mes } = useApp();
+  const { ventas, setVentas, mes, prefillVenta, setPrefillVenta } = useApp();
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [prefab, setPrefab] = useState(null); // marca/sap precargados desde Catálogo
   const [filtroMes, setFiltroMes] = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
+
+  // Si llegamos desde "Vender" del Catálogo, abrimos el alta ya prerrellenada
+  useEffect(() => {
+    if (prefillVenta) {
+      setEditId(null);
+      setPrefab(prefillVenta);
+      setForm(true);
+      setPrefillVenta(null);
+    }
+  }, [prefillVenta, setPrefillVenta]);
 
   const q = busqueda.trim().toLowerCase();
   const lista = ventas.filter((v) => {
@@ -246,7 +257,7 @@ export default function Ventas() {
       const existe = prev.some((p) => p.id === venta.id);
       return existe ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
     });
-    setForm(false); setEditId(null);
+    setForm(false); setEditId(null); setPrefab(null);
 
     if (avisos.length) {
       setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
@@ -327,9 +338,9 @@ export default function Ventas() {
           <FormVenta
             inicial={editId
               ? (() => { const f = ventas.find((v) => v.id === editId); return { ...ventaVacia(), ...f, estado: estadoDe(f) }; })()
-              : { ...ventaVacia(), mes }}
+              : { ...ventaVacia(), mes, ...(prefab || {}) }}
             onGuardar={guardar}
-            onCancelar={() => { setForm(false); setEditId(null); }}
+            onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); }}
           />
         </Card>
       )}

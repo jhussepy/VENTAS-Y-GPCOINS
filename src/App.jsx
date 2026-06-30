@@ -70,7 +70,16 @@ export default function App() {
   const [page, setPage] = useState('dashboard');
   const [mes, setMes] = useState('junio');
   const [open, setOpen] = useState(false);
+  const [prefillVenta, setPrefillVenta] = useState(null); // {marca, sap} para "Vender" desde Catálogo
   const backupRef = useRef(null);
+
+  // Abre el alta de venta de Vodafone con una marca/modelo ya seleccionados
+  const venderModelo = (marca, sap) => {
+    setOperador('vodafone');
+    setPage('ventas');
+    setPrefillVenta({ marca, sap });
+    setOpen(false);
+  };
 
   // Restaura datos desde un archivo de copia de seguridad (reemplaza los actuales)
   const onRestaurar = async (e) => {
@@ -129,7 +138,7 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, mes, setMes, user, admin, operador };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
   const Active = nav.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   return (
