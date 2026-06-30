@@ -2,7 +2,7 @@ import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo } 
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Sparkles, Trash2,
+  Download, Upload, Sparkles, Trash2, Settings,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -23,6 +23,7 @@ const Catalogo = lazy(() => import('./pages/Catalogo.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));
 const LowiDashboard = lazy(() => import('./pages/LowiDashboard.jsx'));
 const LowiVentas = lazy(() => import('./pages/LowiVentas.jsx'));
+const Ajustes = lazy(() => import('./pages/Ajustes.jsx'));
 import Login from './pages/Login.jsx';
 
 export const AppCtx = createContext(null);
@@ -39,6 +40,7 @@ const NAV = [
 ];
 
 const NAV_ADMIN = { id: 'admin', label: 'Supervisor', icon: ShieldCheck, Comp: Admin };
+const NAV_AJUSTES = { id: 'ajustes', label: 'Ajustes', icon: Settings, Comp: Ajustes };
 
 // Menú del mundo Lowi (independiente, sin GP Coins)
 const NAV_LOWI = [
@@ -138,7 +140,9 @@ export default function App() {
 
   const admin = esAdmin(user);
   const esLowi = operador === 'lowi';
-  const nav = esLowi ? NAV_LOWI : (admin ? [...NAV, NAV_ADMIN] : NAV);
+  const nav = esLowi
+    ? [...NAV_LOWI, NAV_AJUSTES]
+    : (admin ? [...NAV, NAV_ADMIN, NAV_AJUSTES] : [...NAV, NAV_AJUSTES]);
   const opCfg = OPERADORES[operador];
 
   // Indicador de sincronización con la nube
