@@ -71,7 +71,9 @@ export default function Admin() {
     lowiTotal: acc.lowiTotal + f.lowi.total,
     lowiActivas: acc.lowiActivas + f.lowi.porEstado.activa,
     lowiFact: acc.lowiFact + f.lowi.facturacionActiva,
-  }), { ventas: 0, gp: 0, clientes: 0, portasActivas: 0, portasPendientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0 });
+    lowiPortasActivas: acc.lowiPortasActivas + (f.lowi.portasActivas || 0),
+    lowiPortasPendientes: acc.lowiPortasPendientes + (f.lowi.portasPendientes || 0),
+  }), { ventas: 0, gp: 0, clientes: 0, portasActivas: 0, portasPendientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0, lowiPortasActivas: 0, lowiPortasPendientes: 0 });
 
   return (
     <div className="space-y-6">
@@ -106,6 +108,12 @@ export default function Admin() {
         <StatCard icon={Wifi} label="Ventas Lowi (equipo)" value={fmtNum(tot.lowiTotal)} accent="text-sky-400" />
         <StatCard icon={Wifi} label="Lowi activas (equipo)" value={fmtNum(tot.lowiActivas)} accent="text-emerald-400" />
         <StatCard icon={Coins} label="Facturación Lowi activa" value={fmtEur(tot.lowiFact)} sub="Suma de cuotas mensuales activas" accent="text-sky-400" />
+      </div>
+
+      {/* Portabilidad Lowi del equipo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <StatCard icon={Repeat} label="Portas Lowi activas (equipo)" value={fmtNum(tot.lowiPortasActivas)} accent="text-emerald-400" />
+        <StatCard icon={Repeat} label="Portas Lowi pendientes (equipo)" value={fmtNum(tot.lowiPortasPendientes)} accent="text-gp-gold" />
       </div>
 
       {/* Drill-down: detalle del agente seleccionado */}

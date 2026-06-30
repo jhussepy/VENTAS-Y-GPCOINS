@@ -48,13 +48,13 @@ export function ventasDemo() {
 // --- Ventas Lowi ------------------------------------------------------------
 export function ventasLowiDemo() {
   return [
-    l({ nombre: 'Andrea', apellido: 'Mora', dni: '22334455A', telefono: '600222111', producto: 'fibra_movil', velocidad: 'Fibra 600 MB', lineas: 2, cuota: 35, estado: 'activa', fechaVenta: '2026-06-10', fechaInstalacion: '2026-06-14', pedido: 'LW-101' }),
-    l({ nombre: 'Sergio', apellido: 'Cabrera', producto: 'fibra', velocidad: 'Fibra 1 GB', cuota: 30, estado: 'activa', fechaVenta: '2026-06-11', fechaInstalacion: '2026-06-15', pedido: 'LW-102' }),
-    l({ nombre: 'Paula', apellido: 'Herrero', producto: 'fibra_movil', velocidad: 'Fibra 300 MB', lineas: 1, cuota: 28, estado: 'activa', fechaVenta: '2026-06-12', fechaInstalacion: '2026-06-16', pedido: 'LW-103' }),
+    l({ nombre: 'Andrea', apellido: 'Mora', dni: '22334455A', telefono: '600222111', producto: 'fibra_movil', velocidad: 'Fibra 600 Mb', tv: 'Netflix', lineas: 2, cuota: 35, estado: 'activa', fechaVenta: '2026-06-10', fechaInstalacion: '2026-06-14', pedido: 'LW-101', lineasMoviles: [{ tarifa: '50gb', numero: '600111001', tipo: 'porta', operador: 'Movistar', activa: true }, { tarifa: '10gb', numero: '600111002', tipo: 'nueva', operador: '', activa: false }] }),
+    l({ nombre: 'Sergio', apellido: 'Cabrera', producto: 'fibra', velocidad: 'Fibra 1 Gb', cuota: 30, estado: 'activa', fechaVenta: '2026-06-11', fechaInstalacion: '2026-06-15', pedido: 'LW-102' }),
+    l({ nombre: 'Paula', apellido: 'Herrero', producto: 'fibra_movil', velocidad: 'Fibra 300 Mb', tv: 'Lowi TV', lineas: 1, cuota: 28, estado: 'activa', fechaVenta: '2026-06-12', fechaInstalacion: '2026-06-16', pedido: 'LW-103', lineasMoviles: [{ tarifa: '100gb', numero: '600111003', tipo: 'porta', operador: 'Orange', activa: true }] }),
     l({ nombre: 'Jorge', apellido: 'Ramos', producto: 'movil', lineas: 1, cuota: 12, estado: 'pendiente', fechaVenta: '2026-06-19', pedido: 'LW-104' }),
-    l({ nombre: 'Cristina', apellido: 'Lozano', producto: 'fibra', velocidad: 'Fibra 600 MB', cuota: 25, estado: 'pendiente', fechaVenta: '2026-06-20', pedido: 'LW-105' }),
-    l({ nombre: 'Raúl', apellido: 'Méndez', producto: 'fibra_movil', velocidad: 'Fibra 1 GB', lineas: 2, cuota: 40, estado: 'baja', motivoBaja: 'Precio / competencia', fechaVenta: '2026-06-02', fechaInstalacion: '2026-06-06', fechaBaja: '2026-06-22', pedido: 'LW-106' }),
-    l({ nombre: 'Beatriz', apellido: 'Crespo', producto: 'fibra', velocidad: 'Fibra 300 MB', cuota: 22, estado: 'cancelada', motivoBaja: 'Mudanza', fechaVenta: '2026-06-03', pedido: 'LW-107' }),
-    l({ nombre: 'Álvaro', apellido: 'Núñez', producto: 'fibra_movil', velocidad: 'Fibra 600 MB', lineas: 1, cuota: 33, estado: 'activa', fechaVenta: '2026-06-13', fechaInstalacion: '2026-06-18', pedido: 'LW-108' }),
+    l({ nombre: 'Cristina', apellido: 'Lozano', producto: 'fibra', velocidad: 'Fibra 600 Mb', cuota: 25, estado: 'pendiente', fechaVenta: '2026-06-20', pedido: 'LW-105' }),
+    l({ nombre: 'Raúl', apellido: 'Méndez', producto: 'fibra_movil', velocidad: 'Fibra 1 Gb', lineas: 2, cuota: 40, estado: 'baja', motivoBaja: 'Precio / competencia', fechaVenta: '2026-06-02', fechaInstalacion: '2026-06-06', fechaBaja: '2026-06-22', pedido: 'LW-106' }),
+    l({ nombre: 'Beatriz', apellido: 'Crespo', producto: 'fibra', velocidad: 'Fibra 300 Mb', cuota: 22, estado: 'cancelada', motivoBaja: 'Mudanza', fechaVenta: '2026-06-03', pedido: 'LW-107' }),
+    l({ nombre: 'Álvaro', apellido: 'Núñez', producto: 'fibra_movil', velocidad: 'Fibra 600 Mb', tv: 'Pack Deportes', lineas: 1, cuota: 33, estado: 'activa', fechaVenta: '2026-06-13', fechaInstalacion: '2026-06-18', pedido: 'LW-108', lineasMoviles: [{ tarifa: '300gb', numero: '600111004', tipo: 'porta', operador: 'DIGI', activa: false }] }),
   ];
 }
