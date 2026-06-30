@@ -78,7 +78,11 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
         </div>
         <div>
           <label className="label">Líneas móvil</label>
-          <input type="number" min="0" className="input disabled:opacity-60" value={v.lineas} disabled={!llevaMovil || tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('lineas', (Number(e.target.value) || 0))} />
+          {tieneLineas ? (
+            <div className="input flex items-center text-fg-muted">{v.lineas} (desde el detalle)</div>
+          ) : (
+            <input type="number" min="0" className="input disabled:opacity-60" value={v.lineas} disabled={!llevaMovil} onChange={(e) => set('lineas', (Number(e.target.value) || 0))} />
+          )}
         </div>
         <div>
           <label className="label">Cuota mensual (€)</label>
