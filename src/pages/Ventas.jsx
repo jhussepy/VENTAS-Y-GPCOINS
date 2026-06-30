@@ -200,29 +200,31 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div><label className="label">Cantidad</label><input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', (Number(e.target.value) || 0))} /></div>
-        <div><label className="label">Portas voz</label><input type="number" min="0" className="input disabled:opacity-60" value={v.portasVoz} disabled={tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('portasVoz', (Number(e.target.value) || 0))} /></div>
-        <div>
-          <label className="label flex items-center gap-1">
-            Portas activas
-            <span className="inline-flex" title="De las portas solicitadas, cuántas ya se han activado. El resto se cuentan como pendientes.">
-              <HelpCircle size={13} className="text-fg-muted cursor-help" />
-            </span>
-          </label>
-          <input type="number" min="0" max={v.portasVoz} className="input disabled:opacity-60" value={v.portasActivas} disabled={tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('portasActivas', (Number(e.target.value) || 0))} />
-        </div>
-        <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input disabled:opacity-60" value={v.lineasVoz} disabled={tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('lineasVoz', (Number(e.target.value) || 0))} /></div>
-        <div>
-          <label className="label flex items-center gap-1">
-            TIL65
-            <span
-              className="inline-flex"
-              title="TIL65 = línea móvil ILIMITADA. Indica cuántas líneas ilimitadas lleva la venta. Solo cuentan dentro de activaciones de cliente nuevo 3P o 4P. Llave: 4 mínimo en el mes."
-            >
-              <HelpCircle size={13} className="text-fg-muted cursor-help" />
-            </span>
-          </label>
-          <input type="number" min="0" className="input disabled:opacity-60" value={v.til65} disabled={tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('til65', (Number(e.target.value) || 0))} />
-        </div>
+        {/* Contadores manuales: solo como respaldo si NO se usan líneas móviles (si las usas, se calculan solos) */}
+        {!tieneLineas && (
+          <>
+            <div><label className="label">Portas voz</label><input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', (Number(e.target.value) || 0))} /></div>
+            <div>
+              <label className="label flex items-center gap-1">
+                Portas activas
+                <span className="inline-flex" title="De las portas solicitadas, cuántas ya se han activado.">
+                  <HelpCircle size={13} className="text-fg-muted cursor-help" />
+                </span>
+              </label>
+              <input type="number" min="0" max={v.portasVoz} className="input" value={v.portasActivas} onChange={(e) => set('portasActivas', (Number(e.target.value) || 0))} />
+            </div>
+            <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', (Number(e.target.value) || 0))} /></div>
+            <div>
+              <label className="label flex items-center gap-1">
+                TIL65
+                <span className="inline-flex" title="TIL65 = línea móvil ILIMITADA. Llave: 4 mínimo en el mes.">
+                  <HelpCircle size={13} className="text-fg-muted cursor-help" />
+                </span>
+              </label>
+              <input type="number" min="0" className="input" value={v.til65} onChange={(e) => set('til65', (Number(e.target.value) || 0))} />
+            </div>
+          </>
+        )}
         <div><label className="label">Secure Net</label><input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', (Number(e.target.value) || 0))} /></div>
         <div>
           <label className="label">Mes (auto)</label>
