@@ -31,6 +31,7 @@ export const ventaVacia = () => ({
   // Terminal / dispositivo
   marca: '',               // '' | 'xiaomi' | 'samsung' | 'honor' | 'motorola' | 'jbl'
   sap: '',                 // código SAP del dispositivo
+  dispositivoEntregado: false, // ¿el cliente ya recibió el dispositivo? (gating de puntos/GP)
   cantidad: 1,             // unidades del dispositivo
   // Líneas móviles detalladas (tarifa, número, nueva/porta, operador, activa)
   lineasMoviles: [],
@@ -95,6 +96,7 @@ export function puntosDispositivos(ventas, marca, mes) {
   for (const v of ventas) {
     if (v.mes !== mes || v.marca !== marca) continue;
     if (estadoDe(v) !== 'activa') continue; // solo ventas activadas puntúan
+    if (!v.dispositivoEntregado) continue;  // solo si el cliente recibió el dispositivo
     const prod = buscarProducto(marca, v.sap);
     if (prod) total += ptsDe(prod, mes) * (v.cantidad || 1);
   }
@@ -113,6 +115,7 @@ export function gpDirectos(ventas, marca, mes) {
   for (const v of ventas) {
     if (v.mes !== mes || v.marca !== marca) continue;
     if (estadoDe(v) !== 'activa') continue;
+    if (!v.dispositivoEntregado) continue; // GP solo si el cliente recibió el dispositivo
     if (!v.sap) continue;
     unidadesPorSap[v.sap] = (unidadesPorSap[v.sap] || 0) + (v.cantidad || 1);
   }
@@ -202,9 +205,9 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
     case 'disp': {
       const inc = INCENTIVOS[incentivoId];
       const marca = inc.catalogo;
-      // Solo dispositivos válidos del catálogo (un SAP inexistente no cuenta)
+      // Solo dispositivos válidos del catálogo y ya ENTREGADOS al cliente
       return activas
-        .filter((v) => v.marca === marca && buscarProducto(marca, v.sap))
+        .filter((v) => v.marca === marca && v.dispositivoEntregado && buscarProducto(marca, v.sap))
         .reduce((a, v) => a + (v.cantidad || 1), 0);
     }
     default:

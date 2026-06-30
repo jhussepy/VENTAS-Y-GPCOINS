@@ -30,11 +30,11 @@ export function ventasDemo() {
   });
 
   // Ventas con dispositivos (GP directos / puntos)
-  base.push(v({ nombre: 'Carmen', apellido: 'Flores', convergencia: '4P', velocidad: 'Fibra 1 GB', tv: 'Netflix Estándar', clienteNuevo: true, fibraActiva: true, marca: 'samsung', sap: '316414', cantidad: 2, lineasVoz: 1, portasVoz: 1, portasActivas: 1, secureNet: 1, fechaVenta: '2026-06-16', pedido: 'PED-201' }));
-  base.push(v({ nombre: 'Pablo', apellido: 'Gil', marca: 'samsung', sap: '316414', cantidad: 1, fechaVenta: '2026-06-17', pedido: 'PED-202' }));
-  base.push(v({ nombre: 'Elena', apellido: 'Cano', marca: 'honor', sap: '316351', cantidad: 2, fechaVenta: '2026-06-18', pedido: 'PED-203' }));
-  base.push(v({ nombre: 'Marcos', apellido: 'Ibáñez', marca: 'xiaomi', sap: '316512', cantidad: 1, fechaVenta: '2026-06-19', pedido: 'PED-204' }));
-  base.push(v({ nombre: 'Nuria', apellido: 'Vidal', marca: 'jbl', sap: '301459', cantidad: 3, fechaVenta: '2026-06-20', pedido: 'PED-205' }));
+  base.push(v({ nombre: 'Carmen', apellido: 'Flores', convergencia: '4P', velocidad: 'Fibra 1 GB', tv: 'Netflix Estándar', clienteNuevo: true, fibraActiva: true, marca: 'samsung', sap: '316414', dispositivoEntregado: true, cantidad: 2, lineasVoz: 1, portasVoz: 1, portasActivas: 1, secureNet: 1, fechaVenta: '2026-06-16', pedido: 'PED-201' }));
+  base.push(v({ nombre: 'Pablo', apellido: 'Gil', marca: 'samsung', sap: '316414', dispositivoEntregado: true, cantidad: 1, fechaVenta: '2026-06-17', pedido: 'PED-202' }));
+  base.push(v({ nombre: 'Elena', apellido: 'Cano', marca: 'honor', sap: '316351', dispositivoEntregado: true, cantidad: 2, fechaVenta: '2026-06-18', pedido: 'PED-203' }));
+  base.push(v({ nombre: 'Marcos', apellido: 'Ibáñez', marca: 'xiaomi', sap: '316512', dispositivoEntregado: true, cantidad: 1, fechaVenta: '2026-06-19', pedido: 'PED-204' }));
+  base.push(v({ nombre: 'Nuria', apellido: 'Vidal', marca: 'jbl', sap: '301459', dispositivoEntregado: true, cantidad: 3, fechaVenta: '2026-06-20', pedido: 'PED-205' }));
 
   // Ventas en otros estados (para distribución y motivos de baja)
   base.push(v({ nombre: 'Iván', apellido: 'Prieto', estado: 'pendiente', convergencia: '3P', velocidad: 'Fibra 600 MB', clienteNuevo: true, lineasVoz: 2, portasVoz: 2, fechaVenta: '2026-06-22', pedido: 'PED-301' }));

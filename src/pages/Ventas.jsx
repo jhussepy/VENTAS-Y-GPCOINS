@@ -249,7 +249,19 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           <input type="checkbox" checked={v.fibraActiva} onChange={(e) => set('fibraActiva', e.target.checked)} className="accent-vf-red w-4 h-4" />
           Fibra activa (neba o fibra)
         </label>
+        {v.marca && (
+          <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer" title="Los puntos y GP Coins del dispositivo solo cuentan cuando el cliente lo ha recibido.">
+            <input type="checkbox" checked={v.dispositivoEntregado} onChange={(e) => set('dispositivoEntregado', e.target.checked)} className="accent-emerald-500 w-4 h-4" />
+            Dispositivo entregado al cliente
+          </label>
+        )}
       </div>
+
+      {v.marca && !v.dispositivoEntregado && (
+        <p className="text-xs text-amber-400 -mt-1">
+          El dispositivo aún no consta como entregado: sus <span className="text-fg-soft">puntos/GP Coins no se cuentan</span> hasta que marques la casilla.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
@@ -500,7 +512,16 @@ export default function Ventas() {
                       </td>
                       <td className="px-4 py-3 text-fg-soft">
                         {prod
-                          ? <span title={prod.modelo}>{nombreMarca(v.marca)} · {prod.modelo.slice(0, 22)}{prod.modelo.length > 22 ? '…' : ''}</span>
+                          ? (
+                            <span>
+                              <span title={prod.modelo}>{nombreMarca(v.marca)} · {prod.modelo.slice(0, 22)}{prod.modelo.length > 22 ? '…' : ''}</span>
+                              <span className="block mt-0.5">
+                                {v.dispositivoEntregado
+                                  ? <Badge tone="green">Entregado</Badge>
+                                  : <Badge tone="gold">Sin entregar</Badge>}
+                              </span>
+                            </span>
+                          )
                           : <span className="text-fg-muted italic">Sin terminal</span>}
                       </td>
                       <td className="px-4 py-3 text-center tabnum">

@@ -21,7 +21,7 @@ const cargarXLSX = () => import('xlsx');
 export const COLUMNAS_VENTAS = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'convergencia',
-  'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'cantidad',
+  'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'dispositivoEntregado', 'cantidad',
   'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
 ];
 
@@ -98,6 +98,7 @@ export async function importarVentas(file, existentes = []) {
     v.fibraActiva = aBool(r.fibraActiva ?? r['fibra activa']);
     v.marca = String(r.marca ?? '').trim().toLowerCase();
     v.sap = String(r.sap ?? r.SAP ?? '').trim();
+    v.dispositivoEntregado = aBool(r.dispositivoEntregado ?? r['dispositivo entregado'] ?? r.entregado);
     v.cantidad = aNum(r.cantidad) || 1;
     v.portasVoz = aNum(r.portasVoz ?? r['portas voz']);
     v.portasActivas = Math.min(aNum(r.portasActivas ?? r['portas activas']), v.portasVoz);
@@ -149,6 +150,7 @@ export async function exportarVentas(ventas) {
     fechaInstalacion: v.fechaInstalacion, convergencia: v.convergencia,
     velocidad: v.velocidad, tv: v.tv, clienteNuevo: v.clienteNuevo ? 'SI' : 'NO',
     fibraActiva: v.fibraActiva ? 'SI' : 'NO', marca: v.marca, sap: v.sap,
+    dispositivoEntregado: v.dispositivoEntregado ? 'SI' : 'NO',
     cantidad: v.cantidad, portasVoz: v.portasVoz, portasActivas: v.portasActivas || 0,
     lineasVoz: v.lineasVoz, til65: v.til65, secureNet: v.secureNet,
     estado: ESTADOS[v.estado]?.label || (v.instalacionActiva ? 'Activa' : 'Pendiente'),
@@ -168,7 +170,7 @@ export async function plantillaVentas() {
     email: 'juan@email.com', direccion: 'C/ Mayor 1, Madrid', idSmart: 'SM-001', idWeb: 'WEB-001',
     fechaVenta: '2026-06-15',
     fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB', tv: 'Netflix Estándar',
-    clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414',
+    clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414', dispositivoEntregado: 'SI',
     cantidad: 1, portasVoz: 2, portasActivas: 1, lineasVoz: 2, til65: 1, secureNet: 1,
     estado: 'Activa', fechaBaja: '', motivoBaja: '', notas: 'Ejemplo con terminal',
   }, {
@@ -176,7 +178,7 @@ export async function plantillaVentas() {
     email: '', direccion: '', idSmart: 'SM-002', idWeb: '',
     fechaVenta: '2026-06-18',
     fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB', tv: '',
-    clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '',
+    clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '', dispositivoEntregado: 'NO',
     cantidad: '', portasVoz: 1, portasActivas: 0, lineasVoz: 1, til65: 0, secureNet: 0,
     estado: 'Pendiente', fechaBaja: '', motivoBaja: '', notas: 'Solo fibra y movil (sin terminal): deja marca y sap vacios',
   }];

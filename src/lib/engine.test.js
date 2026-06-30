@@ -121,8 +121,8 @@ describe('valorLlave solo cuenta ventas activas', () => {
   });
   it('fibra y dispositivos solo cuentan en ventas activas (con SAP válido)', () => {
     const ventas = [
-      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', sap: '316512', cantidad: 2, estado: 'activa' },
-      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', sap: '316512', cantidad: 5, estado: 'pendiente' },
+      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', sap: '316512', dispositivoEntregado: true, cantidad: 2, estado: 'activa' },
+      { ...ventaVacia(), mes: 'junio', fibraActiva: true, marca: 'xiaomi', sap: '316512', dispositivoEntregado: true, cantidad: 5, estado: 'pendiente' },
     ];
     expect(valorLlave(ventas, 'xiaomi', 'fibra', 'junio')).toBe(1);
     expect(valorLlave(ventas, 'xiaomi', 'disp', 'junio')).toBe(2);
@@ -160,18 +160,27 @@ describe('puntos y GP solo cuentan ventas activas', () => {
   });
 });
 
+describe('dispositivo no entregado NO genera puntos ni GP', () => {
+  it('sin entregar → 0; entregado → cuenta', () => {
+    const sinEntregar = [{ ...ventaVacia(), mes: 'junio', estado: 'activa', marca: 'honor', sap: '316351', cantidad: 1 }];
+    expect(resumenGlobal(sinEntregar, 'junio').gpDirectosTotal).toBe(0);
+    const entregado = [{ ...ventaVacia(), mes: 'junio', estado: 'activa', marca: 'honor', sap: '316351', dispositivoEntregado: true, cantidad: 1 }];
+    expect(resumenGlobal(entregado, 'junio').gpDirectosTotal).toBe(14);
+  });
+});
+
 describe('GP directos respetan el tope de stock', () => {
   it('capa las unidades de una familia a su stock (uds)', () => {
     // Samsung S26+ (sap 316396): gp 28, uds_junio 20, familia "S26+"
     const ventas = [
-      { ...ventaVacia(), mes: 'junio', marca: 'samsung', sap: '316396', cantidad: 25, estado: 'activa' },
+      { ...ventaVacia(), mes: 'junio', marca: 'samsung', sap: '316396', dispositivoEntregado: true, cantidad: 25, estado: 'activa' },
     ];
     const r = resumenGlobal(ventas, 'junio');
     expect(r.gpDirectosTotal).toBe(20 * 28); // 25 vendidas → capadas a 20
   });
   it('por debajo del tope acredita todo', () => {
     const ventas = [
-      { ...ventaVacia(), mes: 'junio', marca: 'honor', sap: '316351', cantidad: 3, estado: 'activa' },
+      { ...ventaVacia(), mes: 'junio', marca: 'honor', sap: '316351', dispositivoEntregado: true, cantidad: 3, estado: 'activa' },
     ];
     const r = resumenGlobal(ventas, 'junio');
     expect(r.gpDirectosTotal).toBe(3 * 14); // honor uds 300, sin cap
