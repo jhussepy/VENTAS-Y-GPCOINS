@@ -138,6 +138,7 @@ export default function Catalogo() {
   const [soloEstrella, setSoloEstrella] = useState(false);
   const [soloStock, setSoloStock] = useState(false);
   const [detalle, setDetalle] = useState(null); // producto en ficha de financiación
+  const [plazoFin, setPlazoFin] = useState(36); // plazo de financiación mostrado en la tabla
 
   const cat = CATALOGO[marca];
   const vendidas = useMemo(() => unidadesVendidas(ventas, marca, mes), [ventas, marca, mes]);
@@ -220,6 +221,18 @@ export default function Catalogo() {
           </div>
           {/* Controles: orden y filtros */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Plazo de financiación para la cuota mostrada en la tabla */}
+            <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
+              {PLAZOS.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setPlazoFin(m)}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${plazoFin === m ? 'bg-vf-red text-white' : 'text-fg-muted hover:text-fg'}`}
+                >
+                  {m}m
+                </button>
+              ))}
+            </div>
             <button
               onClick={() => setOrden((o) => (o === 'desc' ? 'asc' : 'desc'))}
               className="btn bg-bg-surface2 text-fg-soft border border-bg-border hover:bg-bg-border text-xs"
@@ -256,7 +269,7 @@ export default function Catalogo() {
                   {tieneRanking && <th className="px-4 py-3 font-medium text-right">Puntos</th>}
                   {tieneDirecto && <th className="px-4 py-3 font-medium text-right">GP directo</th>}
                   {tieneDirecto && <th className="px-4 py-3 font-medium">Stock</th>}
-                  <th className="px-4 py-3 font-medium text-right">Precio ({PERIODO.etiquetas[mes]})</th>
+                  <th className="px-4 py-3 font-medium text-right">Financiación {plazoFin}m</th>
                   <th className="px-4 py-3 font-medium text-center">Destacado</th>
                   <th className="px-4 py-3 font-medium text-right">Acción</th>
                 </tr>
@@ -306,7 +319,13 @@ export default function Catalogo() {
                       <td className="px-4 py-3 text-right tabnum">
                         {(() => {
                           const precio = precios?.[p.sap]?.[mes] ?? p.precio;
-                          return precio != null ? <span className="text-fg-soft font-medium">{fmtEur(precio)}</span> : <span className="text-fg-muted">—</span>;
+                          if (precio == null) return <span className="text-fg-muted">—</span>;
+                          return (
+                            <div>
+                              <div className="font-semibold text-fg">{fmtEur(precio / plazoFin)}<span className="text-[11px] text-fg-muted">/mes</span></div>
+                              <div className="text-[11px] text-fg-muted">{plazoFin}m · {fmtEur(precio)}</div>
+                            </div>
+                          );
                         })()}
                       </td>
                       <td className="px-4 py-3 text-center">
