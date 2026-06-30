@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Smartphone, Search, Star, ShoppingCart, ArrowDownUp, X, CreditCard } from 'lucide-react';
+import { Smartphone, Search, Star, ShoppingCart, ArrowDownUp, X, CreditCard, LayoutGrid, List, Package } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { CATALOGO, ptsDe, gpDe, udsDe, estDe, PERIODO } from '../data/incentivos.js';
 import { SEGUROS, PLAZOS, CATALOGOS_FIN, OFERTAS_FIN, calcFinanciacion } from '../data/financiacion.js';
@@ -139,6 +139,7 @@ export default function Catalogo() {
   const [soloStock, setSoloStock] = useState(false);
   const [detalle, setDetalle] = useState(null); // producto en ficha de financiación
   const [plazoFin, setPlazoFin] = useState(24); // plazo de financiación mostrado en la tabla
+  const [vista, setVista] = useState('tarjetas'); // tarjetas | tabla
 
   const cat = CATALOGO[marca];
   const vendidas = useMemo(() => unidadesVendidas(ventas, marca, mes), [ventas, marca, mes]);
@@ -201,7 +202,7 @@ export default function Catalogo() {
           <p className={`text-xl font-semibold tabnum ${tieneRanking ? 'text-vf-redLight' : 'text-gp-gold'}`}>{fmtNum(resumen.maxVal)} {unidad}</p>
         </div>
         <div className="card p-4">
-          <p className="text-xs text-fg-muted">Destacados ⭐</p>
+          <p className="text-xs text-fg-muted flex items-center gap-1"><Star size={12} className="text-gp-gold" /> Destacados</p>
           <p className="text-xl font-semibold text-fg tabnum">{fmtNum(resumen.estrellas)}</p>
         </div>
         <div className="card p-4">
@@ -221,6 +222,11 @@ export default function Catalogo() {
           </div>
           {/* Controles: orden y filtros */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Conmutador de vista: tarjetas / tabla */}
+            <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
+              <button onClick={() => setVista('tarjetas')} className={`p-1.5 rounded-md transition-colors cursor-pointer ${vista === 'tarjetas' ? 'bg-vf-red text-white' : 'text-fg-muted hover:text-fg'}`} title="Vista de tarjetas" aria-pressed={vista === 'tarjetas'}><LayoutGrid size={15} /></button>
+              <button onClick={() => setVista('tabla')} className={`p-1.5 rounded-md transition-colors cursor-pointer ${vista === 'tabla' ? 'bg-vf-red text-white' : 'text-fg-muted hover:text-fg'}`} title="Vista de tabla" aria-pressed={vista === 'tabla'}><List size={15} /></button>
+            </div>
             {/* Plazo de financiación para la cuota mostrada en la tabla */}
             <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
               {PLAZOS.map((m) => (
@@ -259,19 +265,73 @@ export default function Catalogo() {
 
         {productos.length === 0 ? (
           <EmptyState icon={Smartphone} title="Sin resultados" hint="Prueba otra búsqueda o quita los filtros." />
+        ) : vista === 'tarjetas' ? (
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {productos.map((p) => {
+              const uds = udsDe(p, mes);
+              const vend = vendDe(p);
+              const restante = Math.max(0, uds - vend);
+              const pctStock = uds > 0 ? Math.min(100, (vend / uds) * 100) : 0;
+              const colorStock = pctStock >= 100 ? '#E60000' : pctStock >= 70 ? '#FFB81C' : '#10B981';
+              const pts = ptsDe(p, mes); const gp = gpDe(p, mes);
+              const precio = precios?.[p.sap]?.[mes] ?? p.precio;
+              const destacado = estDe(p, mes);
+              return (
+                <div key={p.sap} className={`relative rounded-xl border p-4 flex flex-col transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${destacado ? 'border-gp-gold/40 bg-gp-gold/[0.03]' : 'border-bg-border bg-bg-surface2/40'}`}>
+                  {destacado && <span className="absolute top-3 right-3"><EstrellaTag tipo={cat.mecanica === 'mixta' ? 'DESTACADO' : 'ESTRELLA'} /></span>}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-2.5 rounded-lg bg-bg-surface text-vf-red ring-1 ring-bg-border shrink-0"><Smartphone size={18} /></div>
+                    <div className="min-w-0 pr-16">
+                      <p className="font-semibold text-fg leading-tight">{p.modelo}</p>
+                      <p className="text-[11px] text-fg-muted mt-0.5 tabnum">SAP {p.sap}{cat.stockPor === 'familia' && p.familia ? ` · ${p.familia}` : ''}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {tieneRanking && <Badge tone="red">{pts ? `${fmtNum(pts)} pts` : '— pts'}</Badge>}
+                    {tieneDirecto && <Badge tone="gold">{gp ? `${gp} GP` : '— GP'}</Badge>}
+                  </div>
+                  {tieneDirecto && uds > 0 && (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-[11px] mb-1">
+                        <span className="text-fg-muted flex items-center gap-1"><Package size={11} /> Quedan {fmtNum(restante)}</span>
+                        <span className="text-fg-muted tabnum">{fmtNum(vend)}/{fmtNum(uds)}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-bg-surface rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pctStock}%`, background: colorStock }} />
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+                    <div>
+                      {precio != null ? (
+                        <>
+                          <p className="text-lg font-bold text-fg tabnum leading-none">{fmtEur(precio / plazoFin)}<span className="text-[11px] text-fg-muted font-normal">/mes</span></p>
+                          <p className="text-[11px] text-fg-muted mt-0.5">{plazoFin}m · {fmtEur(precio)}</p>
+                        </>
+                      ) : <p className="text-xs text-fg-muted">Sin precio</p>}
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => setDetalle(p)} className="btn bg-bg-surface text-fg-soft border border-bg-border hover:bg-bg-border text-xs py-1.5" title="Ver ficha y financiación"><CreditCard size={13} /></button>
+                      <button onClick={() => venderModelo(marca, p.sap)} className="btn bg-vf-red hover:bg-vf-redDark text-white text-xs py-1.5"><ShoppingCart size={13} /> Vender</button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
-                  <th className="px-4 py-3 font-medium">SAP</th>
-                  <th className="px-4 py-3 font-medium">Modelo</th>
-                  {tieneRanking && <th className="px-4 py-3 font-medium text-right">Puntos</th>}
-                  {tieneDirecto && <th className="px-4 py-3 font-medium text-right">GP directo</th>}
-                  {tieneDirecto && <th className="px-4 py-3 font-medium">Stock</th>}
-                  <th className="px-4 py-3 font-medium text-right">Financiación {plazoFin}m</th>
-                  <th className="px-4 py-3 font-medium text-center">Destacado</th>
-                  <th className="px-4 py-3 font-medium text-right">Acción</th>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
+                  <th className="px-4 py-3 font-semibold">SAP</th>
+                  <th className="px-4 py-3 font-semibold">Modelo</th>
+                  {tieneRanking && <th className="px-4 py-3 font-semibold text-right">Puntos</th>}
+                  {tieneDirecto && <th className="px-4 py-3 font-semibold text-right">GP directo</th>}
+                  {tieneDirecto && <th className="px-4 py-3 font-semibold">Stock</th>}
+                  <th className="px-4 py-3 font-semibold text-right">Financiación {plazoFin}m</th>
+                  <th className="px-4 py-3 font-semibold text-center">Destacado</th>
+                  <th className="px-4 py-3 font-semibold text-right">Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -284,7 +344,7 @@ export default function Catalogo() {
                   const pts = ptsDe(p, mes); const ptsOtro = ptsDe(p, otroMes);
                   const gp = gpDe(p, mes);
                   return (
-                    <tr key={p.sap} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
+                    <tr key={p.sap} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                       <td className="px-4 py-3 tabnum text-fg-muted">{p.sap}</td>
                       <td className="px-4 py-3 text-fg">
                         {p.modelo}
