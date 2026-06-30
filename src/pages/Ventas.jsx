@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search,
+  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search, Tv,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { ventaVacia, mesDesdeFecha, unidadesVendidas } from '../lib/engine.js';
@@ -475,23 +475,23 @@ export default function Ventas() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
-                  <th className="px-4 py-3 font-medium">Cliente</th>
-                  <th className="px-4 py-3 font-medium">F. Venta</th>
-                  <th className="px-4 py-3 font-medium">F. Instalación</th>
-                  <th className="px-4 py-3 font-medium">Fibra</th>
-                  <th className="px-4 py-3 font-medium">Terminal</th>
-                  <th className="px-4 py-3 font-medium text-center">Portas</th>
-                  <th className="px-4 py-3 font-medium text-center">Mes</th>
-                  <th className="px-4 py-3 font-medium text-center">Estado</th>
-                  <th className="px-4 py-3 font-medium text-right">Acciones</th>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60 sticky top-0 backdrop-blur z-10">
+                  <th className="px-4 py-3 font-semibold">Cliente</th>
+                  <th className="px-4 py-3 font-semibold">F. Venta</th>
+                  <th className="px-4 py-3 font-semibold">F. Instalación</th>
+                  <th className="px-4 py-3 font-semibold">Fibra</th>
+                  <th className="px-4 py-3 font-semibold">Terminal</th>
+                  <th className="px-4 py-3 font-semibold text-center">Portas</th>
+                  <th className="px-4 py-3 font-semibold text-center">Mes</th>
+                  <th className="px-4 py-3 font-semibold text-center">Estado</th>
+                  <th className="px-4 py-3 font-semibold text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {lista.map((v) => {
                   const prod = v.marca ? CATALOGO[v.marca]?.productos.find((p) => p.sap === v.sap) : null;
                   return (
-                    <tr key={v.id} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
+                    <tr key={v.id} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                       <td className="px-4 py-3">
                         <div className="font-medium text-fg">{v.nombre} {v.apellido}</div>
                         {(v.dni || v.telefono) && (
@@ -508,7 +508,7 @@ export default function Ventas() {
                       <td className="px-4 py-3 text-fg-muted tabnum">{fmtFecha(v.fechaInstalacion)}</td>
                       <td className="px-4 py-3 text-fg-soft">
                         {v.convergencia ? `${v.convergencia} · ${v.velocidad}` : '—'}
-                        {v.tv && <span className="block text-[11px] text-fg-muted">📺 {v.tv}</span>}
+                        {v.tv && <span className="flex items-center gap-1 text-[11px] text-fg-muted mt-0.5"><Tv size={12} className="text-vf-red" /> {v.tv}</span>}
                       </td>
                       <td className="px-4 py-3 text-fg-soft">
                         {prod
@@ -534,14 +534,17 @@ export default function Ventas() {
                       </td>
                       <td className="px-4 py-3 text-center"><Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge></td>
                       <td className="px-4 py-3">
-                        <select
-                          value={estadoDe(v)}
-                          onChange={(e) => cambiarEstado(v.id, e.target.value)}
-                          className="bg-bg-surface2 border border-bg-border rounded-md px-2 py-1 text-xs text-fg cursor-pointer focus:outline-none focus:ring-1 focus:ring-vf-red"
-                          title="Cambiar estado rápido"
-                        >
-                          {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS[k].label}</option>)}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: ESTADOS[estadoDe(v)]?.color }} aria-hidden="true" />
+                          <select
+                            value={estadoDe(v)}
+                            onChange={(e) => cambiarEstado(v.id, e.target.value)}
+                            className="bg-bg-surface2 border border-bg-border rounded-md px-2 py-1 text-xs text-fg cursor-pointer focus:outline-none focus:ring-1 focus:ring-vf-red"
+                            title="Cambiar estado rápido"
+                          >
+                            {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS[k].label}</option>)}
+                          </select>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">

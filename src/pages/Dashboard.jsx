@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList,
+  PieChart, Pie,
 } from 'recharts';
 import { useApp } from '../App.jsx';
 import { resumenGlobal } from '../lib/engine.js';
@@ -291,24 +292,45 @@ export default function Dashboard() {
         {distribucion.total === 0 ? (
           <p className="py-6 text-center text-fg-muted text-sm">Aún no hay ventas este mes.</p>
         ) : (
-          <div className="space-y-3">
-            {distribucion.items.map((it) => {
-              const pct = distribucion.total ? (it.n / distribucion.total) * 100 : 0;
-              return (
-                <div key={it.id}>
-                  <div className="flex items-center justify-between text-xs mb-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+            {/* Donut con total al centro */}
+            <div className="relative" style={{ width: '100%', height: 200 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={distribucion.items.filter((it) => it.n > 0)}
+                    dataKey="n" nameKey="label"
+                    cx="50%" cy="50%" innerRadius={58} outerRadius={84}
+                    paddingAngle={2} stroke="none" animationDuration={700}
+                  >
+                    {distribucion.items.filter((it) => it.n > 0).map((it) => <Cell key={it.id} fill={it.color} />)}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
+                    formatter={(val, name) => [fmtNum(val), name]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-bold text-fg tabnum leading-none">{fmtNum(distribucion.total)}</span>
+                <span className="text-[11px] text-fg-muted mt-0.5">ventas</span>
+              </div>
+            </div>
+            {/* Leyenda con valores */}
+            <div className="space-y-2">
+              {distribucion.items.map((it) => {
+                const pct = distribucion.total ? (it.n / distribucion.total) * 100 : 0;
+                return (
+                  <div key={it.id} className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-2 text-fg-soft">
-                      <span className="inline-block w-3 h-3 rounded-sm" style={{ background: it.color }} />
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: it.color }} />
                       {it.label}
                     </span>
                     <span className="text-fg-muted tabnum">{it.n} · {pct.toFixed(0)}%</span>
                   </div>
-                  <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: it.color }} />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </Card>

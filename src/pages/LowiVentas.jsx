@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import {
-  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, Wifi, Search,
+  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, Wifi, Search, Tv,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import {
@@ -327,19 +327,19 @@ export default function LowiVentas() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
-                  <th className="px-4 py-3 font-medium">Cliente</th>
-                  <th className="px-4 py-3 font-medium">F. Venta</th>
-                  <th className="px-4 py-3 font-medium">F. Instalación</th>
-                  <th className="px-4 py-3 font-medium">Producto</th>
-                  <th className="px-4 py-3 font-medium text-right">Cuota</th>
-                  <th className="px-4 py-3 font-medium">Estado</th>
-                  <th className="px-4 py-3 font-medium text-right">Acciones</th>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60 sticky top-0 backdrop-blur z-10">
+                  <th className="px-4 py-3 font-semibold">Cliente</th>
+                  <th className="px-4 py-3 font-semibold">F. Venta</th>
+                  <th className="px-4 py-3 font-semibold">F. Instalación</th>
+                  <th className="px-4 py-3 font-semibold">Producto</th>
+                  <th className="px-4 py-3 font-semibold text-right">Cuota</th>
+                  <th className="px-4 py-3 font-semibold">Estado</th>
+                  <th className="px-4 py-3 font-semibold text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {lista.map((v) => (
-                  <tr key={v.id} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
+                  <tr key={v.id} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                     <td className="px-4 py-3">
                       <div className="font-medium text-fg">{v.nombre} {v.apellido}</div>
                       {(v.dni || v.telefono) && (
@@ -357,7 +357,7 @@ export default function LowiVentas() {
                       {v.producto ? PRODUCTOS_LOWI[v.producto] : '—'}
                       {v.velocidad && <span className="text-fg-muted"> · {v.velocidad}</span>}
                       {v.lineas > 0 && <span className="text-fg-muted"> · {v.lineas} líneas</span>}
-                      {v.tv && <span className="block text-[11px] text-fg-muted">📺 {v.tv}</span>}
+                      {v.tv && <span className="flex items-center gap-1 text-[11px] text-fg-muted mt-0.5"><Tv size={12} className="text-sky-400" /> {v.tv}</span>}
                       {(() => {
                         const lm = v.lineasMoviles || [];
                         const portas = lm.filter((l) => l.tipo === 'porta').length;
@@ -368,14 +368,17 @@ export default function LowiVentas() {
                     </td>
                     <td className="px-4 py-3 text-right text-fg-soft tabnum">{v.cuota ? fmtEur(v.cuota) : '—'}</td>
                     <td className="px-4 py-3">
-                      <select
-                        value={v.estado}
-                        onChange={(e) => cambiarEstado(v.id, e.target.value)}
-                        className="bg-bg-surface2 border border-bg-border rounded-md px-2 py-1 text-xs text-fg cursor-pointer focus:outline-none focus:ring-1 focus:ring-vf-red"
-                        title="Cambiar estado rápido"
-                      >
-                        {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS_LOWI[k].label}</option>)}
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: ESTADOS_LOWI[v.estado]?.color }} aria-hidden="true" />
+                        <select
+                          value={v.estado}
+                          onChange={(e) => cambiarEstado(v.id, e.target.value)}
+                          className="bg-bg-surface2 border border-bg-border rounded-md px-2 py-1 text-xs text-fg cursor-pointer focus:outline-none focus:ring-1 focus:ring-vf-red"
+                          title="Cambiar estado rápido"
+                        >
+                          {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS_LOWI[k].label}</option>)}
+                        </select>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1 justify-end">

@@ -38,28 +38,28 @@ function TablaExclusivo() {
           </select>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+      <div className="overflow-x-auto max-h-[70vh]">
+        <table className="w-full text-xs border-separate border-spacing-0">
           <thead>
-            <tr className="text-left text-fg-muted border-b border-bg-border bg-bg-surface2/40">
-              <th className="px-3 py-2 font-medium sticky left-0 bg-bg-surface z-10">Móvil</th>
-              {OTT_COLS.map((c) => (
-                <th key={c.key} className="px-3 py-2 font-medium text-right whitespace-nowrap" title={c.grupo}>{c.label}</th>
+            <tr className="text-left text-[10px] uppercase tracking-wide text-fg-muted">
+              <th className="px-3 py-2.5 font-semibold sticky left-0 top-0 bg-bg-surface2 z-30 border-b border-bg-border">Móvil</th>
+              {OTT_COLS.map((c, ci) => (
+                <th key={c.key} className={`px-3 py-2.5 font-semibold text-right whitespace-nowrap sticky top-0 z-20 border-b border-bg-border ${ci === 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-bg-surface2'}`} title={c.grupo}>{c.label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtradas.map((t, i) => (
-              <tr key={i} className="border-b border-bg-border/50 hover:bg-bg-surface2/40">
-                <td className="px-3 py-2 sticky left-0 bg-bg-surface z-10">
+              <tr key={i} className="group">
+                <td className={`px-3 py-2 sticky left-0 z-10 border-b border-bg-border/50 ${i % 2 ? 'bg-bg-surface2/40' : 'bg-bg-surface'} group-hover:bg-bg-surface2`}>
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="text-fg font-medium">{t.movil}</span>
                     {t.promo && <Badge tone="red">X3M</Badge>}
                   </div>
                   <span className="text-[10px] text-fg-muted">{t.fibra} · {t.lineas}</span>
                 </td>
-                {OTT_COLS.map((c) => (
-                  <td key={c.key} className={`px-3 py-2 text-right tabnum whitespace-nowrap ${t.promo ? 'text-vf-redLight' : 'text-fg-soft'}`}>
+                {OTT_COLS.map((c, ci) => (
+                  <td key={c.key} className={`px-3 py-2 text-right tabnum whitespace-nowrap border-b border-bg-border/50 group-hover:bg-bg-surface2/60 ${i % 2 ? 'bg-bg-surface2/20' : ''} ${ci === 0 ? 'font-semibold text-fg' : (t.promo ? 'text-vf-redLight' : 'text-fg-soft')}`}>
                     {t.precios[c.key] != null ? fmtEur(t.precios[c.key]) : '—'}
                   </td>
                 ))}
@@ -162,17 +162,17 @@ function MisTarifas() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
-                <th className="px-4 py-3 font-medium">Concepto</th>
-                <th className="px-4 py-3 font-medium">Descripción</th>
-                <th className="px-4 py-3 font-medium text-right">Precio</th>
-                <th className="px-4 py-3 font-medium">Promo</th>
+              <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
+                <th className="px-4 py-3 font-semibold">Concepto</th>
+                <th className="px-4 py-3 font-semibold">Descripción</th>
+                <th className="px-4 py-3 font-semibold text-right">Precio</th>
+                <th className="px-4 py-3 font-semibold">Promo</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {tarifas.map((t) => (
-                <tr key={t.id} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
+                <tr key={t.id} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                   <td className="px-4 py-3 text-fg font-medium">{t.concepto}</td>
                   <td className="px-4 py-3 text-fg-muted">{t.descripcion || '—'}</td>
                   <td className="px-4 py-3 text-right tabnum text-gp-gold">{fmtEur(t.precio)}</td>
