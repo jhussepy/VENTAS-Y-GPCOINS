@@ -13,6 +13,7 @@ import { nuevoId } from '../lib/id.js';
 import { importarLowi, exportarLowi, plantillaLowi } from '../lib/excelLowi.js';
 import { avisosContacto } from '../lib/validacion.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
+import { ventanaRelevante, fmtVentana, TONO_VENTANA, ETIQUETA_VENTANA } from '../lib/portabilidad.js';
 import { fmtFecha, fmtEur } from '../lib/format.js';
 
 function FormLowi({ inicial, onGuardar, onCancelar }) {
@@ -373,7 +374,13 @@ export default function LowiVentas() {
                         const portas = lm.filter((l) => l.tipo === 'porta').length;
                         if (portas === 0) return null;
                         const act = lm.filter((l) => l.tipo === 'porta' && l.activa).length;
-                        return <span className="block text-[11px] text-fg-muted"><span className="text-emerald-400">{act}</span>/{portas} portas</span>;
+                        const vt = ventanaRelevante(lm);
+                        return (
+                          <span className="block text-[11px] text-fg-muted">
+                            <span className="text-emerald-400">{act}</span>/{portas} portas
+                            {vt && <span className="ml-1.5 inline-flex align-middle" title={`${ETIQUETA_VENTANA[vt.estado]}: ${fmtVentana(vt.fecha)}`}><Badge tone={TONO_VENTANA[vt.estado]}>{vt.estado === 'vencida' ? 'Vencida' : fmtVentana(vt.fecha)}</Badge></span>}
+                          </span>
+                        );
                       })()}
                     </td>
                     <td className="px-4 py-3 text-right text-fg-soft tabnum">{v.cuota ? fmtEur(v.cuota) : '—'}</td>

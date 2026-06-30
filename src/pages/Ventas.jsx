@@ -12,6 +12,7 @@ import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas } from 
 import { nuevoId } from '../lib/id.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
+import { ventanaRelevante, fmtVentana, TONO_VENTANA, ETIQUETA_VENTANA } from '../lib/portabilidad.js';
 
 const VELOCIDADES = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
 const MARCAS = Object.keys(CATALOGO);
@@ -541,6 +542,15 @@ export default function Ventas() {
                             <span className="text-fg-muted"> / {v.portasVoz}</span>
                           </span>
                         ) : <span className="text-fg-muted">—</span>}
+                        {(() => {
+                          const vt = ventanaRelevante(v.lineasMoviles);
+                          if (!vt) return null;
+                          return (
+                            <span className="flex justify-center mt-1" title={`${ETIQUETA_VENTANA[vt.estado]}: ${fmtVentana(vt.fecha)}`}>
+                              <Badge tone={TONO_VENTANA[vt.estado]}>{vt.estado === 'vencida' ? 'Vencida' : fmtVentana(vt.fecha)}</Badge>
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-center"><Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge></td>
                       <td className="px-4 py-3">
