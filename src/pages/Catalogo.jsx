@@ -281,7 +281,7 @@ export default function Catalogo() {
                   {destacado && <span className="absolute top-3 right-3"><EstrellaTag tipo={cat.mecanica === 'mixta' ? 'DESTACADO' : 'ESTRELLA'} /></span>}
                   <div className="flex items-start gap-3 mb-3">
                     <div className="p-2.5 rounded-lg bg-bg-surface text-vf-red ring-1 ring-bg-border shrink-0"><Smartphone size={18} /></div>
-                    <div className="min-w-0 pr-16">
+                    <div className="min-w-0 pr-24">
                       <p className="font-semibold text-fg leading-tight">{p.modelo}</p>
                       <p className="text-[11px] text-fg-muted mt-0.5 tabnum">SAP {p.sap}{cat.stockPor === 'familia' && p.familia ? ` · ${p.familia}` : ''}</p>
                     </div>
