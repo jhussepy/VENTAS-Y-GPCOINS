@@ -408,8 +408,12 @@ export default function Ventas() {
                       </td>
                       <td className="px-4 py-3 text-center tabnum">
                         {Number(v.portasVoz) > 0 ? (
-                          <span title="Portas activas / solicitadas">
-                            <span className="text-emerald-400">{Math.min(Number(v.portasActivas) || 0, v.portasVoz)}</span>
+                          <span title={estadoDe(v) === 'activa'
+                            ? 'Portas activas / solicitadas (cuentan para el incentivo)'
+                            : 'Estas portas NO cuentan hasta que la venta esté Activa'}>
+                            <span className={estadoDe(v) === 'activa' ? 'text-emerald-400' : 'text-fg-muted'}>
+                              {Math.min(Number(v.portasActivas) || 0, v.portasVoz)}
+                            </span>
                             <span className="text-fg-muted"> / {v.portasVoz}</span>
                           </span>
                         ) : <span className="text-fg-muted">—</span>}
