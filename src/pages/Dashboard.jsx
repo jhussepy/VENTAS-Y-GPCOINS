@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat,
+  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat, Smartphone,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList,
@@ -9,6 +9,9 @@ import { useApp } from '../App.jsx';
 import { resumenGlobal } from '../lib/engine.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
 import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
+import { TARIFAS_MOVIL } from '../data/movil.js';
+
+const VELOCIDADES_FIBRA = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
 import { StatCard, Card, SectionTitle, Badge, Progress } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
@@ -67,6 +70,29 @@ export default function Dashboard() {
       n: delMes.filter((v) => estadoDe(v) === k).length,
     }));
     return { total: delMes.length, items };
+  }, [ventas, mes]);
+
+  // Fibra activa por velocidad (ventas activas con convergencia)
+  const fibraPorVelocidad = useMemo(() => {
+    const activas = ventas.filter((v) => v.mes === mes && estadoDe(v) === 'activa' && v.convergencia);
+    const items = VELOCIDADES_FIBRA.map((vel) => ({ label: vel, n: activas.filter((v) => v.velocidad === vel).length }));
+    return { items, total: activas.length };
+  }, [ventas, mes]);
+
+  // Líneas móviles activas por tarifa (del detalle de líneas móviles de ventas activas)
+  const movilPorTarifa = useMemo(() => {
+    const cuenta = {};
+    let total = 0;
+    for (const v of ventas) {
+      if (v.mes !== mes || estadoDe(v) !== 'activa') continue;
+      for (const l of v.lineasMoviles || []) {
+        if (!l.tarifa) continue;
+        cuenta[l.tarifa] = (cuenta[l.tarifa] || 0) + 1;
+        total += 1;
+      }
+    }
+    const items = TARIFAS_MOVIL.map((t) => ({ label: t.label, n: cuenta[t.id] || 0 }));
+    return { items, total };
   }, [ventas, mes]);
 
   // --- Proyección / ritmo del mes activo --------------------------------------
@@ -289,6 +315,61 @@ export default function Dashboard() {
           </div>
         </Card>
       )}
+
+      {/* Fibra activa por velocidad y líneas móviles por tarifa */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <SectionTitle right={<Badge tone="neutral">{fmtNum(fibraPorVelocidad.total)} fibras activas</Badge>}>
+            <span className="flex items-center gap-2"><Wifi size={18} className="text-emerald-400" /> Fibra activa por velocidad</span>
+          </SectionTitle>
+          {fibraPorVelocidad.total === 0 ? (
+            <p className="py-4 text-center text-fg-muted text-sm">Sin fibras activas este mes.</p>
+          ) : (
+            <div className="space-y-3">
+              {fibraPorVelocidad.items.map((it) => {
+                const pct = fibraPorVelocidad.total ? (it.n / fibraPorVelocidad.total) * 100 : 0;
+                return (
+                  <div key={it.label}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-fg-soft">{it.label}</span>
+                      <span className="text-fg-muted tabnum">{it.n}</span>
+                    </div>
+                    <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <SectionTitle right={<Badge tone="neutral">{fmtNum(movilPorTarifa.total)} líneas activas</Badge>}>
+            <span className="flex items-center gap-2"><Smartphone size={18} className="text-sky-400" /> Líneas móviles por tarifa</span>
+          </SectionTitle>
+          {movilPorTarifa.total === 0 ? (
+            <p className="py-4 text-center text-fg-muted text-sm">Sin líneas móviles detalladas este mes. Añádelas en el alta de venta.</p>
+          ) : (
+            <div className="space-y-3">
+              {movilPorTarifa.items.map((it) => {
+                const pct = movilPorTarifa.total ? (it.n / movilPorTarifa.total) * 100 : 0;
+                return (
+                  <div key={it.label}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-fg-soft">{it.label}</span>
+                      <span className="text-fg-muted tabnum">{it.n}</span>
+                    </div>
+                    <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-sky-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      </div>
 
       {/* Seguimiento de portabilidad móvil */}
       <Card>
