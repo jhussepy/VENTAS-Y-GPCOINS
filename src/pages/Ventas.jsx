@@ -7,7 +7,7 @@ import { ventaVacia, mesDesdeFecha, unidadesVendidas } from '../lib/engine.js';
 import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js';
 import { avisosContacto } from '../lib/validacion.js';
 import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.js';
-import { CATALOGO, PERIODO, udsDe } from '../data/incentivos.js';
+import { CATALOGO, PERIODO, udsDe, TV_CONTENIDOS } from '../data/incentivos.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
 
@@ -22,6 +22,8 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
     if (k === 'marca') next.sap = '';
     // El estado manda: "instalación activa" solo es cierto cuando el estado es 'activa'
     if (k === 'estado') next.instalacionActiva = val === 'activa';
+    // El contenido de TV solo aplica en 4P; si deja de ser 4P, se limpia
+    if (k === 'convergencia' && val !== '4P') next.tv = '';
     // Las portas activas no pueden superar las solicitadas
     if (k === 'portasVoz') next.portasActivas = Math.min(next.portasActivas || 0, val || 0);
     if (k === 'portasActivas') next.portasActivas = Math.min(val || 0, next.portasVoz || 0);
@@ -72,7 +74,9 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         <div>
           <label className="label">Convergencia (fibra)</label>
           <select className="input" value={v.convergencia} onChange={(e) => set('convergencia', e.target.value)}>
-            <option value="">—</option><option value="3P">3P</option><option value="4P">4P</option>
+            <option value="">—</option>
+            <option value="3P">3P · Fibra + Fijo + Móvil</option>
+            <option value="4P">4P · Fibra + Fijo + Móvil + TV</option>
           </select>
         </div>
         <div>
@@ -82,6 +86,15 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
             {VELOCIDADES.map((x) => <option key={x} value={x}>{x}</option>)}
           </select>
         </div>
+        {v.convergencia === '4P' && (
+          <div>
+            <label className="label">Contenido TV <span className="text-fg-muted font-normal">(4P)</span></label>
+            <select className="input" value={v.tv} onChange={(e) => set('tv', e.target.value)}>
+              <option value="">—</option>
+              {TV_CONTENIDOS.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        )}
         <div>
           <label className="label">Marca terminal <span className="text-fg-muted font-normal">(opcional)</span></label>
           <select className="input" value={v.marca} onChange={(e) => set('marca', e.target.value)}>
@@ -122,7 +135,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
             TIL65
             <span
               className="inline-flex"
-              title="Líneas TIL65 incluidas en esta venta. Solo cuentan las que van dentro de activaciones de cliente nuevo 3P o 4P. Llave: 4 mínimo en el mes."
+              title="TIL65 = línea móvil ILIMITADA. Indica cuántas líneas ilimitadas lleva la venta. Solo cuentan dentro de activaciones de cliente nuevo 3P o 4P. Llave: 4 mínimo en el mes."
             >
               <HelpCircle size={13} className="text-fg-muted cursor-help" />
             </span>
@@ -400,6 +413,7 @@ export default function Ventas() {
                       <td className="px-4 py-3 text-fg-muted tabnum">{fmtFecha(v.fechaInstalacion)}</td>
                       <td className="px-4 py-3 text-fg-soft">
                         {v.convergencia ? `${v.convergencia} · ${v.velocidad}` : '—'}
+                        {v.tv && <span className="block text-[11px] text-fg-muted">📺 {v.tv}</span>}
                       </td>
                       <td className="px-4 py-3 text-fg-soft">
                         {prod

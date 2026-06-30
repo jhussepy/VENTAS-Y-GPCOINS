@@ -47,6 +47,16 @@ export default function Dashboard() {
   // Nº total de incentivos (dinámico, en vez de hardcodear 6)
   const totalIncentivos = ORDEN_INCENTIVOS.length;
 
+  // Contenidos de TV vendidos (paquetes 4P con TV) en el mes
+  const contenidosTV = useMemo(() => {
+    const m = {};
+    for (const v of ventas) {
+      if (v.mes !== mes || !v.tv) continue;
+      m[v.tv] = (m[v.tv] || 0) + 1;
+    }
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [ventas, mes]);
+
   // Distribución de ventas por estado (pendiente / activa / baja / cancelada)
   const distribucion = useMemo(() => {
     const delMes = ventas.filter((v) => v.mes === mes);
@@ -256,6 +266,23 @@ export default function Dashboard() {
             {motivosBaja.map(([motivo, n]) => (
               <div key={motivo} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
                 <span className="text-sm text-fg-soft">{motivo}</span>
+                <span className="text-lg font-semibold text-fg tabnum">{n}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Contenidos de TV vendidos (4P) */}
+      {contenidosTV.length > 0 && (
+        <Card>
+          <SectionTitle right={<Badge tone="neutral">{fmtNum(contenidosTV.reduce((a, [, n]) => a + n, 0))} con TV</Badge>}>
+            Contenidos TV vendidos (4P)
+          </SectionTitle>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {contenidosTV.map(([nombre, n]) => (
+              <div key={nombre} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
+                <span className="text-sm text-fg-soft">📺 {nombre}</span>
                 <span className="text-lg font-semibold text-fg tabnum">{n}</span>
               </div>
             ))}

@@ -20,7 +20,7 @@ const cargarXLSX = () => import('xlsx');
 export const COLUMNAS_VENTAS = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'convergencia',
-  'velocidad', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'cantidad',
+  'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'cantidad',
   'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas',
 ];
 
@@ -86,6 +86,7 @@ export async function importarVentas(file, existentes = []) {
     v.fechaInstalacion = aFecha(XLSX, r.fechaInstalacion ?? r['fecha instalacion'] ?? r.FechaInstalacion);
     v.convergencia = String(r.convergencia ?? '').trim().toUpperCase();
     v.velocidad = String(r.velocidad ?? '').trim();
+    v.tv = v.convergencia === '4P' ? String(r.tv ?? r.TV ?? '').trim() : '';
     v.clienteNuevo = aBool(r.clienteNuevo ?? r['cliente nuevo']);
     v.fibraActiva = aBool(r.fibraActiva ?? r['fibra activa']);
     v.marca = String(r.marca ?? '').trim().toLowerCase();
@@ -131,7 +132,7 @@ export async function exportarVentas(ventas) {
     email: v.email, direccion: v.direccion, idSmart: v.pedido, idWeb: v.idWeb,
     fechaVenta: v.fechaVenta,
     fechaInstalacion: v.fechaInstalacion, convergencia: v.convergencia,
-    velocidad: v.velocidad, clienteNuevo: v.clienteNuevo ? 'SI' : 'NO',
+    velocidad: v.velocidad, tv: v.tv, clienteNuevo: v.clienteNuevo ? 'SI' : 'NO',
     fibraActiva: v.fibraActiva ? 'SI' : 'NO', marca: v.marca, sap: v.sap,
     cantidad: v.cantidad, portasVoz: v.portasVoz, portasActivas: v.portasActivas || 0,
     lineasVoz: v.lineasVoz, til65: v.til65, secureNet: v.secureNet,
@@ -150,7 +151,7 @@ export async function plantillaVentas() {
     nombre: 'Juan', apellido: 'Pérez', dni: '12345678Z', telefono: '600111222',
     email: 'juan@email.com', direccion: 'C/ Mayor 1, Madrid', idSmart: 'SM-001', idWeb: 'WEB-001',
     fechaVenta: '2026-06-15',
-    fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB',
+    fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB', tv: 'Netflix Estándar',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414',
     cantidad: 1, portasVoz: 2, portasActivas: 1, lineasVoz: 2, til65: 1, secureNet: 1,
     estado: 'Activa', fechaBaja: '', motivoBaja: '', notas: 'Ejemplo con terminal',
@@ -158,7 +159,7 @@ export async function plantillaVentas() {
     nombre: 'María', apellido: 'García', dni: '87654321X', telefono: '600333444',
     email: '', direccion: '', idSmart: 'SM-002', idWeb: '',
     fechaVenta: '2026-06-18',
-    fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB',
+    fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB', tv: '',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '',
     cantidad: '', portasVoz: 1, portasActivas: 0, lineasVoz: 1, til65: 0, secureNet: 0,
     estado: 'Pendiente', fechaBaja: '', motivoBaja: '', notas: 'Solo fibra y movil (sin terminal): deja marca y sap vacios',

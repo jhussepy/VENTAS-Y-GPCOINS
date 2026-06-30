@@ -23,8 +23,9 @@ export const ventaVacia = () => ({
   fechaInstalacion: '',
   mes: 'junio',            // junio | julio (se autodetecta de la fecha)
   // Fibra / convergencia
-  convergencia: '',        // '' | '3P' | '4P'
+  convergencia: '',        // '' | '3P' (Fibra+Fijo+Móvil) | '4P' (+TV)
   velocidad: '',           // '' | 'Fibra 300 MB' | 'Fibra 600 MB' | 'Fibra 1 GB'
+  tv: '',                  // contenido TV (solo aplica en 4P)
   clienteNuevo: false,     // cuenta para llave "clientes nuevos"
   fibraActiva: false,      // cuenta para llave Fibra (neba o fibra)
   // Terminal / dispositivo

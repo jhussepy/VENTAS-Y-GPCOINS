@@ -12,6 +12,20 @@ export const PERIODO = {
   etiquetas: { junio: 'JUNIO', julio: 'JULIO' },
 };
 
+// Contenidos de TV disponibles en paquetes 4P (Fibra + Fijo + Móvil + TV)
+export const TV_CONTENIDOS = [
+  'Básico',
+  'Netflix con anuncios',
+  'Netflix Estándar',
+  'Netflix Premium',
+  'HBO Max',
+  'Disney con anuncios',
+  'Disney Estándar',
+  'Prime',
+  'DAZN Fútbol',
+  'DAZN Pro',
+];
+
 // ---------------------------------------------------------------------------
 //  TARIFAS DE FIBRA (puntos por convergencia) — Incentivo Cliente Nuevo
 // ---------------------------------------------------------------------------

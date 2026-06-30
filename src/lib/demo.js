@@ -30,7 +30,7 @@ export function ventasDemo() {
   });
 
   // Ventas con dispositivos (GP directos / puntos)
-  base.push(v({ nombre: 'Carmen', apellido: 'Flores', convergencia: '4P', velocidad: 'Fibra 1 GB', clienteNuevo: true, fibraActiva: true, marca: 'samsung', sap: '316414', cantidad: 2, lineasVoz: 1, portasVoz: 1, portasActivas: 1, secureNet: 1, fechaVenta: '2026-06-16', pedido: 'PED-201' }));
+  base.push(v({ nombre: 'Carmen', apellido: 'Flores', convergencia: '4P', velocidad: 'Fibra 1 GB', tv: 'Netflix Estándar', clienteNuevo: true, fibraActiva: true, marca: 'samsung', sap: '316414', cantidad: 2, lineasVoz: 1, portasVoz: 1, portasActivas: 1, secureNet: 1, fechaVenta: '2026-06-16', pedido: 'PED-201' }));
   base.push(v({ nombre: 'Pablo', apellido: 'Gil', marca: 'samsung', sap: '316414', cantidad: 1, fechaVenta: '2026-06-17', pedido: 'PED-202' }));
   base.push(v({ nombre: 'Elena', apellido: 'Cano', marca: 'honor', sap: '316351', cantidad: 2, fechaVenta: '2026-06-18', pedido: 'PED-203' }));
   base.push(v({ nombre: 'Marcos', apellido: 'Ibáñez', marca: 'xiaomi', sap: '316512', cantidad: 1, fechaVenta: '2026-06-19', pedido: 'PED-204' }));
@@ -38,6 +38,7 @@ export function ventasDemo() {
 
   // Ventas en otros estados (para distribución y motivos de baja)
   base.push(v({ nombre: 'Iván', apellido: 'Prieto', estado: 'pendiente', convergencia: '3P', velocidad: 'Fibra 600 MB', clienteNuevo: true, lineasVoz: 2, portasVoz: 2, fechaVenta: '2026-06-22', pedido: 'PED-301' }));
+  base.push(v({ nombre: 'Sara', apellido: 'Vega', convergencia: '4P', velocidad: 'Fibra 600 MB', tv: 'DAZN Fútbol', clienteNuevo: true, fibraActiva: true, lineasVoz: 1, portasVoz: 1, portasActivas: 1, secureNet: 1, fechaVenta: '2026-06-14', pedido: 'PED-206' }));
   base.push(v({ nombre: 'Rosa', apellido: 'León', estado: 'baja', motivoBaja: 'Precio / competencia', convergencia: '4P', velocidad: 'Fibra 1 GB', clienteNuevo: true, fechaVenta: '2026-06-05', fechaBaja: '2026-06-21', pedido: 'PED-302' }));
   base.push(v({ nombre: 'Tomás', apellido: 'Reyes', estado: 'cancelada', motivoBaja: 'Mala cobertura', convergencia: '3P', velocidad: 'Fibra 300 MB', clienteNuevo: true, fechaVenta: '2026-06-06', pedido: 'PED-303' }));
 
