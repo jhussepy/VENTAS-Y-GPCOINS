@@ -222,6 +222,19 @@ describe('líneas móviles → portas activas suman en el Dashboard', () => {
   });
 });
 
+describe('calcFinanciacion (configurador de terminal)', () => {
+  it('cuota = precio / meses; total fijo', async () => {
+    const { calcFinanciacion } = await import('../data/financiacion.js');
+    expect(calcFinanciacion({ precio: 648, meses: 36 })).toEqual({ pagoInicial: 0, cuota: 18, total: 648 });
+    expect(calcFinanciacion({ precio: 648, meses: 24 })).toEqual({ pagoInicial: 0, cuota: 27, total: 648 });
+  });
+  it('seguro suma a la cuota; pago al contado pone todo en inicial', async () => {
+    const { calcFinanciacion } = await import('../data/financiacion.js');
+    expect(calcFinanciacion({ precio: 648, meses: 36, seguroExtra: 6 }).cuota).toBe(24);
+    expect(calcFinanciacion({ precio: 648, meses: 36, contado: true })).toEqual({ pagoInicial: 648, cuota: 0, total: 648 });
+  });
+});
+
 describe('datos de demostración', () => {
   it('generan un panel con al menos un incentivo clasificado y GP > 0', async () => {
     const { ventasDemo } = await import('./demo.js');

@@ -1,10 +1,110 @@
 import { useState, useMemo } from 'react';
-import { Smartphone, Search, Star, ShoppingCart, ArrowDownUp } from 'lucide-react';
+import { Smartphone, Search, Star, ShoppingCart, ArrowDownUp, X, CreditCard } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { CATALOGO, ptsDe, gpDe, udsDe, estDe, PERIODO } from '../data/incentivos.js';
+import { SEGUROS, PLAZOS, CATALOGOS_FIN, OFERTAS_FIN, calcFinanciacion } from '../data/financiacion.js';
 import { unidadesVendidas } from '../lib/engine.js';
 import { Card, Badge, EstrellaTag, EmptyState } from '../components/ui.jsx';
-import { fmtNum } from '../lib/format.js';
+import { fmtNum, fmtEur } from '../lib/format.js';
+
+// --- Ficha/configurador de financiación de un terminal ----------------------
+function DetalleTerminal({ producto, marca, onVender, onClose }) {
+  const [precio, setPrecio] = useState(producto.precio || '');
+  const [seguro, setSeguro] = useState('desprotegido');
+  const [meses, setMeses] = useState(36);
+  const [catalogo, setCatalogo] = useState(CATALOGOS_FIN[0]);
+  const [oferta, setOferta] = useState(OFERTAS_FIN[0]);
+  const [contado, setContado] = useState(false);
+
+  const seguroExtra = SEGUROS.find((s) => s.id === seguro)?.extra || 0;
+  const r = calcFinanciacion({ precio, meses, contado, seguroExtra });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div className="card w-full max-w-md p-6 space-y-4 max-h-[90dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold text-fg leading-tight">{producto.modelo}</h2>
+            <p className="text-xs text-fg-muted mt-1">SAP: {producto.sap}</p>
+            <p className="text-xs text-fg-muted">Stock central: <span className="text-fg-soft font-medium">{producto.stock != null ? fmtNum(producto.stock) : '—'}</span></p>
+          </div>
+          <button className="btn-ghost p-2" onClick={onClose} aria-label="Cerrar"><X size={16} /></button>
+        </div>
+
+        {/* Precio del terminal (editable si no está en el catálogo) */}
+        <div>
+          <label className="label">Precio del terminal (€)</label>
+          <input type="number" min="0" step="0.01" className="input" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="Introduce el precio" />
+        </div>
+
+        <div>
+          <label className="label">Seguro Móvil</label>
+          <select className="input" value={seguro} onChange={(e) => setSeguro(e.target.value)}>
+            {SEGUROS.map((s) => {
+              const cuota = calcFinanciacion({ precio, meses, contado, seguroExtra: s.extra }).cuota;
+              return <option key={s.id} value={s.id}>{s.label} ({fmtEur(cuota)}/mes)</option>;
+            })}
+          </select>
+        </div>
+
+        <div>
+          <label className="label mb-2">Tipos de Financiación</label>
+          <div className="flex gap-4">
+            {PLAZOS.map((m) => (
+              <label key={m} className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
+                <input type="radio" name="plazo" checked={meses === m} onChange={() => setMeses(m)} disabled={contado} className="accent-vf-red" />
+                Financiación {m} meses
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Catálogo</label>
+            <select className="input" value={catalogo} onChange={(e) => setCatalogo(e.target.value)}>
+              {CATALOGOS_FIN.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Tipo de Oferta</label>
+            <select className="input" value={oferta} onChange={(e) => setOferta(e.target.value)}>
+              {OFERTAS_FIN.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Resultado del cálculo */}
+        <div className="grid grid-cols-3 gap-2 bg-bg-surface2 rounded-lg p-4 border border-bg-border text-center">
+          <div>
+            <p className="text-lg font-bold text-fg tabnum">{fmtEur(r.pagoInicial)}</p>
+            <p className="text-[10px] text-fg-muted">Pago inicial</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-vf-red tabnum">{contado ? '—' : `${fmtEur(r.cuota)}`}</p>
+            <p className="text-[10px] text-fg-muted">Cuota mensual</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-fg tabnum">{fmtEur(r.total)}</p>
+            <p className="text-[10px] text-fg-muted">Pago total terminal</p>
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
+          <input type="checkbox" checked={contado} onChange={(e) => setContado(e.target.checked)} className="accent-vf-red w-4 h-4" />
+          Pago al contado
+        </label>
+
+        <div className="flex gap-2 justify-end pt-1">
+          <button className="btn-ghost" onClick={onClose}>Cerrar</button>
+          <button className="btn-primary" onClick={() => onVender(marca, producto.sap)}>
+            <ShoppingCart size={15} /> Seleccionar terminal
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const MARCAS = Object.keys(CATALOGO);
 const ETIQ_MEC = {
@@ -20,6 +120,7 @@ export default function Catalogo() {
   const [orden, setOrden] = useState('desc');       // desc | asc por valor
   const [soloEstrella, setSoloEstrella] = useState(false);
   const [soloStock, setSoloStock] = useState(false);
+  const [detalle, setDetalle] = useState(null); // producto en ficha de financiación
 
   const cat = CATALOGO[marca];
   const vendidas = useMemo(() => unidadesVendidas(ventas, marca, mes), [ventas, marca, mes]);
@@ -188,13 +289,22 @@ export default function Catalogo() {
                         {estDe(p, mes) ? <EstrellaTag tipo={cat.mecanica === 'mixta' ? 'DESTACADO' : 'ESTRELLA'} /> : <span className="text-fg-muted">—</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => venderModelo(marca, p.sap)}
-                          className="btn bg-vf-red hover:bg-vf-redDark text-white text-xs py-1.5"
-                          title="Registrar una venta con este modelo"
-                        >
-                          <ShoppingCart size={13} /> Vender
-                        </button>
+                        <div className="flex gap-1 justify-end">
+                          <button
+                            onClick={() => setDetalle(p)}
+                            className="btn bg-bg-surface2 text-fg-soft border border-bg-border hover:bg-bg-border text-xs py-1.5"
+                            title="Ver ficha y financiación"
+                          >
+                            <CreditCard size={13} /> Ficha
+                          </button>
+                          <button
+                            onClick={() => venderModelo(marca, p.sap)}
+                            className="btn bg-vf-red hover:bg-vf-redDark text-white text-xs py-1.5"
+                            title="Registrar una venta con este modelo"
+                          >
+                            <ShoppingCart size={13} /> Vender
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -204,6 +314,15 @@ export default function Catalogo() {
           </div>
         )}
       </Card>
+
+      {detalle && (
+        <DetalleTerminal
+          producto={detalle}
+          marca={marca}
+          onVender={(m, s) => { venderModelo(m, s); setDetalle(null); }}
+          onClose={() => setDetalle(null)}
+        />
+      )}
     </div>
   );
 }

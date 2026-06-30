@@ -52,7 +52,7 @@ export const CATALOGO = {
     mecanica: 'ranking',
     stockPor: 'sin-limite',
     productos: [
-      { sap: '316512', modelo: 'Xiaomi 17T Black 12GB 256GB',              pts_junio: 3000, pts_julio: 2500, est_junio: true,  est_julio: true },
+      { sap: '316512', modelo: 'Xiaomi 17T Black 12GB 256GB',              pts_junio: 3000, pts_julio: 2500, est_junio: true,  est_julio: true, precio: 648, stock: 426 },
       { sap: '316511', modelo: 'Xiaomi 17T Pro Deep Blue 12GB 512GB',      pts_junio: 2500, pts_julio: 2000, est_junio: true,  est_julio: true },
       { sap: '316376', modelo: 'Xiaomi Redmi Note 15 Pro 5G 256GB Black',  pts_junio: 2000, pts_julio: 2000, est_junio: true,  est_julio: true },
       { sap: '316416', modelo: 'Xiaomi Redmi Note 15 Pro+ 5G 256GB Black', pts_junio: 1800, pts_julio: 1800, est_junio: false, est_julio: false },
