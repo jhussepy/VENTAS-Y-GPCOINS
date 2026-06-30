@@ -40,13 +40,22 @@ export default function GPCoins() {
         <SectionTitle right={<Badge tone="neutral">{PERIODO.etiquetas[mes]}</Badge>}>
           Portas voz móvil (Individual)
         </SectionTitle>
-        <div className="flex items-baseline gap-3">
-          <p className={`text-3xl font-semibold tabnum ${portas.pct >= objetivoPortas ? 'text-emerald-400' : 'text-fg'}`}>
+        <div className="flex items-baseline gap-3 mb-3">
+          <p className={`text-3xl font-bold tabnum ${portas.pct >= objetivoPortas ? 'text-emerald-400' : 'text-fg'}`}>
             {portas.pct}%
           </p>
           <span className="text-sm text-fg-soft tabnum">{portas.portas}/{portas.lineas} portas activas</span>
           <span className="text-xs text-fg-muted">objetivo {objetivoPortas}% · {portas.solicitadas} solicitadas</span>
         </div>
+        {/* Barra con marca de objetivo */}
+        <div className="relative w-full h-2.5 bg-bg-surface2 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${portas.pct >= objetivoPortas ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-vf-red to-vf-redLight'}`}
+            style={{ width: `${Math.min(100, portas.pct)}%` }}
+          />
+          <div className="absolute inset-y-0 w-0.5 bg-fg/60" style={{ left: `${Math.min(100, objetivoPortas)}%` }} title={`Objetivo ${objetivoPortas}%`} />
+        </div>
+        <p className="text-[11px] text-fg-muted mt-1.5">La marca vertical señala el objetivo del {objetivoPortas}%.</p>
       </Card>
 
       <Card>
@@ -56,17 +65,17 @@ export default function GPCoins() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
-                <th className="px-4 py-3 font-medium">Incentivo</th>
-                <th className="px-4 py-3 font-medium">Mecánica</th>
-                <th className="px-4 py-3 font-medium text-right">Puntos ranking</th>
-                <th className="px-4 py-3 font-medium text-right">GP directos</th>
-                <th className="px-4 py-3 font-medium text-center">Clasifica</th>
+              <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
+                <th className="px-4 py-3 font-semibold">Incentivo</th>
+                <th className="px-4 py-3 font-semibold">Mecánica</th>
+                <th className="px-4 py-3 font-semibold text-right">Puntos ranking</th>
+                <th className="px-4 py-3 font-semibold text-right">GP directos</th>
+                <th className="px-4 py-3 font-semibold text-center">Clasifica</th>
               </tr>
             </thead>
             <tbody>
               {r.estados.map((e) => (
-                <tr key={e.incentivoId} className="border-b border-bg-border/60 hover:bg-bg-surface2/50">
+                <tr key={e.incentivoId} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                   <td className="px-4 py-3 font-medium text-fg">{e.nombre}</td>
                   <td className="px-4 py-3">
                     <Badge tone={e.mecanica === 'directo' ? 'gold' : e.mecanica === 'mixta' ? 'red' : 'neutral'}>
@@ -133,8 +142,8 @@ export default function GPCoins() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {inc.premios.map((p, i) => (
-                      <span key={i} className="text-xs px-2 py-1 rounded bg-bg-base border border-bg-border text-fg-soft">
-                        {p.rango}: <span className="text-gp-gold font-semibold">{p.gpcoins} GP</span>
+                      <span key={i} className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded border ${i === 0 ? 'bg-gp-gold/15 border-gp-gold/40 text-gp-gold font-medium' : 'bg-bg-base border-bg-border text-fg-soft'}`}>
+                        {i === 0 && <Trophy size={11} className="text-gp-gold" />}{p.rango}: <span className="text-gp-gold font-semibold">{p.gpcoins} GP</span>
                       </span>
                     ))}
                   </div>

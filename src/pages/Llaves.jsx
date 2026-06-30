@@ -27,7 +27,10 @@ function LlaveRow({ ll, portas }) {
             </span>
           </div>
           <p className="text-xs text-fg-muted mt-0.5">{ll.detalle}</p>
-          <div className="mt-2"><Progress value={ll.pct} cumple={ll.cumple} /></div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex-1"><Progress value={ll.pct} cumple={ll.cumple} /></div>
+            <span className={`text-[11px] tabnum font-semibold shrink-0 w-9 text-right ${ll.cumple ? 'text-emerald-400' : 'text-fg-muted'}`}>{Math.min(100, Math.round(ll.pct || 0))}%</span>
+          </div>
         </div>
       </div>
     </div>
@@ -53,22 +56,32 @@ export default function Llaves() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {estados.map((e) => (
-          <Card key={e.incentivoId}>
+        {estados.map((e) => {
+          const cumplidas = e.llaves.filter((l) => l.cumple).length;
+          const pctTotal = e.llaves.length ? (cumplidas / e.llaves.length) * 100 : 0;
+          return (
+          <Card key={e.incentivoId} accent={e.clasifica ? 'green' : false}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <KeyRound size={18} className="text-vf-red" />
+                <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${e.clasifica ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/10 text-vf-red'}`}>
+                  <KeyRound size={18} />
+                </span>
                 <h2 className="text-lg font-semibold text-fg">{e.nombre}</h2>
               </div>
               {e.clasifica
                 ? <Badge tone="green">Clasificas</Badge>
-                : <Badge tone="red">{e.llaves.filter((l) => l.cumple).length}/{e.llaves.length} llaves</Badge>}
+                : <Badge tone="red">{cumplidas}/{e.llaves.length} llaves</Badge>}
+            </div>
+            <div className="mb-3 flex items-center gap-2">
+              <div className="flex-1"><Progress value={pctTotal} cumple={e.clasifica} /></div>
+              <span className="text-[11px] tabnum text-fg-muted shrink-0">{cumplidas}/{e.llaves.length}</span>
             </div>
             <div>
               {e.llaves.map((ll) => <LlaveRow key={ll.id} ll={ll} portas={portas} />)}
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

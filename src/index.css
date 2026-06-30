@@ -94,6 +94,9 @@ body {
     background: linear-gradient(90deg, var(--vf-red, #E60000), #FF4D4D);
     opacity: 0.9;
   }
+  .card-accent-green::before {
+    background: linear-gradient(90deg, #059669, #10B981);
+  }
   .fade-in { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium

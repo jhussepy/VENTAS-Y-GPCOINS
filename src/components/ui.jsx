@@ -2,7 +2,9 @@ import { Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export function Card({ children, className = '', accent = false }) {
-  return <div className={`card p-5 ${accent ? 'card-accent' : ''} ${className}`}>{children}</div>;
+  // accent: true|'red' = barra roja de marca · 'green' = éxito
+  const acc = accent === 'green' ? 'card-accent card-accent-green' : (accent ? 'card-accent' : '');
+  return <div className={`card p-5 ${acc} ${className}`}>{children}</div>;
 }
 
 // Cuenta ascendente animada (respeta prefers-reduced-motion)
