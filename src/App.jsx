@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, lazy, Suspense, useRef } from 'react';
+import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
@@ -127,6 +127,14 @@ export default function App() {
   if (user === null) return <Login />;
   // Data loading
   if (loading) return <Spinner />;
+
+  // Monitor de tamaño del documento (Firestore limita 1 MB por documento)
+  const usoDoc = useMemo(() => {
+    try { return new Blob([JSON.stringify({ ventas, ventasLowi, tarifas, precios })]).size; } catch { return 0; }
+  }, [ventas, ventasLowi, tarifas, precios]);
+  const LIMITE_DOC = 1024 * 1024;
+  const pctUso = Math.round((usoDoc / LIMITE_DOC) * 100);
+  const cercaLimite = pctUso >= 75;
 
   const admin = esAdmin(user);
   const esLowi = operador === 'lowi';
@@ -309,6 +317,12 @@ export default function App() {
           </header>
 
           <main className="flex-1 p-4 lg:p-8 max-w-[1600px] w-full mx-auto">
+            {cercaLimite && (
+              <div className="mb-4 text-sm px-4 py-3 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                ⚠️ Tus datos ocupan el <span className="font-semibold">{pctUso}%</span> del límite de almacenamiento por usuario.
+                Haz una <span className="font-semibold">Copia</span> de seguridad y avísame para migrar a almacenamiento ampliado antes de llegar al 100%.
+              </div>
+            )}
             <Suspense fallback={<div className="py-20 flex justify-center"><Loader2 size={28} className="text-vf-red animate-spin" /></div>}>
               <div key={`${operador}-${page}`} className="fade-in">
                 <Active />
