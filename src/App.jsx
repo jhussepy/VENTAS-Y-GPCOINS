@@ -123,20 +123,21 @@ export default function App() {
     setOpen(false);
   };
 
-  // Auth loading
-  if (user === undefined) return <Spinner />;
-  // Not logged in
-  if (user === null) return <Login />;
-  // Data loading
-  if (loading) return <Spinner />;
-
   // Monitor de tamaño del documento (Firestore limita 1 MB por documento)
+  // IMPORTANTE: este hook debe ir ANTES de cualquier return condicional
   const usoDoc = useMemo(() => {
     try { return new Blob([JSON.stringify({ ventas, ventasLowi, tarifas, precios })]).size; } catch { return 0; }
   }, [ventas, ventasLowi, tarifas, precios]);
   const LIMITE_DOC = 1024 * 1024;
   const pctUso = Math.round((usoDoc / LIMITE_DOC) * 100);
   const cercaLimite = pctUso >= 75;
+
+  // Auth loading
+  if (user === undefined) return <Spinner />;
+  // Not logged in
+  if (user === null) return <Login />;
+  // Data loading
+  if (loading) return <Spinner />;
 
   const admin = esAdmin(user);
   const esLowi = operador === 'lowi';
