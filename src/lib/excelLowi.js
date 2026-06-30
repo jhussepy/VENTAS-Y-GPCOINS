@@ -128,23 +128,28 @@ export async function plantillaLowi() {
     nombre: 'Juan', apellido: 'Pérez', dni: '12345678Z', telefono: '600111222',
     email: 'juan@email.com', direccion: 'C/ Mayor 1, Madrid', idSmart: 'SM-001', idWeb: 'WEB-001',
     fechaVenta: '2026-06-15',
-    fechaInstalacion: '2026-06-20', producto: 'fibra_movil', velocidad: 'Fibra 600 MB',
+    fechaInstalacion: '2026-06-20', producto: 'fibra_movil', velocidad: 'Fibra 600 Mb', tv: 'Netflix',
     lineas: 2, cuota: 35, estado: 'activa', fechaBaja: '', motivoBaja: '',
     notas: 'Ejemplo activo',
+    lineasMoviles: JSON.stringify([
+      { tarifa: '50gb', numero: '600111001', tipo: 'porta', operador: 'Movistar', activa: true },
+      { tarifa: '10gb', numero: '600111002', tipo: 'nueva', operador: '', activa: false },
+    ]),
   }, {
     nombre: 'María', apellido: 'García', dni: '87654321X', telefono: '600333444',
     email: '', direccion: '', idSmart: 'SM-002', idWeb: '',
     fechaVenta: '2026-06-18',
-    fechaInstalacion: '', producto: 'fibra', velocidad: 'Fibra 300 MB',
+    fechaInstalacion: '', producto: 'fibra', velocidad: 'Fibra 300 Mb', tv: '',
     lineas: 0, cuota: 22, estado: 'pendiente', fechaBaja: '', motivoBaja: '',
-    notas: 'Pendiente de instalar',
+    notas: 'Pendiente de instalar', lineasMoviles: '',
   }, {
     nombre: 'Luis', apellido: 'Soto', dni: '11223344A', telefono: '600555666',
     email: '', direccion: '', idSmart: 'SM-003', idWeb: '',
     fechaVenta: '2026-05-30',
-    fechaInstalacion: '2026-06-05', producto: 'fibra_movil', velocidad: 'Fibra 1 GB',
+    fechaInstalacion: '2026-06-05', producto: 'fibra_movil', velocidad: 'Fibra 1 Gb', tv: 'Lowi TV',
     lineas: 1, cuota: 40, estado: 'baja', fechaBaja: '2026-06-22',
     motivoBaja: 'Precio / competencia', notas: 'Se fue a la competencia',
+    lineasMoviles: JSON.stringify([{ tarifa: '100gb', numero: '600111003', tipo: 'porta', operador: 'Orange', activa: true }]),
   }];
   const ws = XLSX.utils.json_to_sheet(ejemplo, { header: COLUMNAS_LOWI });
   const wb = XLSX.utils.book_new();

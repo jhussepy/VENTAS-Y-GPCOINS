@@ -357,6 +357,14 @@ export default function LowiVentas() {
                       {v.producto ? PRODUCTOS_LOWI[v.producto] : '—'}
                       {v.velocidad && <span className="text-fg-muted"> · {v.velocidad}</span>}
                       {v.lineas > 0 && <span className="text-fg-muted"> · {v.lineas} líneas</span>}
+                      {v.tv && <span className="block text-[11px] text-fg-muted">📺 {v.tv}</span>}
+                      {(() => {
+                        const lm = v.lineasMoviles || [];
+                        const portas = lm.filter((l) => l.tipo === 'porta').length;
+                        if (portas === 0) return null;
+                        const act = lm.filter((l) => l.tipo === 'porta' && l.activa).length;
+                        return <span className="block text-[11px] text-fg-muted"><span className="text-emerald-400">{act}</span>/{portas} portas</span>;
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-right text-fg-soft tabnum">{v.cuota ? fmtEur(v.cuota) : '—'}</td>
                     <td className="px-4 py-3">
