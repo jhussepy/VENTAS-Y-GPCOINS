@@ -186,6 +186,22 @@ describe('estados no activos NO generan puntos ni GP', () => {
   });
 });
 
+describe('resumenLineas (líneas móviles)', () => {
+  it('deriva líneas, portas, activas y TIL65 desde el detalle', async () => {
+    const { resumenLineas } = await import('../data/movil.js');
+    const lm = [
+      { tarifa: 'ilim60', tipo: 'nueva', activa: false },
+      { tarifa: 'ilimtotal', tipo: 'porta', operador: 'Movistar', activa: true },
+      { tarifa: 'basica', tipo: 'porta', operador: 'Orange', activa: false },
+    ];
+    const r = resumenLineas(lm);
+    expect(r.lineasVoz).toBe(3);
+    expect(r.portasVoz).toBe(2);
+    expect(r.portasActivas).toBe(1);
+    expect(r.til65).toBe(1); // solo la "Ilimitada Total (TIL65)"
+  });
+});
+
 describe('datos de demostración', () => {
   it('generan un panel con al menos un incentivo clasificado y GP > 0', async () => {
     const { ventasDemo } = await import('./demo.js');

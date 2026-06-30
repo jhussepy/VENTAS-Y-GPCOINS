@@ -32,7 +32,9 @@ export const ventaVacia = () => ({
   marca: '',               // '' | 'xiaomi' | 'samsung' | 'honor' | 'motorola' | 'jbl'
   sap: '',                 // código SAP del dispositivo
   cantidad: 1,             // unidades del dispositivo
-  // Contadores de llaves
+  // Líneas móviles detalladas (tarifa, número, nueva/porta, operador, activa)
+  lineasMoviles: [],
+  // Contadores de llaves (se autocalculan desde lineasMoviles si las hay)
   portasVoz: 0,            // portas de voz solicitadas (total)
   portasActivas: 0,        // portas que ya se han activado (≤ portasVoz)
   lineasVoz: 0,            // total líneas de voz (denominador del %)

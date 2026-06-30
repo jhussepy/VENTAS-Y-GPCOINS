@@ -8,6 +8,8 @@ import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js
 import { avisosContacto } from '../lib/validacion.js';
 import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.js';
 import { CATALOGO, PERIODO, udsDe, TV_CONTENIDOS } from '../data/incentivos.js';
+import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas } from '../data/movil.js';
+import { nuevoId } from '../lib/id.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
 
@@ -30,6 +32,24 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
     return next;
   });
   const esBaja = v.estado === 'baja' || v.estado === 'cancelada';
+
+  // --- Líneas móviles: contadores derivados automáticamente -------------------
+  const lineas = v.lineasMoviles || [];
+  const tieneLineas = lineas.length > 0;
+  const recompute = (next) => {
+    const lm = next.lineasMoviles || [];
+    if (lm.length > 0) Object.assign(next, resumenLineas(lm));
+    return next;
+  };
+  const setLineas = (lm) => setV((p) => recompute({ ...p, lineasMoviles: lm }));
+  const addLinea = () => setLineas([...lineas, { id: nuevoId(), ...lineaMovilVacia() }]);
+  const updLinea = (id, k, val) => setLineas(lineas.map((l) => {
+    if (l.id !== id) return l;
+    const nl = { ...l, [k]: val };
+    if (k === 'tipo' && val === 'nueva') { nl.operador = ''; nl.activa = false; }
+    return nl;
+  }));
+  const delLinea = (id) => setLineas(lineas.filter((l) => l.id !== id));
 
   const productos = v.marca ? CATALOGO[v.marca]?.productos ?? [] : [];
 
@@ -117,9 +137,70 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         </p>
       )}
 
+      {/* Líneas móviles detalladas */}
+      <div className="border border-bg-border rounded-lg p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-fg">Líneas móviles {tieneLineas && <span className="text-fg-muted font-normal">({lineas.length})</span>}</span>
+          <button type="button" className="btn-ghost text-xs py-1" onClick={addLinea}><Plus size={14} /> Añadir línea</button>
+        </div>
+        {tieneLineas ? (
+          <div className="space-y-2">
+            {lineas.map((l, i) => (
+              <div key={l.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end bg-bg-surface2/50 rounded-lg p-2">
+                <div className="sm:col-span-3">
+                  <label className="label">Tarifa línea {i + 1}</label>
+                  <select className="input" value={l.tarifa} onChange={(e) => updLinea(l.id, 'tarifa', e.target.value)}>
+                    <option value="">—</option>
+                    {TARIFAS_MOVIL.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                  </select>
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="label">Número</label>
+                  <input type="tel" className="input" value={l.numero} onChange={(e) => updLinea(l.id, 'numero', e.target.value)} placeholder="6XX XXX XXX" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Tipo</label>
+                  <select className="input" value={l.tipo} onChange={(e) => updLinea(l.id, 'tipo', e.target.value)}>
+                    <option value="nueva">Nueva</option>
+                    <option value="porta">Porta</option>
+                  </select>
+                </div>
+                {l.tipo === 'porta' ? (
+                  <>
+                    <div className="sm:col-span-3">
+                      <label className="label">Operador origen</label>
+                      <select className="input" value={l.operador} onChange={(e) => updLinea(l.id, 'operador', e.target.value)}>
+                        <option value="">—</option>
+                        {OPERADORES_PORTA.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-1 flex items-center justify-between gap-1 pb-2">
+                      <label className="flex items-center gap-1 text-xs text-fg-soft cursor-pointer" title="Porta ya activada">
+                        <input type="checkbox" checked={l.activa} onChange={(e) => updLinea(l.id, 'activa', e.target.checked)} className="accent-emerald-500 w-4 h-4" />
+                        Act.
+                      </label>
+                      <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="sm:col-span-4 flex items-center justify-end pb-2">
+                    <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
+                  </div>
+                )}
+              </div>
+            ))}
+            <p className="text-[11px] text-fg-muted">
+              Resumen: {v.lineasVoz} líneas · {v.portasVoz} portas ({v.portasActivas} activas) · {v.til65} TIL65 — calculado automáticamente.
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-fg-muted">Añade las líneas móviles una a una (tarifa, número, nueva/porta y operador). Los contadores de abajo se rellenarán solos.</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div><label className="label">Cantidad</label><input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', (Number(e.target.value) || 0))} /></div>
-        <div><label className="label">Portas voz</label><input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', (Number(e.target.value) || 0))} /></div>
+        <div><label className="label">Portas voz</label><input type="number" min="0" className="input disabled:opacity-60" value={v.portasVoz} disabled={tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('portasVoz', (Number(e.target.value) || 0))} /></div>
         <div>
           <label className="label flex items-center gap-1">
             Portas activas
@@ -127,9 +208,9 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
               <HelpCircle size={13} className="text-fg-muted cursor-help" />
             </span>
           </label>
-          <input type="number" min="0" max={v.portasVoz} className="input" value={v.portasActivas} onChange={(e) => set('portasActivas', (Number(e.target.value) || 0))} />
+          <input type="number" min="0" max={v.portasVoz} className="input disabled:opacity-60" value={v.portasActivas} disabled={tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('portasActivas', (Number(e.target.value) || 0))} />
         </div>
-        <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', (Number(e.target.value) || 0))} /></div>
+        <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input disabled:opacity-60" value={v.lineasVoz} disabled={tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('lineasVoz', (Number(e.target.value) || 0))} /></div>
         <div>
           <label className="label flex items-center gap-1">
             TIL65
@@ -140,7 +221,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
               <HelpCircle size={13} className="text-fg-muted cursor-help" />
             </span>
           </label>
-          <input type="number" min="0" className="input" value={v.til65} onChange={(e) => set('til65', (Number(e.target.value) || 0))} />
+          <input type="number" min="0" className="input disabled:opacity-60" value={v.til65} disabled={tieneLineas} title={tieneLineas ? 'Se calcula desde las líneas móviles' : undefined} onChange={(e) => set('til65', (Number(e.target.value) || 0))} />
         </div>
         <div><label className="label">Secure Net</label><input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', (Number(e.target.value) || 0))} /></div>
         <div>
