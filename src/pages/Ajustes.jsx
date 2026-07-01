@@ -1,15 +1,41 @@
-import { useMemo } from 'react';
-import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { Card, SectionTitle } from '../components/ui.jsx';
+import { Card, SectionTitle, Badge } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
+import { mesEfectivo } from '../lib/engine.js';
 
 const LIMITE = 1024 * 1024; // 1 MB por documento de usuario en Firestore
 const tam = (obj) => { try { return new Blob([JSON.stringify(obj ?? null)]).size; } catch { return 0; } };
 const kb = (b) => `${(b / 1024).toFixed(1)} KB`;
 
 export default function Ajustes() {
-  const { ventas, ventasLowi, tarifas, precios } = useApp();
+  const { ventas, setVentas, ventasLowi, tarifas, precios } = useApp();
+  const [msg, setMsg] = useState(null);
+
+  // Ventas de Vodafone cuyo "mes" guardado no coincide con la regla actual
+  // (mes de instalación/activación, con la venta como respaldo)
+  const desactualizadas = useMemo(() => ventas.filter((v) => mesEfectivo(v) !== v.mes).length, [ventas]);
+
+  const recalcularMeses = () => {
+    if (desactualizadas === 0) {
+      setMsg({ tone: 'green', text: 'Todas las ventas ya tienen el mes correcto. Nada que recalcular.' });
+      setTimeout(() => setMsg(null), 5000);
+      return;
+    }
+    const ok = confirm(
+      `Se recalculará el mes de ${desactualizadas} venta(s) usando la fecha de instalación ` +
+      `(o la de venta si aún no la hay). Esto puede cambiar los números históricos de puntos/GP Coins ` +
+      `por mes. Te recomendamos hacer antes una Copia de seguridad. ¿Continuar?`
+    );
+    if (!ok) return;
+    setVentas((prev) => prev.map((v) => {
+      const mes = mesEfectivo(v);
+      return mes === v.mes ? v : { ...v, mes };
+    }));
+    setMsg({ tone: 'green', text: `Mes recalculado en ${desactualizadas} venta(s).` });
+    setTimeout(() => setMsg(null), 5000);
+  };
 
   const d = useMemo(() => {
     const bVentas = tam(ventas);
@@ -82,6 +108,22 @@ export default function Ajustes() {
             );
           })}
         </div>
+      </Card>
+
+      {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
+
+      <Card>
+        <SectionTitle right={desactualizadas > 0 ? <Badge tone="gold">{fmtNum(desactualizadas)} por actualizar</Badge> : <Badge tone="green">Al día</Badge>}>
+          <span className="flex items-center gap-2"><CalendarClock size={18} className="text-vf-red" /> Mes por activación</span>
+        </SectionTitle>
+        <p className="text-sm text-fg-soft mb-4">
+          El mes de una venta ahora se calcula desde la <span className="font-medium">fecha de instalación</span> (activación),
+          no desde la fecha de venta. Las ventas guardadas antes de este cambio conservan el mes calculado con la regla
+          anterior hasta que se recalculen aquí o se editen manualmente.
+        </p>
+        <button className="btn-primary" onClick={recalcularMeses} disabled={desactualizadas === 0}>
+          Recalcular mes de {fmtNum(desactualizadas)} venta{desactualizadas === 1 ? '' : 's'}
+        </button>
       </Card>
 
       <Card>
