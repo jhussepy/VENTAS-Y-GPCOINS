@@ -7,7 +7,8 @@ import {
   PieChart, Pie,
 } from 'recharts';
 import { useApp } from '../App.jsx';
-import { resumenGlobal } from '../lib/engine.js';
+import { resumenGlobal, portasCruzadas } from '../lib/engine.js';
+import { fmtVentana } from '../lib/portabilidad.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
 import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { TARIFAS_MOVIL } from '../data/movil.js';
@@ -30,6 +31,8 @@ const ETIQUETA_LLAVE = {
 export default function Dashboard() {
   const { ventas, mes, user } = useApp();
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
+  // Portas cuya venta se cerró en otro mes pero cuya ventana de portabilidad cae en el mes activo
+  const cruzadas = useMemo(() => portasCruzadas(ventas, mes), [ventas, mes]);
 
   // Saludo según la hora del día
   const saludo = useMemo(() => {
@@ -447,6 +450,22 @@ export default function Dashboard() {
               <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm bg-gp-gold" /> Pendientes</span>
             </div>
           </>
+        )}
+        {cruzadas.length > 0 && (
+          <div className="mt-4 rounded-lg border border-sky-500/30 bg-sky-500/[0.06] p-3">
+            <p className="text-xs font-medium text-sky-300">
+              {fmtNum(cruzadas.length)} {cruzadas.length === 1 ? 'porta viene' : 'portas vienen'} de venta{cruzadas.length === 1 ? '' : 's'} de otro mes
+            </p>
+            <div className="mt-2 space-y-1">
+              {cruzadas.map(({ venta, linea, mesVenta }, i) => (
+                <p key={i} className="text-[11px] text-fg-muted">
+                  <span className="text-fg-soft">{[venta.nombre, venta.apellido].filter(Boolean).join(' ') || 'Cliente sin nombre'}</span>
+                  {' '}· venta de <span className="capitalize">{mesVenta}</span> · ventana {fmtVentana(linea.ventanaPorta)}
+                  {linea.activa ? <span className="text-emerald-400"> · activa</span> : <span className="text-gp-gold"> · pendiente</span>}
+                </p>
+              ))}
+            </div>
+          </div>
         )}
       </Card>
 

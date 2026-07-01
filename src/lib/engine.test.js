@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo } from './engine.js';
+import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas } from './engine.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
 import { resumenLowi, mesLowi, ventaLowiVacia } from './lowi.js';
 
@@ -147,6 +147,13 @@ describe('portas atribuidas al mes de su ventana de portabilidad', () => {
       lineasMoviles: [{ tipo: 'porta', activa: true, ventanaPorta: '', tarifa: 'total' }] };
     expect(resumenGlobal([v], 'junio').portasActivas).toBe(1);
     expect(resumenGlobal([v], 'julio').portasActivas).toBe(0);
+  });
+
+  it('portasCruzadas detecta la venta de junio cuya ventana cae en julio', () => {
+    const cruzadas = portasCruzadas([ventaCruzada], 'julio');
+    expect(cruzadas).toHaveLength(2);
+    expect(cruzadas[0].mesVenta).toBe('junio');
+    expect(portasCruzadas([ventaCruzada], 'junio')).toHaveLength(0);
   });
 });
 

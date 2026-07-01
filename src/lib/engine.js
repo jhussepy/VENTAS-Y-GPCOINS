@@ -242,6 +242,23 @@ export function portasPorMes(ventas, mes) {
   return { portas, solicitadas, lineas };
 }
 
+// --- Portas "importadas" de otro mes: la venta se cerró en otro mes distinto
+// al de la ventana de portabilidad que cuenta en el mes activo. Útil para
+// avisar "estas portas vienen de ventas de otro mes".
+export function portasCruzadas(ventas, mes) {
+  const out = [];
+  for (const v of ventas) {
+    for (const l of v.lineasMoviles || []) {
+      if (l.tipo !== 'porta' || !l.ventanaPorta) continue;
+      const mVentana = mesDesdeFecha(l.ventanaPorta);
+      if (mVentana === mes && v.mes !== mes) {
+        out.push({ venta: v, linea: l, mesVenta: v.mes });
+      }
+    }
+  }
+  return out;
+}
+
 // --- Detalle de portas de voz del mes (portas activas, líneas y % redondeado) -
 // El % de la llave se calcula sobre portas ACTIVADAS (no solo solicitadas).
 export function portasDetalle(ventas, mes) {
