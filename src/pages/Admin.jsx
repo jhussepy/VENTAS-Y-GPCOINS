@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 import { useApp } from '../App.jsx';
-import { resumenGlobal } from '../lib/engine.js';
+import { resumenGlobal, mesEfectivo } from '../lib/engine.js';
 import { resumenLowi } from '../lib/lowi.js';
 import { ESTADOS, estadoDe } from '../lib/estados.js';
 import { ORDEN_INCENTIVOS, CATALOGO } from '../data/incentivos.js';
@@ -54,7 +54,9 @@ export default function Admin() {
   // Resumen por agente en el mes activo
   const filas = agentes.map((a) => {
     const r = resumenGlobal(a.ventas, mes);
-    const lowi = resumenLowi(a.ventasLowi);
+    // Igual que Vodafone: solo las ventas Lowi cuyo mes efectivo (instalación,
+    // o venta si aún no la hay) caiga en el Período activo de la cabecera.
+    const lowi = resumenLowi(a.ventasLowi.filter((v) => mesEfectivo(v) === mes));
     return { ...a, resumen: r, lowi };
   }).sort((x, y) =>
     (y.resumen.gpDirectosTotal + y.resumen.gpPotencialRanking) -
