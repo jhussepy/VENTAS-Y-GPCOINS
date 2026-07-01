@@ -186,11 +186,9 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
     case 'clientes': // clientes nuevos genéricos
       return activas.filter((v) => v.clienteNuevo).length;
     case 'portas': {
-      // Las portas cuentan por su propia activación (campo portasActivas),
-      // independientemente del estado de la venta (la portabilidad móvil se
-      // completa por su cuenta, aunque la fibra siga pendiente).
-      const portas = delMes.reduce((a, v) => a + Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0), 0);
-      const lineas = delMes.reduce((a, v) => a + (Number(v.lineasVoz) || 0), 0);
+      // Las portas cuentan por su propia activación y en el MES de su ventana de
+      // portabilidad (independiente del estado y del mes de la venta).
+      const { portas, lineas } = portasPorMes(ventas, mes);
       return lineas > 0 ? Math.round((portas / lineas) * 100) : 0;
     }
     case 'til65':
@@ -215,14 +213,39 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
   }
 }
 
+// --- Portas atribuidas al mes en que se activan (no al de la venta) ----------
+// Cada línea porta con "fecha ventana portabilidad" cuenta en el mes de esa
+// ventana; el resto (líneas nuevas y ventas sin detalle) van al mes de la venta.
+// Devuelve { portas (activas), solicitadas, lineas } del mes indicado.
+export function portasPorMes(ventas, mes) {
+  let portas = 0; let solicitadas = 0; let lineas = 0;
+  for (const v of ventas) {
+    const lm = v.lineasMoviles || [];
+    if (lm.length > 0) {
+      for (const l of lm) {
+        const mLinea = (l.tipo === 'porta' && l.ventanaPorta) ? mesDesdeFecha(l.ventanaPorta) : v.mes;
+        if (mLinea !== mes) continue;
+        lineas += 1;
+        if (l.tipo === 'porta') {
+          solicitadas += 1;
+          if (l.activa) portas += 1;
+        }
+      }
+    } else {
+      // Sin detalle de líneas: usamos los contadores manuales, atribuidos al mes de la venta
+      if (v.mes !== mes) continue;
+      lineas += Number(v.lineasVoz) || 0;
+      solicitadas += Number(v.portasVoz) || 0;
+      portas += Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0);
+    }
+  }
+  return { portas, solicitadas, lineas };
+}
+
 // --- Detalle de portas de voz del mes (portas activas, líneas y % redondeado) -
 // El % de la llave se calcula sobre portas ACTIVADAS (no solo solicitadas).
 export function portasDetalle(ventas, mes) {
-  // Las portas cuentan por su propia activación, sin depender del estado de la venta
-  const delMes = ventas.filter((v) => v.mes === mes);
-  const portas = delMes.reduce((a, v) => a + Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0), 0);
-  const solicitadas = delMes.reduce((a, v) => a + (Number(v.portasVoz) || 0), 0);
-  const lineas = delMes.reduce((a, v) => a + (Number(v.lineasVoz) || 0), 0);
+  const { portas, solicitadas, lineas } = portasPorMes(ventas, mes);
   const pct = lineas > 0 ? Math.round((portas / lineas) * 100) : 0;
   return { portas, solicitadas, lineas, pct };
 }
@@ -275,11 +298,11 @@ export function resumenGlobal(ventas, mes) {
     }
   }
 
-  // Portabilidades móviles: cuentan por su propia activación (independiente del estado de la venta)
-  const portasTotales = delMes.reduce((a, v) => a + (Number(v.portasVoz) || 0), 0);
-  const portasActivas = delMes.reduce(
-    (a, v) => a + Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0), 0
-  );
+  // Portabilidades móviles: cuentan por su propia activación y en el mes de su
+  // ventana de portabilidad (independiente del mes/estado de la venta)
+  const pm = portasPorMes(ventas, mes);
+  const portasTotales = pm.solicitadas;
+  const portasActivas = pm.portas;
   const portasPendientes = Math.max(0, portasTotales - portasActivas);
 
   return {

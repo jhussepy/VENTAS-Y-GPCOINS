@@ -119,6 +119,37 @@ describe('portasDetalle usa portas activas para el %', () => {
   });
 });
 
+describe('portas atribuidas al mes de su ventana de portabilidad', () => {
+  // Venta cerrada en junio, con 2 portas cuya ventana de portabilidad es julio
+  const ventaCruzada = {
+    ...ventaVacia(), mes: 'junio', estado: 'activa',
+    lineasMoviles: [
+      { tipo: 'porta', activa: true, ventanaPorta: '2026-07-01T02:00', tarifa: 'total' },
+      { tipo: 'porta', activa: true, ventanaPorta: '2026-07-01T02:00', tarifa: 'total' },
+    ],
+  };
+
+  it('no cuenta las portas en junio (mes de la venta)', () => {
+    const r = resumenGlobal([ventaCruzada], 'junio');
+    expect(r.portasActivas).toBe(0);
+    expect(r.portasTotales).toBe(0);
+  });
+
+  it('cuenta las portas en julio (mes de la ventana)', () => {
+    const r = resumenGlobal([ventaCruzada], 'julio');
+    expect(r.portasActivas).toBe(2);
+    expect(r.portasTotales).toBe(2);
+    expect(portasDetalle([ventaCruzada], 'julio').pct).toBe(100);
+  });
+
+  it('la línea sin ventana cae en el mes de la venta', () => {
+    const v = { ...ventaVacia(), mes: 'junio', estado: 'activa',
+      lineasMoviles: [{ tipo: 'porta', activa: true, ventanaPorta: '', tarifa: 'total' }] };
+    expect(resumenGlobal([v], 'junio').portasActivas).toBe(1);
+    expect(resumenGlobal([v], 'julio').portasActivas).toBe(0);
+  });
+});
+
 describe('gpPotencialMax', () => {
   it('existe y es el techo teórico (>= asegurado por ranking)', () => {
     const r = resumenGlobal([], 'junio');
