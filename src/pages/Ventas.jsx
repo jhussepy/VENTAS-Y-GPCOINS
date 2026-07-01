@@ -360,7 +360,7 @@ export default function Ventas() {
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [prefab, setPrefab] = useState(null); // marca/sap precargados desde Catálogo
-  const [filtroMes, setFiltroMes] = useState('todos');
+  const [filtroMes, setFiltroMes] = useState(mes);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
@@ -375,6 +375,10 @@ export default function Ventas() {
       setPrefillVenta(null);
     }
   }, [prefillVenta, setPrefillVenta]);
+
+  // La tabla sigue al Período activo (JUNIO/JULIO) de la cabecera; el
+  // desplegable "Todos los meses" sigue disponible para ver ambos a la vez.
+  useEffect(() => { setFiltroMes(mes); }, [mes]);
 
   const q = busqueda.trim().toLowerCase();
   const lista = ventas.filter((v) => {
@@ -487,7 +491,12 @@ export default function Ventas() {
           </button>
         </div>
         <div className="flex flex-wrap gap-2">
-          <select className="input w-auto" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}>
+          <select
+            className="input w-auto"
+            value={filtroMes}
+            onChange={(e) => setFiltroMes(e.target.value)}
+            title="Se sincroniza con el Período activo de arriba; elige 'Todos los meses' para ver ambos a la vez"
+          >
             <option value="todos">Todos los meses</option>
             <option value="junio">Junio</option>
             <option value="julio">Julio</option>
