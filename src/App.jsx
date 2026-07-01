@@ -2,7 +2,7 @@ import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo } 
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Sparkles, Trash2, Settings,
+  Download, Upload, Sparkles, Trash2, Settings, CalendarClock,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { mesDesdeFecha } from './lib/engine.js';
@@ -144,6 +144,13 @@ export default function App() {
   if (loading) return <Spinner />;
 
   const admin = esAdmin(user);
+
+  // Aviso de fin de período: cada mes cambian las ofertas/incentivos (junio→julio→agosto…),
+  // así que avisamos al admin con antelación para que prepare los datos del mes siguiente.
+  const DIAS_AVISO_FIN_PERIODO = 7;
+  const diasParaFinPeriodo = Math.ceil((new Date(`${PERIODO.fin}T23:59:59`) - new Date()) / 86400000);
+  const avisoFinPeriodo = admin && diasParaFinPeriodo >= 0 && diasParaFinPeriodo <= DIAS_AVISO_FIN_PERIODO;
+
   const esLowi = operador === 'lowi';
   const nav = esLowi
     ? [...NAV_LOWI, NAV_AJUSTES]
@@ -327,6 +334,16 @@ export default function App() {
           </header>
 
           <main className="flex-1 p-4 lg:p-8 max-w-[1600px] w-full mx-auto">
+            {avisoFinPeriodo && (
+              <div className="mb-4 flex items-start gap-2 text-sm px-4 py-3 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                <CalendarClock size={18} className="shrink-0 mt-0.5" />
+                <span>
+                  El período de incentivos actual termina el <span className="font-semibold">{PERIODO.fin}</span>
+                  {' '}(quedan {diasParaFinPeriodo} {diasParaFinPeriodo === 1 ? 'día' : 'días'}).
+                  Prepara los datos del mes siguiente (puntos, estrellas, precios, tarifas) para cargarlos aquí antes de que empiece.
+                </span>
+              </div>
+            )}
             {cercaLimite && (
               <div className="mb-4 text-sm px-4 py-3 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/30">
                 ⚠️ Tus datos ocupan el <span className="font-semibold">{pctUso}%</span> del límite de almacenamiento por usuario.
