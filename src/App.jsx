@@ -5,6 +5,7 @@ import {
   Download, Upload, Sparkles, Trash2, Settings,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
+import { mesDesdeFecha } from './lib/engine.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useCloudData } from './hooks/useCloudData.js';
 import { cerrarSesion } from './lib/firebase.js';
@@ -71,7 +72,9 @@ export default function App() {
   const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
-  const [mes, setMes] = useState('junio');
+  // El período activo arranca en el mes real de hoy (no siempre "junio"),
+  // para que el Dashboard/GP Coins/Llaves no muestren un mes vencido por defecto.
+  const [mes, setMes] = useState(() => mesDesdeFecha(new Date()));
   const [open, setOpen] = useState(false);
   const [prefillVenta, setPrefillVenta] = useState(null); // {marca, sap} para "Vender" desde Catálogo
   const backupRef = useRef(null);
