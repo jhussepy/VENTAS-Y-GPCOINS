@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  ShoppingCart, Wifi, Clock, XCircle, Euro, TrendingDown, TrendingUp,
+  ShoppingCart, Wifi, Clock, XCircle, TrendingDown, TrendingUp,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
@@ -9,7 +9,7 @@ import { Repeat, Smartphone, Tv } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS, VELOCIDADES_LOWI, TARIFAS_MOVIL_LOWI } from '../lib/lowi.js';
 import { StatCard, Card, SectionTitle, Badge, EmptyState, HeroBanner } from '../components/ui.jsx';
-import { fmtNum, fmtEur } from '../lib/format.js';
+import { fmtNum } from '../lib/format.js';
 
 const COLORES_ESTADO = {
   pendiente: '#FFB81C',
@@ -101,7 +101,7 @@ export default function LowiDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard icon={Euro} label="Facturación activa (mensual)" value={fmtEur(r.facturacionActiva)} sub="Suma de cuotas de clientes activos" accent="text-emerald-400" />
+        <StatCard icon={Repeat} label="Portas pendientes de activar" value={fmtNum(r.portasPendientes)} sub={`de ${fmtNum(r.portasTotales)} solicitadas`} accent="text-gp-gold" />
         <StatCard icon={TrendingUp} label="Tasa de activación" value={`${r.tasaActivacion.toFixed(0)}%`} sub="Activas sobre las instaladas" accent="text-sky-400" />
         <StatCard icon={TrendingDown} label="Tasa de baja" value={`${r.tasaBaja.toFixed(0)}%`} sub="Bajas sobre las instaladas" accent="text-vf-redLight" />
       </div>
