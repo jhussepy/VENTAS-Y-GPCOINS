@@ -326,7 +326,7 @@ export default function LowiVentas() {
 
       <Card className="!p-0 overflow-hidden">
         <div className="p-5 border-b border-bg-border flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-fg">Ventas Lowi</h2>
+          <h2 className="text-lg font-semibold text-fg">Ventas registradas</h2>
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
@@ -351,7 +351,9 @@ export default function LowiVentas() {
                   <th className="px-4 py-3 font-semibold">F. Venta</th>
                   <th className="px-4 py-3 font-semibold">F. Instalación</th>
                   <th className="px-4 py-3 font-semibold">Producto</th>
+                  <th className="px-4 py-3 font-semibold text-center">Portas</th>
                   <th className="px-4 py-3 font-semibold text-right">Cuota</th>
+                  <th className="px-4 py-3 font-semibold text-center">Mes</th>
                   <th className="px-4 py-3 font-semibold">Estado</th>
                   <th className="px-4 py-3 font-semibold text-right">Acciones</th>
                 </tr>
@@ -377,27 +379,38 @@ export default function LowiVentas() {
                       {v.velocidad && <span className="text-fg-muted"> · {v.velocidad}</span>}
                       {v.lineas > 0 && <span className="text-fg-muted"> · {v.lineas} líneas</span>}
                       {v.tv && <span className="flex items-center gap-1 text-[11px] text-fg-muted mt-0.5"><Tv size={12} className="text-sky-400" /> {v.tv}</span>}
+                    </td>
+                    <td className="px-4 py-3 text-center tabnum">
                       {(() => {
                         const lm = v.lineasMoviles || [];
                         const portas = lm.filter((l) => l.tipo === 'porta').length;
-                        if (portas === 0) return null;
+                        if (portas === 0) return <span className="text-fg-muted">—</span>;
                         const act = lm.filter((l) => l.tipo === 'porta' && l.activa).length;
                         const vt = ventanaRelevante(lm);
+                        const inc = lm.find((l) => l.tipo === 'porta' && l.incidenciaPorta && !l.activa);
+                        const labelInc = inc && INCIDENCIAS_PORTA.find((i) => i.id === inc.incidenciaPorta)?.label;
                         return (
-                          <span className="block text-[11px] text-fg-muted">
-                            <span className="text-emerald-400">{act}</span>/{portas} portas
-                            {vt && <span className="ml-1.5 inline-flex align-middle" title={`${ETIQUETA_VENTANA[vt.estado]}: ${fmtVentana(vt.fecha)}`}><Badge tone={TONO_VENTANA[vt.estado]}>{vt.estado === 'vencida' ? 'Vencida' : fmtVentana(vt.fecha)}</Badge></span>}
-                            {(() => {
-                              const inc = lm.find((l) => l.tipo === 'porta' && l.incidenciaPorta && !l.activa);
-                              if (!inc) return null;
-                              const label = INCIDENCIAS_PORTA.find((i) => i.id === inc.incidenciaPorta)?.label;
-                              return <span className="ml-1.5 inline-flex align-middle" title={label}><Badge tone="red">{label}</Badge></span>;
-                            })()}
-                          </span>
+                          <>
+                            <span title="Portas activas / solicitadas">
+                              <span className="text-emerald-400">{act}</span>
+                              <span className="text-fg-muted"> / {portas}</span>
+                            </span>
+                            {vt && (
+                              <span className="flex justify-center mt-1" title={`${ETIQUETA_VENTANA[vt.estado]}: ${fmtVentana(vt.fecha)}`}>
+                                <Badge tone={TONO_VENTANA[vt.estado]}>{vt.estado === 'vencida' ? 'Vencida' : fmtVentana(vt.fecha)}</Badge>
+                              </span>
+                            )}
+                            {labelInc && (
+                              <span className="flex justify-center mt-1" title={labelInc}>
+                                <Badge tone="red">{labelInc}</Badge>
+                              </span>
+                            )}
+                          </>
                         );
                       })()}
                     </td>
                     <td className="px-4 py-3 text-right text-fg-soft tabnum">{v.cuota ? fmtEur(v.cuota) : '—'}</td>
+                    <td className="px-4 py-3 text-center"><Badge tone="neutral">{etiquetaMesLowi(mesLowi(v.fechaVenta)).slice(0, 3)}</Badge></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: ESTADOS_LOWI[v.estado]?.color }} aria-hidden="true" />
