@@ -113,9 +113,12 @@ export function resumenLowi(ventas) {
 
 // Resumen de contadores derivados de una lista de líneas móviles de Lowi
 export function resumenLineasLowi(lm = []) {
+  // Una porta cancelada por el cliente (ES M1) nunca se activará: la excluimos
+  // del recuento, igual que resumenLowi().
+  const validas = lm.filter((l) => !(l.tipo === 'porta' && l.incidenciaPorta === 'cancelada_m1'));
   return {
-    lineas: lm.length,
-    portas: lm.filter((l) => l.tipo === 'porta').length,
-    portasActivas: lm.filter((l) => l.tipo === 'porta' && l.activa).length,
+    lineas: validas.length,
+    portas: validas.filter((l) => l.tipo === 'porta').length,
+    portasActivas: validas.filter((l) => l.tipo === 'porta' && l.activa).length,
   };
 }

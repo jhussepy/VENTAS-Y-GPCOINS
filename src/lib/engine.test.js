@@ -340,6 +340,29 @@ describe('resumenLineas (líneas móviles)', () => {
     const r = resumenLineas([]);
     expect(r).toEqual({ lineasVoz: 0, portasVoz: 0, portasActivas: 0, til65: 0 });
   });
+
+  it('excluye las portas canceladas (ES M1), igual que portasPorMes', async () => {
+    const { resumenLineas } = await import('../data/movil.js');
+    const lm = [
+      { tarifa: 'basica', tipo: 'porta', activa: false, incidenciaPorta: 'cancelada_m1' },
+      { tarifa: 'ilim60', tipo: 'porta', activa: true },
+    ];
+    const r = resumenLineas(lm);
+    expect(r.lineasVoz).toBe(1);
+    expect(r.portasVoz).toBe(1);
+    expect(r.portasActivas).toBe(1);
+  });
+});
+
+describe('resumenLineasLowi excluye las portas canceladas (ES M1)', () => {
+  it('no cuenta la línea cancelada en lineas/portas', async () => {
+    const { resumenLineasLowi } = await import('./lowi.js');
+    const lm = [
+      { tarifa: '10gb', tipo: 'porta', activa: false, incidenciaPorta: 'cancelada_m1' },
+      { tarifa: '50gb', tipo: 'porta', activa: true },
+    ];
+    expect(resumenLineasLowi(lm)).toEqual({ lineas: 1, portas: 1, portasActivas: 1 });
+  });
 });
 
 describe('resumenLineasLowi (líneas móviles de Lowi)', () => {
@@ -488,5 +511,26 @@ describe('lineaPrincipal', () => {
   it('devuelve la marcada como principal entre varias', () => {
     const principal = { numero: '2', principal: true };
     expect(lineaPrincipal([{ numero: '1' }, principal])).toBe(principal);
+  });
+});
+
+describe('Supervisor: los totales de Lowi por agente respetan el Período activo', () => {
+  // Reproduce el mismo cálculo que Admin.jsx: resumenLowi(ventasLowi
+  // filtradas por mesEfectivo === mes activo), para verificar sin depender
+  // de Firestore que el fix de "Lowi no cambiaba entre JUNIO/JULIO" funciona.
+  it('un agente con ventas Lowi en junio y en julio ve totales distintos por mes', async () => {
+    const { resumenLowi, ventaLowiVacia } = await import('./lowi.js');
+    const ventasLowiAgente = [
+      { ...ventaLowiVacia(), fechaVenta: '2026-06-10', fechaInstalacion: '2026-06-14', estado: 'activa', cuota: 30 },
+      { ...ventaLowiVacia(), fechaVenta: '2026-07-02', fechaInstalacion: '2026-07-06', estado: 'activa', cuota: 25 },
+      // Venta cerrada en junio pero instalada en julio: debe contar en julio
+      { ...ventaLowiVacia(), fechaVenta: '2026-06-25', fechaInstalacion: '2026-07-01', estado: 'activa', cuota: 12 },
+    ];
+    const junio = resumenLowi(ventasLowiAgente.filter((v) => mesEfectivo(v) === 'junio'));
+    const julio = resumenLowi(ventasLowiAgente.filter((v) => mesEfectivo(v) === 'julio'));
+    expect(junio.total).toBe(1);
+    expect(junio.facturacionActiva).toBe(30);
+    expect(julio.total).toBe(2);
+    expect(julio.facturacionActiva).toBe(37);
   });
 });

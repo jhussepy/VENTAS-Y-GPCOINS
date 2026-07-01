@@ -39,11 +39,14 @@ export const INCIDENCIAS_PORTA = [
 
 // Resumen de contadores derivados de una lista de líneas móviles
 export function resumenLineas(lm = []) {
+  // Una porta cancelada por el cliente (ES M1) nunca se activará: la excluimos
+  // del recuento, igual que hace el motor de incentivos (portasPorMes).
+  const validas = lm.filter((l) => !(l.tipo === 'porta' && l.incidenciaPorta === 'cancelada_m1'));
   return {
-    lineasVoz: lm.length,
-    portasVoz: lm.filter((l) => l.tipo === 'porta').length,
-    portasActivas: lm.filter((l) => l.tipo === 'porta' && l.activa).length,
-    til65: lm.filter((l) => esTil65(l.tarifa)).length,
+    lineasVoz: validas.length,
+    portasVoz: validas.filter((l) => l.tipo === 'porta').length,
+    portasActivas: validas.filter((l) => l.tipo === 'porta' && l.activa).length,
+    til65: validas.filter((l) => esTil65(l.tarifa)).length,
   };
 }
 
