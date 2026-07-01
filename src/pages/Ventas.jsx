@@ -3,7 +3,7 @@ import {
   Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search, Tv,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { ventaVacia, mesDesdeFecha, unidadesVendidas, estadoEntregaTerminal, ETIQUETAS_ENTREGA } from '../lib/engine.js';
+import { ventaVacia, mesDesdeFecha, unidadesVendidas, estadoEntregaTerminal, ETIQUETAS_ENTREGA, lineaPrincipal } from '../lib/engine.js';
 import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js';
 import { avisosContacto } from '../lib/validacion.js';
 import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.js';
@@ -51,6 +51,8 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
     return nl;
   }));
   const delLinea = (id) => setLineas(lineas.filter((l) => l.id !== id));
+  // El terminal va ligado a una única línea: marcarla desmarca las demás
+  const setLineaPrincipal = (id) => setLineas(lineas.map((l) => ({ ...l, principal: l.id === id })));
 
   const productos = v.marca ? CATALOGO[v.marca]?.productos ?? [] : [];
 
@@ -154,6 +156,14 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           <div className="space-y-2">
             {lineas.map((l, i) => (
               <div key={l.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end bg-bg-surface2/50 rounded-lg p-2">
+                {v.marca && lineas.length > 1 && (
+                  <div className="sm:col-span-12 -mb-1">
+                    <label className="flex items-center gap-2 text-xs text-fg-soft cursor-pointer" title="El terminal se entrega según la activación de esta línea">
+                      <input type="radio" name="lineaPrincipal" checked={!!l.principal} onChange={() => setLineaPrincipal(l.id)} className="accent-vf-red w-3.5 h-3.5" />
+                      Línea principal (asociada al terminal)
+                    </label>
+                  </div>
+                )}
                 <div className="sm:col-span-3">
                   <label className="label">Tarifa línea {i + 1}</label>
                   <select className="input" value={l.tarifa} onChange={(e) => updLinea(l.id, 'tarifa', e.target.value)}>
@@ -277,12 +287,19 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
       {v.marca && !v.dispositivoEntregado && (() => {
         const estadoEntrega = estadoEntregaTerminal(v);
         const et = ETIQUETAS_ENTREGA[estadoEntrega];
+        const principal = lineaPrincipal(v.lineasMoviles);
         return (
           <div className="-mt-1 space-y-2">
             <p className="text-xs text-amber-400">
               El dispositivo aún no consta como entregado: sus <span className="text-fg-soft">puntos/GP Coins no se cuentan</span> hasta que marques la casilla.
             </p>
             {et && <Badge tone={et.tone}>{et.label}</Badge>}
+            {principal?.tipo === 'porta' && (
+              <p className="text-[11px] text-fg-muted">Según la línea principal {principal.numero || '(sin número)'} — su porta manda sobre la entrega.</p>
+            )}
+            {!principal && (lineas.length > 1) && (
+              <p className="text-[11px] text-amber-400">Marca cuál es la línea principal para calcular cuándo estará lista la entrega.</p>
+            )}
             {(estadoEntrega === 'lista' || v.incidenciaEntrega) && (
               <div className="max-w-xs">
                 <label className="label">Incidencia en la entrega <span className="text-fg-muted font-normal">(opcional)</span></label>

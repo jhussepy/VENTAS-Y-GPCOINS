@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas, estadoEntregaTerminal } from './engine.js';
+import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas, estadoEntregaTerminal, lineaPrincipal } from './engine.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
 import { resumenLowi, mesLowi, ventaLowiVacia } from './lowi.js';
 
@@ -368,14 +368,53 @@ describe('estadoEntregaTerminal', () => {
     expect(estadoEntregaTerminal(v, ahora)).toBe('lista');
   });
 
-  it('usa la ventana más tardía cuando hay varias portas activas', () => {
+  it('con varias líneas y ninguna marcada como principal, no hay línea que bloquee (pendiente)', () => {
     const v = {
       ...ventaVacia(), marca: 'xiaomi',
       lineasMoviles: [
         { tipo: 'porta', activa: true, ventanaPorta: '2026-06-20T02:00' },
-        { tipo: 'porta', activa: true, ventanaPorta: '2026-06-30T02:00' },
+        { tipo: 'porta', activa: false, ventanaPorta: '2026-06-30T02:00' },
       ],
     };
-    expect(estadoEntregaTerminal(v, ahora)).toBe('esperando_48h');
+    expect(estadoEntregaTerminal(v, ahora)).toBe('pendiente');
+  });
+
+  it('usa solo la línea marcada como principal, ignorando las demás portas', () => {
+    const v = {
+      ...ventaVacia(), marca: 'xiaomi',
+      lineasMoviles: [
+        { tipo: 'porta', activa: true, ventanaPorta: '2026-06-28T02:00', principal: true }, // lista
+        { tipo: 'porta', activa: false, ventanaPorta: '2026-06-30T02:00' }, // aún esperando, pero no es la principal
+      ],
+    };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('lista');
+  });
+
+  it('si la línea principal es "nueva" (sin porta), la entrega no depende de ninguna ventana', () => {
+    const v = {
+      ...ventaVacia(), marca: 'xiaomi',
+      lineasMoviles: [
+        { tipo: 'nueva', principal: true },
+        { tipo: 'porta', activa: false, ventanaPorta: '2026-06-30T02:00' },
+      ],
+    };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('pendiente');
+  });
+});
+
+describe('lineaPrincipal', () => {
+  it('null si no hay líneas', () => {
+    expect(lineaPrincipal([])).toBeNull();
+  });
+  it('asume la única línea como principal si no hay ninguna marcada', () => {
+    const l = { tipo: 'porta', numero: '600' };
+    expect(lineaPrincipal([l])).toBe(l);
+  });
+  it('null si hay varias líneas y ninguna marcada', () => {
+    expect(lineaPrincipal([{ numero: '1' }, { numero: '2' }])).toBeNull();
+  });
+  it('devuelve la marcada como principal entre varias', () => {
+    const principal = { numero: '2', principal: true };
+    expect(lineaPrincipal([{ numero: '1' }, principal])).toBe(principal);
   });
 });

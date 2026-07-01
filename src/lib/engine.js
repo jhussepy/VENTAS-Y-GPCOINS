@@ -277,23 +277,29 @@ export const ETIQUETAS_ENTREGA = {
   lista: { label: 'Lista para entregar', tone: 'neutral' },
 };
 
+// El terminal va ligado a UNA línea (la principal), no a cualquier porta de la
+// venta. Si ninguna línea está marcada como principal, se asume la única
+// línea existente (compatibilidad con ventas de una sola línea); con varias
+// líneas y ninguna marcada, no hay forma de saber cuál bloquea la entrega.
+export function lineaPrincipal(lineasMoviles = []) {
+  if (!lineasMoviles.length) return null;
+  const marcada = lineasMoviles.find((l) => l.principal);
+  if (marcada) return marcada;
+  return lineasMoviles.length === 1 ? lineasMoviles[0] : null;
+}
+
 // Devuelve la clave de estado (ver ETIQUETAS_ENTREGA) o null si la venta no lleva terminal
 export function estadoEntregaTerminal(venta, ahora = new Date()) {
   if (!venta.marca) return null;
   if (venta.dispositivoEntregado) return 'entregado';
   if (venta.incidenciaEntrega) return venta.incidenciaEntrega;
 
-  const portas = (venta.lineasMoviles || []).filter((l) => l.tipo === 'porta');
-  if (portas.length === 0) return 'pendiente'; // sin porta que bloquee la entrega
+  const principal = lineaPrincipal(venta.lineasMoviles);
+  if (!principal || principal.tipo !== 'porta') return 'pendiente'; // sin porta principal que bloquee
 
-  const activasConVentana = portas.filter((l) => l.activa && l.ventanaPorta);
-  if (activasConVentana.length === 0) return 'esperando_porta';
+  if (!principal.activa || !principal.ventanaPorta) return 'esperando_porta';
 
-  const maxVentana = activasConVentana.reduce((max, l) => {
-    const f = new Date(l.ventanaPorta);
-    return f > max ? f : max;
-  }, new Date(0));
-  const listaDesde = new Date(maxVentana.getTime() + HORAS_ESPERA_ENTREGA * 3600000);
+  const listaDesde = new Date(new Date(principal.ventanaPorta).getTime() + HORAS_ESPERA_ENTREGA * 3600000);
   return ahora >= listaDesde ? 'lista' : 'esperando_48h';
 }
 

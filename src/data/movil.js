@@ -56,4 +56,5 @@ export const lineaMovilVacia = () => ({
   ventanaPorta: '',    // fecha/hora de la ventana de portabilidad (solo si porta)
   activa: false,       // porta ya activada (solo si porta)
   incidenciaPorta: '', // '' | 'esperando_sim' | 'error_m6' | 'cancelada_m1' | 'otro' (solo si porta)
+  principal: false,    // ¿es la línea principal? (a ella va ligado el terminal)
 });
