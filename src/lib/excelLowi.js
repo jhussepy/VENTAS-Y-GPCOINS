@@ -1,4 +1,5 @@
 import { ventaLowiVacia, ESTADOS_LOWI, PRODUCTOS_LOWI, resumenLineasLowi } from './lowi.js';
+import { nuevoId } from './id.js';
 
 // xlsx se carga de forma diferida para aligerar el bundle inicial
 const cargarXLSX = () => import('xlsx');
@@ -84,7 +85,12 @@ export async function importarLowi(file, existentes = []) {
     v.notas = String(r.notas ?? '').trim();
     try {
       const lm = r.lineasMoviles ? JSON.parse(r.lineasMoviles) : null;
-      if (Array.isArray(lm) && lm.length) { v.lineasMoviles = lm; Object.assign(v, resumenLineasLowi(lm)); }
+      if (Array.isArray(lm) && lm.length) {
+        // Aseguramos un id único por línea: sin él, editar/eliminar una línea
+        // importada afectaría a todas las que compartan id undefined.
+        v.lineasMoviles = lm.map((l) => ({ ...l, id: l.id || nuevoId() }));
+        Object.assign(v, resumenLineasLowi(v.lineasMoviles));
+      }
     } catch { /* ignora JSON inválido */ }
     return v;
   }).filter((v) => v.nombre || v.apellido || v.producto);

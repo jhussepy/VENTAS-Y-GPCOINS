@@ -39,7 +39,9 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
   const tieneLineas = lineas.length > 0;
   const recompute = (next) => {
     const lm = next.lineasMoviles || [];
-    if (lm.length > 0) Object.assign(next, resumenLineas(lm));
+    // Siempre recalculamos (incluso a 0 si se borran todas las líneas): si no,
+    // quedan contadores "fantasma" de líneas ya eliminadas.
+    Object.assign(next, resumenLineas(lm));
     return next;
   };
   const setLineas = (lm) => setV((p) => recompute({ ...p, lineasMoviles: lm }));
@@ -47,7 +49,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
   const updLinea = (id, k, val) => setLineas(lineas.map((l) => {
     if (l.id !== id) return l;
     const nl = { ...l, [k]: val };
-    if (k === 'tipo' && val === 'nueva') { nl.operador = ''; nl.activa = false; nl.ventanaPorta = ''; }
+    if (k === 'tipo' && val === 'nueva') { nl.operador = ''; nl.activa = false; nl.ventanaPorta = ''; nl.incidenciaPorta = ''; }
     return nl;
   }));
   const delLinea = (id) => setLineas(lineas.filter((l) => l.id !== id));

@@ -224,6 +224,9 @@ export function portasPorMes(ventas, mes) {
     const lm = v.lineasMoviles || [];
     if (lm.length > 0) {
       for (const l of lm) {
+        // El cliente canceló el proceso (ES M1): esa porta nunca se activará,
+        // así que no debe seguir contando como "pendiente" indefinidamente.
+        if (l.tipo === 'porta' && l.incidenciaPorta === 'cancelada_m1') continue;
         const mLinea = (l.tipo === 'porta' && l.ventanaPorta) ? mesDesdeFecha(l.ventanaPorta) : v.mes;
         if (mLinea !== mes) continue;
         lineas += 1;

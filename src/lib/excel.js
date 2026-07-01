@@ -1,6 +1,7 @@
 import { ventaVacia, mesDesdeFecha } from './engine.js';
 import { ESTADOS } from './estados.js';
 import { resumenLineas } from '../data/movil.js';
+import { nuevoId } from './id.js';
 import { PERIODO } from '../data/incentivos.js';
 
 // Normaliza el texto de estado a una clave válida
@@ -116,8 +117,10 @@ export async function importarVentas(file, existentes = []) {
     try {
       const lm = r.lineasMoviles ? JSON.parse(r.lineasMoviles) : null;
       if (Array.isArray(lm) && lm.length) {
-        v.lineasMoviles = lm;
-        Object.assign(v, resumenLineas(lm));
+        // Aseguramos un id único por línea: sin él, editar/eliminar una línea
+        // importada afectaría a todas las que compartan id undefined.
+        v.lineasMoviles = lm.map((l) => ({ ...l, id: l.id || nuevoId() }));
+        Object.assign(v, resumenLineas(v.lineasMoviles));
       }
     } catch { /* ignora JSON inválido */ }
     v.mes = mesDesdeFecha(v.fechaVenta);

@@ -27,12 +27,14 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
   // Líneas móviles detalladas (igual que Vodafone, sin GP/terminales)
   const lineas = v.lineasMoviles || [];
   const tieneLineas = lineas.length > 0;
-  const setLineas = (lm) => setV((p) => ({ ...p, lineasMoviles: lm, ...(lm.length ? resumenLineasLowi(lm) : {}) }));
+  // Siempre recalculamos (incluso a 0 si se borran todas las líneas): si no,
+  // queda un contador "X líneas" fantasma de líneas ya eliminadas.
+  const setLineas = (lm) => setV((p) => ({ ...p, lineasMoviles: lm, ...resumenLineasLowi(lm) }));
   const addLinea = () => setLineas([...lineas, { id: nuevoId(), ...lineaMovilVacia() }]);
   const updLinea = (id, k, val) => setLineas(lineas.map((l) => {
     if (l.id !== id) return l;
     const nl = { ...l, [k]: val };
-    if (k === 'tipo' && val === 'nueva') { nl.operador = ''; nl.activa = false; nl.ventanaPorta = ''; }
+    if (k === 'tipo' && val === 'nueva') { nl.operador = ''; nl.activa = false; nl.ventanaPorta = ''; nl.incidenciaPorta = ''; }
     return nl;
   }));
   const delLinea = (id) => setLineas(lineas.filter((l) => l.id !== id));

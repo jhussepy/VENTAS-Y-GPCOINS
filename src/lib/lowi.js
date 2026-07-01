@@ -84,11 +84,15 @@ export function resumenLowi(ventas) {
     porEstado[e] += 1;
     if (e === 'activa') {
       facturacionActiva += Number(v.cuota) || 0;
-      for (const l of v.lineasMoviles || []) {
-        if (l.tipo === 'porta') {
-          portasTotales += 1;
-          if (l.activa) portasActivas += 1;
-        }
+    }
+    // Las portas cuentan por su propia activación, igual que en Vodafone:
+    // independientemente de si la venta (fibra/alta) ya está activa o no.
+    // Si el cliente canceló el proceso (ES M1), esa porta nunca se activará
+    // y no debe seguir contando como pendiente.
+    for (const l of v.lineasMoviles || []) {
+      if (l.tipo === 'porta' && l.incidenciaPorta !== 'cancelada_m1') {
+        portasTotales += 1;
+        if (l.activa) portasActivas += 1;
       }
     }
   }

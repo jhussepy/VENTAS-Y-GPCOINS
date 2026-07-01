@@ -71,18 +71,31 @@ describe('resumenLowi', () => {
 });
 
 describe('resumenLowi: portabilidad desde líneas móviles', () => {
-  it('cuenta portas activas/pendientes de ventas activas', async () => {
+  it('cuenta portas por su propia activación, igual con venta activa que pendiente', async () => {
     const { resumenLowi, ventaLowiVacia } = await import('./lowi.js');
     const ventas = [
       { ...ventaLowiVacia(), estado: 'activa', lineasMoviles: [
         { tipo: 'porta', activa: true }, { tipo: 'porta', activa: false }, { tipo: 'nueva', activa: false },
       ] },
-      { ...ventaLowiVacia(), estado: 'pendiente', lineasMoviles: [{ tipo: 'porta', activa: true }] }, // no activa → no cuenta
+      // La venta (fibra) sigue pendiente, pero la porta ya se activó: debe contar igual.
+      { ...ventaLowiVacia(), estado: 'pendiente', lineasMoviles: [{ tipo: 'porta', activa: true }] },
     ];
     const r = resumenLowi(ventas);
-    expect(r.portasTotales).toBe(2);
-    expect(r.portasActivas).toBe(1);
+    expect(r.portasTotales).toBe(3);
+    expect(r.portasActivas).toBe(2);
     expect(r.portasPendientes).toBe(1);
+  });
+
+  it('excluye las portas canceladas por el cliente (ES M1) del recuento', async () => {
+    const { resumenLowi, ventaLowiVacia } = await import('./lowi.js');
+    const ventas = [{ ...ventaLowiVacia(), estado: 'activa', lineasMoviles: [
+      { tipo: 'porta', activa: false, incidenciaPorta: 'cancelada_m1' },
+      { tipo: 'porta', activa: true },
+    ] }];
+    const r = resumenLowi(ventas);
+    expect(r.portasTotales).toBe(1);
+    expect(r.portasActivas).toBe(1);
+    expect(r.portasPendientes).toBe(0);
   });
 });
 
@@ -116,6 +129,21 @@ describe('portasDetalle usa portas activas para el %', () => {
     expect(d.solicitadas).toBe(4);   // solicitadas aparte
     expect(d.lineas).toBe(4);
     expect(d.pct).toBe(0);           // 0 activas → 0%
+  });
+
+  it('excluye las portas canceladas por el cliente (ES M1) del % de líneas', () => {
+    const v = {
+      ...ventaVacia(), mes: 'junio', estado: 'activa',
+      lineasMoviles: [
+        { tipo: 'porta', activa: false, ventanaPorta: '', incidenciaPorta: 'cancelada_m1' },
+        { tipo: 'porta', activa: true, ventanaPorta: '' },
+      ],
+    };
+    const d = portasDetalle([v], 'junio');
+    expect(d.lineas).toBe(1);        // la cancelada no cuenta como línea
+    expect(d.solicitadas).toBe(1);
+    expect(d.portas).toBe(1);
+    expect(d.pct).toBe(100);
   });
 });
 
@@ -274,6 +302,19 @@ describe('resumenLineas (líneas móviles)', () => {
     expect(r.portasVoz).toBe(2);
     expect(r.portasActivas).toBe(1);
     expect(r.til65).toBe(1); // solo la "Ilimitada Total (TIL65)"
+  });
+
+  it('devuelve todo a 0 con el array vacío (al borrar todas las líneas)', async () => {
+    const { resumenLineas } = await import('../data/movil.js');
+    const r = resumenLineas([]);
+    expect(r).toEqual({ lineasVoz: 0, portasVoz: 0, portasActivas: 0, til65: 0 });
+  });
+});
+
+describe('resumenLineasLowi (líneas móviles de Lowi)', () => {
+  it('devuelve todo a 0 con el array vacío (al borrar todas las líneas)', async () => {
+    const { resumenLineasLowi } = await import('./lowi.js');
+    expect(resumenLineasLowi([])).toEqual({ lineas: 0, portas: 0, portasActivas: 0 });
   });
 });
 
