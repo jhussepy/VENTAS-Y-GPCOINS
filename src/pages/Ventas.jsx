@@ -3,12 +3,12 @@ import {
   Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search, Tv,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { ventaVacia, mesDesdeFecha, unidadesVendidas } from '../lib/engine.js';
+import { ventaVacia, mesDesdeFecha, unidadesVendidas, estadoEntregaTerminal, ETIQUETAS_ENTREGA } from '../lib/engine.js';
 import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js';
 import { avisosContacto } from '../lib/validacion.js';
 import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.js';
 import { CATALOGO, PERIODO, udsDe, TV_CONTENIDOS } from '../data/incentivos.js';
-import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas } from '../data/movil.js';
+import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas, INCIDENCIAS_PORTA } from '../data/movil.js';
 import { nuevoId } from '../lib/id.js';
 import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
@@ -188,9 +188,15 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
                       </label>
                       <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
                     </div>
-                    <div className="sm:col-span-5">
+                    <div className="sm:col-span-3">
                       <label className="label">Fecha ventana portabilidad</label>
                       <input type="datetime-local" className="input" value={l.ventanaPorta || ''} onChange={(e) => updLinea(l.id, 'ventanaPorta', e.target.value)} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="label">Incidencia porta</label>
+                      <select className="input" value={l.incidenciaPorta || ''} onChange={(e) => updLinea(l.id, 'incidenciaPorta', e.target.value)}>
+                        {INCIDENCIAS_PORTA.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
+                      </select>
                     </div>
                   </>
                 ) : (
@@ -268,11 +274,29 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         )}
       </div>
 
-      {v.marca && !v.dispositivoEntregado && (
-        <p className="text-xs text-amber-400 -mt-1">
-          El dispositivo aún no consta como entregado: sus <span className="text-fg-soft">puntos/GP Coins no se cuentan</span> hasta que marques la casilla.
-        </p>
-      )}
+      {v.marca && !v.dispositivoEntregado && (() => {
+        const estadoEntrega = estadoEntregaTerminal(v);
+        const et = ETIQUETAS_ENTREGA[estadoEntrega];
+        return (
+          <div className="-mt-1 space-y-2">
+            <p className="text-xs text-amber-400">
+              El dispositivo aún no consta como entregado: sus <span className="text-fg-soft">puntos/GP Coins no se cuentan</span> hasta que marques la casilla.
+            </p>
+            {et && <Badge tone={et.tone}>{et.label}</Badge>}
+            {(estadoEntrega === 'lista' || v.incidenciaEntrega) && (
+              <div className="max-w-xs">
+                <label className="label">Incidencia en la entrega <span className="text-fg-muted font-normal">(opcional)</span></label>
+                <select className="input" value={v.incidenciaEntrega || ''} onChange={(e) => set('incidenciaEntrega', e.target.value)}>
+                  <option value="">Sin incidencia</option>
+                  <option value="cliente_ausente">Cliente ausente</option>
+                  <option value="rechaza_terminal">Cliente rechaza el terminal</option>
+                  <option value="otro">Otra incidencia</option>
+                </select>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
@@ -523,16 +547,17 @@ export default function Ventas() {
                       </td>
                       <td className="px-4 py-3 text-fg-soft">
                         {prod
-                          ? (
-                            <span>
-                              <span title={prod.modelo}>{nombreMarca(v.marca)} · {prod.modelo.slice(0, 22)}{prod.modelo.length > 22 ? '…' : ''}</span>
-                              <span className="block mt-0.5">
-                                {v.dispositivoEntregado
-                                  ? <Badge tone="green">Entregado</Badge>
-                                  : <Badge tone="gold">Sin entregar</Badge>}
+                          ? (() => {
+                            const et = ETIQUETAS_ENTREGA[estadoEntregaTerminal(v)];
+                            return (
+                              <span>
+                                <span title={prod.modelo}>{nombreMarca(v.marca)} · {prod.modelo.slice(0, 22)}{prod.modelo.length > 22 ? '…' : ''}</span>
+                                <span className="block mt-0.5">
+                                  {et && <Badge tone={et.tone}>{et.label}</Badge>}
+                                </span>
                               </span>
-                            </span>
-                          )
+                            );
+                          })()
                           : <span className="text-fg-muted italic">Sin terminal</span>}
                       </td>
                       <td className="px-4 py-3 text-center tabnum">
@@ -548,6 +573,16 @@ export default function Ventas() {
                           return (
                             <span className="flex justify-center mt-1" title={`${ETIQUETA_VENTANA[vt.estado]}: ${fmtVentana(vt.fecha)}`}>
                               <Badge tone={TONO_VENTANA[vt.estado]}>{vt.estado === 'vencida' ? 'Vencida' : fmtVentana(vt.fecha)}</Badge>
+                            </span>
+                          );
+                        })()}
+                        {(() => {
+                          const inc = (v.lineasMoviles || []).find((l) => l.tipo === 'porta' && l.incidenciaPorta && !l.activa);
+                          if (!inc) return null;
+                          const label = INCIDENCIAS_PORTA.find((i) => i.id === inc.incidenciaPorta)?.label;
+                          return (
+                            <span className="flex justify-center mt-1" title={label}>
+                              <Badge tone="red">{label}</Badge>
                             </span>
                           );
                         })()}

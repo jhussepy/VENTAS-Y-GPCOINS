@@ -8,7 +8,7 @@ import {
   VELOCIDADES_LOWI, MOTIVOS_BAJA, mesLowi, etiquetaMesLowi, resumenLineasLowi,
   TARIFAS_MOVIL_LOWI, TV_LOWI,
 } from '../lib/lowi.js';
-import { OPERADORES_PORTA, lineaMovilVacia } from '../data/movil.js';
+import { OPERADORES_PORTA, lineaMovilVacia, INCIDENCIAS_PORTA } from '../data/movil.js';
 import { nuevoId } from '../lib/id.js';
 import { importarLowi, exportarLowi, plantillaLowi } from '../lib/excelLowi.js';
 import { avisosContacto } from '../lib/validacion.js';
@@ -150,9 +150,15 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
                         </label>
                         <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
                       </div>
-                      <div className="sm:col-span-5">
+                      <div className="sm:col-span-3">
                         <label className="label">Fecha ventana portabilidad</label>
                         <input type="datetime-local" className="input" value={l.ventanaPorta || ''} onChange={(e) => updLinea(l.id, 'ventanaPorta', e.target.value)} />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="label">Incidencia porta</label>
+                        <select className="input" value={l.incidenciaPorta || ''} onChange={(e) => updLinea(l.id, 'incidenciaPorta', e.target.value)}>
+                          {INCIDENCIAS_PORTA.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
+                        </select>
                       </div>
                     </>
                   ) : (
@@ -379,6 +385,12 @@ export default function LowiVentas() {
                           <span className="block text-[11px] text-fg-muted">
                             <span className="text-emerald-400">{act}</span>/{portas} portas
                             {vt && <span className="ml-1.5 inline-flex align-middle" title={`${ETIQUETA_VENTANA[vt.estado]}: ${fmtVentana(vt.fecha)}`}><Badge tone={TONO_VENTANA[vt.estado]}>{vt.estado === 'vencida' ? 'Vencida' : fmtVentana(vt.fecha)}</Badge></span>}
+                            {(() => {
+                              const inc = lm.find((l) => l.tipo === 'porta' && l.incidenciaPorta && !l.activa);
+                              if (!inc) return null;
+                              const label = INCIDENCIAS_PORTA.find((i) => i.id === inc.incidenciaPorta)?.label;
+                              return <span className="ml-1.5 inline-flex align-middle" title={label}><Badge tone="red">{label}</Badge></span>;
+                            })()}
                           </span>
                         );
                       })()}

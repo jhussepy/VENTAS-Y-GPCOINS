@@ -28,6 +28,15 @@ export const OPERADORES_PORTA = [
   'CableMóvil',
 ];
 
+// Incidencias del proceso de portabilidad (código ES habitual entre paréntesis)
+export const INCIDENCIAS_PORTA = [
+  { id: '', label: 'Sin incidencia' },
+  { id: 'esperando_sim', label: 'Esperando SIM' },
+  { id: 'error_m6', label: 'Error de portabilidad (ES M6)' },
+  { id: 'cancelada_m1', label: 'Cliente cancela el proceso (ES M1)' },
+  { id: 'otro', label: 'Otra incidencia' },
+];
+
 // Resumen de contadores derivados de una lista de líneas móviles
 export function resumenLineas(lm = []) {
   return {
@@ -46,4 +55,5 @@ export const lineaMovilVacia = () => ({
   operador: '',        // operador de origen (solo si porta)
   ventanaPorta: '',    // fecha/hora de la ventana de portabilidad (solo si porta)
   activa: false,       // porta ya activada (solo si porta)
+  incidenciaPorta: '', // '' | 'esperando_sim' | 'error_m6' | 'cancelada_m1' | 'otro' (solo si porta)
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas } from './engine.js';
+import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas, estadoEntregaTerminal } from './engine.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
 import { resumenLowi, mesLowi, ventaLowiVacia } from './lowi.js';
 
@@ -328,5 +328,54 @@ describe('ventaVacia', () => {
     expect(v).toHaveProperty('email');
     expect(v).toHaveProperty('direccion');
     expect(v).toHaveProperty('pedido');
+  });
+});
+
+describe('estadoEntregaTerminal', () => {
+  const ahora = new Date('2026-07-01T12:00:00');
+
+  it('null si la venta no lleva terminal', () => {
+    expect(estadoEntregaTerminal({ ...ventaVacia(), marca: '' }, ahora)).toBeNull();
+  });
+
+  it('entregado si ya se marcó como entregado', () => {
+    const v = { ...ventaVacia(), marca: 'xiaomi', dispositivoEntregado: true };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('entregado');
+  });
+
+  it('respeta una incidencia de entrega manual aunque haya pasado el plazo', () => {
+    const v = { ...ventaVacia(), marca: 'xiaomi', incidenciaEntrega: 'cliente_ausente' };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('cliente_ausente');
+  });
+
+  it('pendiente si no hay portas que bloqueen la entrega', () => {
+    const v = { ...ventaVacia(), marca: 'xiaomi', lineasMoviles: [{ tipo: 'nueva' }] };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('pendiente');
+  });
+
+  it('esperando_porta si la porta aún no está activa', () => {
+    const v = { ...ventaVacia(), marca: 'xiaomi', lineasMoviles: [{ tipo: 'porta', activa: false, ventanaPorta: '2026-06-28T02:00' }] };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('esperando_porta');
+  });
+
+  it('esperando_48h si la porta está activa pero no han pasado las 48h', () => {
+    const v = { ...ventaVacia(), marca: 'xiaomi', lineasMoviles: [{ tipo: 'porta', activa: true, ventanaPorta: '2026-06-30T02:00' }] };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('esperando_48h');
+  });
+
+  it('lista cuando ya pasaron 48h desde la ventana activa', () => {
+    const v = { ...ventaVacia(), marca: 'xiaomi', lineasMoviles: [{ tipo: 'porta', activa: true, ventanaPorta: '2026-06-28T02:00' }] };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('lista');
+  });
+
+  it('usa la ventana más tardía cuando hay varias portas activas', () => {
+    const v = {
+      ...ventaVacia(), marca: 'xiaomi',
+      lineasMoviles: [
+        { tipo: 'porta', activa: true, ventanaPorta: '2026-06-20T02:00' },
+        { tipo: 'porta', activa: true, ventanaPorta: '2026-06-30T02:00' },
+      ],
+    };
+    expect(estadoEntregaTerminal(v, ahora)).toBe('esperando_48h');
   });
 });

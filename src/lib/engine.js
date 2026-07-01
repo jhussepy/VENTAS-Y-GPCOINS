@@ -32,6 +32,7 @@ export const ventaVacia = () => ({
   marca: '',               // '' | 'xiaomi' | 'samsung' | 'honor' | 'motorola' | 'jbl'
   sap: '',                 // código SAP del dispositivo
   dispositivoEntregado: false, // ¿el cliente ya recibió el dispositivo? (gating de puntos/GP)
+  incidenciaEntrega: '',   // '' | 'cliente_ausente' | 'rechaza_terminal' | 'otro' (si la entrega no se completó)
   cantidad: 1,             // unidades del dispositivo
   // Líneas móviles detalladas (tarifa, número, nueva/porta, operador, activa)
   lineasMoviles: [],
@@ -257,6 +258,43 @@ export function portasCruzadas(ventas, mes) {
     }
   }
   return out;
+}
+
+// --- Estado de entrega del terminal ------------------------------------------
+// El terminal no puede entregarse hasta que la línea portada esté activa y
+// hayan pasado 48h desde su ventana de portabilidad. Durante la entrega puede
+// haber incidencias (cliente ausente, rechaza el terminal, etc.).
+export const HORAS_ESPERA_ENTREGA = 48;
+
+export const ETIQUETAS_ENTREGA = {
+  entregado: { label: 'Entregado', tone: 'green' },
+  cliente_ausente: { label: 'Cliente ausente', tone: 'red' },
+  rechaza_terminal: { label: 'Rechaza terminal', tone: 'red' },
+  otro: { label: 'Incidencia en entrega', tone: 'red' },
+  pendiente: { label: 'Pendiente de entrega', tone: 'gold' },
+  esperando_porta: { label: 'Esperando activación de porta', tone: 'gold' },
+  esperando_48h: { label: `En espera (48h tras porta)`, tone: 'gold' },
+  lista: { label: 'Lista para entregar', tone: 'neutral' },
+};
+
+// Devuelve la clave de estado (ver ETIQUETAS_ENTREGA) o null si la venta no lleva terminal
+export function estadoEntregaTerminal(venta, ahora = new Date()) {
+  if (!venta.marca) return null;
+  if (venta.dispositivoEntregado) return 'entregado';
+  if (venta.incidenciaEntrega) return venta.incidenciaEntrega;
+
+  const portas = (venta.lineasMoviles || []).filter((l) => l.tipo === 'porta');
+  if (portas.length === 0) return 'pendiente'; // sin porta que bloquee la entrega
+
+  const activasConVentana = portas.filter((l) => l.activa && l.ventanaPorta);
+  if (activasConVentana.length === 0) return 'esperando_porta';
+
+  const maxVentana = activasConVentana.reduce((max, l) => {
+    const f = new Date(l.ventanaPorta);
+    return f > max ? f : max;
+  }, new Date(0));
+  const listaDesde = new Date(maxVentana.getTime() + HORAS_ESPERA_ENTREGA * 3600000);
+  return ahora >= listaDesde ? 'lista' : 'esperando_48h';
 }
 
 // --- Detalle de portas de voz del mes (portas activas, líneas y % redondeado) -
