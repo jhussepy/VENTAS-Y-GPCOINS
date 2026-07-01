@@ -60,6 +60,11 @@ export const mesDesdeFecha = (fecha) => {
   return 'junio'; // fallback: siempre devolvemos 'junio' o 'julio', nunca null
 };
 
+// El incentivo se paga por ACTIVACIONES, no por ventas: si ya hay fecha de
+// instalación, esa manda sobre el mes; si aún no la hay (venta pendiente de
+// instalar), usamos la fecha de venta como respaldo.
+export const mesEfectivo = (v) => mesDesdeFecha(v?.fechaInstalacion || v?.fechaVenta);
+
 // --- ¿La fecha cae dentro del período válido del incentivo? -------------------
 export const dentroDePeriodo = (fecha) => {
   if (!fecha) return false;

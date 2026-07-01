@@ -5,7 +5,7 @@ import {
 import { useApp } from '../App.jsx';
 import {
   ventaLowiVacia, ESTADOS_LOWI, ORDEN_ESTADOS, PRODUCTOS_LOWI,
-  VELOCIDADES_LOWI, MOTIVOS_BAJA, mesLowi, etiquetaMesLowi, resumenLineasLowi,
+  VELOCIDADES_LOWI, MOTIVOS_BAJA, mesEfectivoLowi, etiquetaMesLowi, resumenLineasLowi,
   TARIFAS_MOVIL_LOWI, TV_LOWI,
 } from '../lib/lowi.js';
 import { OPERADORES_PORTA, lineaMovilVacia, INCIDENCIAS_PORTA } from '../data/movil.js';
@@ -50,7 +50,11 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div><label className="label">Fecha de venta</label><input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></div>
-        <div><label className="label">Fecha de instalación</label><input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} /></div>
+        <div>
+          <label className="label">Fecha de instalación</label>
+          <input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} />
+          <p className="text-[11px] text-fg-muted mt-1">Esta fecha decide el mes de seguimiento (activación), no la de venta.</p>
+        </div>
         <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span></label><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></div>
         <div><label className="label">ID Smart <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
       </div>
@@ -218,16 +222,16 @@ export default function LowiVentas() {
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
 
-  // Meses disponibles (de las fechas de venta) para el filtro
+  // Meses disponibles (mes de instalación, o de venta si aún no hay instalación) para el filtro
   const meses = useMemo(() => {
-    const s = new Set(ventasLowi.map((v) => mesLowi(v.fechaVenta)).filter(Boolean));
+    const s = new Set(ventasLowi.map((v) => mesEfectivoLowi(v)).filter(Boolean));
     return [...s].sort().reverse();
   }, [ventasLowi]);
 
   const q = busqueda.trim().toLowerCase();
   const lista = ventasLowi.filter((v) => {
     if (filtro !== 'todos' && v.estado !== filtro) return false;
-    if (filtroMes !== 'todos' && mesLowi(v.fechaVenta) !== filtroMes) return false;
+    if (filtroMes !== 'todos' && mesEfectivoLowi(v) !== filtroMes) return false;
     if (!q) return true;
     return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido, v.idWeb]
       .some((c) => String(c || '').toLowerCase().includes(q));
@@ -410,7 +414,7 @@ export default function LowiVentas() {
                       })()}
                     </td>
                     <td className="px-4 py-3 text-right text-fg-soft tabnum">{v.cuota ? fmtEur(v.cuota) : '—'}</td>
-                    <td className="px-4 py-3 text-center"><Badge tone="neutral">{etiquetaMesLowi(mesLowi(v.fechaVenta)).slice(0, 3)}</Badge></td>
+                    <td className="px-4 py-3 text-center"><Badge tone="neutral">{etiquetaMesLowi(mesEfectivoLowi(v)).slice(0, 3)}</Badge></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: ESTADOS_LOWI[v.estado]?.color }} aria-hidden="true" />

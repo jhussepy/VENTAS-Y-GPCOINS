@@ -123,7 +123,9 @@ export async function importarVentas(file, existentes = []) {
         Object.assign(v, resumenLineas(v.lineasMoviles));
       }
     } catch { /* ignora JSON inválido */ }
-    v.mes = mesDesdeFecha(v.fechaVenta);
+    // El incentivo se paga por activaciones: el mes lo manda la instalación,
+    // con la fecha de venta como respaldo si aún no hay instalación.
+    v.mes = mesDesdeFecha(v.fechaInstalacion || v.fechaVenta);
     return v;
   }).filter((v) => v.nombre || v.apellido || v.sap || v.convergencia);
 

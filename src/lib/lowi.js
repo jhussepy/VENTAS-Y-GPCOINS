@@ -60,6 +60,10 @@ export const ventaLowiVacia = () => ({
 // Mes (YYYY-MM) de una venta a partir de su fecha de venta
 export const mesLowi = (fecha) => (fecha ? String(fecha).slice(0, 7) : '');
 
+// Mes efectivo de una venta: prioriza la fecha de instalación (activación)
+// sobre la de venta, ya que el seguimiento se hace por activaciones del mes.
+export const mesEfectivoLowi = (v) => mesLowi(v?.fechaInstalacion || v?.fechaVenta);
+
 // Etiqueta legible de un mes YYYY-MM (ej. "junio 2026")
 const NOMBRES_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 export const etiquetaMesLowi = (ym) => {

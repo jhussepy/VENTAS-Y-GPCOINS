@@ -21,7 +21,10 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
   const [v, setV] = useState(inicial);
   const set = (k, val) => setV((p) => {
     const next = { ...p, [k]: val };
-    if (k === 'fechaVenta') next.mes = mesDesdeFecha(val);
+    // El mes lo manda la fecha de instalación (activación); si aún no la hay,
+    // usamos la fecha de venta como respaldo.
+    if (k === 'fechaVenta') next.mes = mesDesdeFecha(next.fechaInstalacion || val);
+    if (k === 'fechaInstalacion') next.mes = mesDesdeFecha(val || next.fechaVenta);
     if (k === 'marca') { next.sap = ''; if (!val) next.dispositivoEntregado = false; }
     // El estado manda: "instalación activa" solo es cierto cuando el estado es 'activa'
     if (k === 'estado') next.instalacionActiva = val === 'activa';
@@ -92,7 +95,11 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
             </p>
           )}
         </div>
-        <div><label className="label">Fecha de instalación</label><input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} /></div>
+        <div>
+          <label className="label">Fecha de instalación</label>
+          <input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} />
+          <p className="text-[11px] text-fg-muted mt-1">Esta fecha decide el mes del incentivo (activación), no la de venta.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -257,7 +264,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         <div><label className="label">Secure Net</label><input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', (Number(e.target.value) || 0))} /></div>
         <div>
           <label className="label">Mes (auto)</label>
-          <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!v.fechaVenta} title={v.fechaVenta ? 'Se autodetecta desde la fecha de venta' : undefined}>
+          <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!(v.fechaInstalacion || v.fechaVenta)} title={(v.fechaInstalacion || v.fechaVenta) ? 'Se autodetecta desde la fecha de instalación (o la de venta si aún no hay instalación)' : undefined}>
             <option value="junio">Junio</option><option value="julio">Julio</option>
           </select>
         </div>

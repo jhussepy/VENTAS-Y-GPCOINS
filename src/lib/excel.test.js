@@ -29,3 +29,19 @@ describe('importarVentas: líneas móviles sin id', () => {
     expect(lm[0].id).not.toBe(lm[1].id);
   });
 });
+
+describe('importarVentas: el mes lo manda la instalación', () => {
+  it('atribuye la venta al mes de fechaInstalacion, aunque fechaVenta sea de otro mes', async () => {
+    const file = filaAExcel([{
+      nombre: 'Ana', apellido: 'Ruiz', fechaVenta: '2026-06-22', fechaInstalacion: '2026-07-01',
+    }]);
+    const { ventas } = await importarVentas(file, []);
+    expect(ventas[0].mes).toBe('julio');
+  });
+
+  it('usa fechaVenta si aún no hay fechaInstalacion', async () => {
+    const file = filaAExcel([{ nombre: 'Ana', apellido: 'Ruiz', fechaVenta: '2026-06-22', fechaInstalacion: '' }]);
+    const { ventas } = await importarVentas(file, []);
+    expect(ventas[0].mes).toBe('junio');
+  });
+});

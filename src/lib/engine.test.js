@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas, estadoEntregaTerminal, lineaPrincipal } from './engine.js';
+import { mesDesdeFecha, mesEfectivo, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas, estadoEntregaTerminal, lineaPrincipal } from './engine.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
-import { resumenLowi, mesLowi, ventaLowiVacia } from './lowi.js';
+import { resumenLowi, mesLowi, mesEfectivoLowi, ventaLowiVacia } from './lowi.js';
 
 describe('mesDesdeFecha', () => {
   it('clasifica junio y julio correctamente (getMonth base 0)', () => {
@@ -14,6 +14,24 @@ describe('mesDesdeFecha', () => {
   it('no se desfasa por zona horaria en límites de mes', () => {
     expect(mesDesdeFecha('2026-06-30')).toBe('junio');
     expect(mesDesdeFecha('2026-07-01')).toBe('julio');
+  });
+});
+
+describe('mesEfectivo: el mes lo manda la instalación, no la venta', () => {
+  it('usa fechaInstalacion si existe, aunque la venta sea de otro mes', () => {
+    expect(mesEfectivo({ fechaVenta: '2026-06-22', fechaInstalacion: '2026-07-01' })).toBe('julio');
+  });
+  it('cae en fechaVenta si aún no hay instalación', () => {
+    expect(mesEfectivo({ fechaVenta: '2026-06-22', fechaInstalacion: '' })).toBe('junio');
+  });
+});
+
+describe('mesEfectivoLowi: el mes lo manda la instalación, no la venta', () => {
+  it('usa fechaInstalacion si existe, aunque la venta sea de otro mes', () => {
+    expect(mesEfectivoLowi({ fechaVenta: '2026-06-22', fechaInstalacion: '2026-07-01' })).toBe('2026-07');
+  });
+  it('cae en fechaVenta si aún no hay instalación', () => {
+    expect(mesEfectivoLowi({ fechaVenta: '2026-06-22', fechaInstalacion: '' })).toBe('2026-06');
   });
 });
 
