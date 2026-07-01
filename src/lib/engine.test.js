@@ -183,6 +183,19 @@ describe('portas atribuidas al mes de su ventana de portabilidad', () => {
     expect(cruzadas[0].mesVenta).toBe('junio');
     expect(portasCruzadas([ventaCruzada], 'junio')).toHaveLength(0);
   });
+
+  it('portasCruzadas ignora las portas canceladas por el cliente (ES M1)', () => {
+    const v = {
+      ...ventaVacia(), mes: 'junio', estado: 'activa',
+      lineasMoviles: [
+        { tipo: 'porta', activa: false, ventanaPorta: '2026-07-01T02:00', incidenciaPorta: 'cancelada_m1' },
+        { tipo: 'porta', activa: true, ventanaPorta: '2026-07-01T02:00' },
+      ],
+    };
+    const cruzadas = portasCruzadas([v], 'julio');
+    expect(cruzadas).toHaveLength(1);
+    expect(cruzadas[0].linea.activa).toBe(true);
+  });
 });
 
 describe('gpPotencialMax', () => {

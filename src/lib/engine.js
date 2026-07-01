@@ -254,6 +254,9 @@ export function portasCruzadas(ventas, mes) {
   for (const v of ventas) {
     for (const l of v.lineasMoviles || []) {
       if (l.tipo !== 'porta' || !l.ventanaPorta) continue;
+      // Una porta cancelada por el cliente (ES M1) nunca se activará: no aporta
+      // nada avisar de que "viene de otro mes", así que no ensucia el aviso.
+      if (l.incidenciaPorta === 'cancelada_m1') continue;
       const mVentana = mesDesdeFecha(l.ventanaPorta);
       if (mVentana === mes && v.mes !== mes) {
         out.push({ venta: v, linea: l, mesVenta: v.mes });
