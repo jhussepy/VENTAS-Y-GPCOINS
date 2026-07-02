@@ -1,5 +1,55 @@
-import { Star, AlertTriangle, Info } from 'lucide-react';
+import {
+  Star, AlertTriangle, Info, Flame, Target,
+  Sparkles, ShoppingCart, Repeat, UserPlus, Coins, Trophy, Wifi,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+// Iconos disponibles para las insignias (por nombre, desde logros.js)
+const ICONOS_LOGRO = { Sparkles, ShoppingCart, Repeat, UserPlus, Coins, Trophy, Wifi, Flame };
+
+// Tarjeta "Foco del día": objetivo accionable más cercano (estilo Versículo del Día)
+export function FocoDelDia({ foco, racha = 0 }) {
+  if (!foco) return null;
+  const cumplido = foco.tipo === 'ok';
+  return (
+    <div className={`relative overflow-hidden rounded-2xl p-5 text-white shadow-lg bg-gradient-to-br ${cumplido ? 'from-emerald-600 to-emerald-500' : 'from-indigo-600 via-violet-600 to-fuchsia-600'}`}>
+      <div className="absolute -top-10 -right-6 w-40 h-40 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
+      <div className="relative flex items-start gap-4">
+        <span className="p-3 rounded-xl bg-white/15 backdrop-blur shrink-0"><Target size={24} /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Foco del día</p>
+          <h3 className="text-lg font-bold leading-tight mt-0.5">{foco.titulo}</h3>
+          <p className="text-sm text-white/85 mt-1">{foco.texto}</p>
+        </div>
+        {racha > 0 && (
+          <div className="shrink-0 flex flex-col items-center rounded-xl bg-white/15 backdrop-blur px-3 py-2 ring-1 ring-white/20">
+            <Flame size={18} className="text-amber-300" />
+            <span className="text-lg font-bold tabnum leading-none mt-0.5">{racha}</span>
+            <span className="text-[10px] text-white/75">racha</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Insignia individual: medalla circular con progreso (estilo perfil de la app)
+export function Insignia({ logro }) {
+  const Icon = ICONOS_LOGRO[logro.icono] || Star;
+  const c = logro.cumplido;
+  return (
+    <div className="flex flex-col items-center text-center gap-1.5" title={logro.desc}>
+      <div className={`relative w-14 h-14 rounded-full flex items-center justify-center ring-2 transition-transform hover:scale-105 ${c ? 'bg-gp-gold/15 ring-gp-gold text-gp-gold' : 'bg-bg-surface2 ring-bg-border text-fg-muted'}`}>
+        <Icon size={22} />
+        {c && <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] ring-2 ring-bg-surface">✓</span>}
+      </div>
+      <span className={`text-[11px] font-medium leading-tight ${c ? 'text-fg' : 'text-fg-muted'}`}>{logro.label}</span>
+      <div className="w-full h-1 bg-bg-surface2 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${c ? 'bg-gp-gold' : 'bg-vf-red'}`} style={{ width: `${logro.pct}%` }} />
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 //  Diálogo de confirmación con el diseño de la app (sustituye a confirm/alert)

@@ -8,13 +8,14 @@ import {
 } from 'recharts';
 import { useApp } from '../App.jsx';
 import { resumenGlobal, portasCruzadas } from '../lib/engine.js';
+import { rachaVentas, calcularLogros, focoDelDia } from '../lib/logros.js';
 import { fmtVentana } from '../lib/portabilidad.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
 import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { TARIFAS_MOVIL } from '../data/movil.js';
 
 const VELOCIDADES_FIBRA = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
-import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner } from '../components/ui.jsx';
+import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner, FocoDelDia, Insignia } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
 // Etiquetas cortas para los chips de llaves del resumen de clasificación
@@ -33,6 +34,11 @@ export default function Dashboard() {
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
   // Portas cuya venta se cerró en otro mes pero cuya ventana de portabilidad cae en el mes activo
   const cruzadas = useMemo(() => portasCruzadas(ventas, mes), [ventas, mes]);
+  // Gamificación: racha de ventas (global, no por mes), insignias y foco del día
+  const racha = useMemo(() => rachaVentas(ventas), [ventas]);
+  const logros = useMemo(() => calcularLogros(r, racha), [r, racha]);
+  const foco = useMemo(() => focoDelDia(r), [r]);
+  const logrosCumplidos = logros.filter((l) => l.cumplido).length;
 
   // Saludo según la hora del día
   const saludo = useMemo(() => {
@@ -145,6 +151,8 @@ export default function Dashboard() {
         ]}
       />
 
+      <FocoDelDia foco={foco} racha={racha} />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={ShoppingCart} label={`Ventas en ${PERIODO.etiquetas[mes]}`} value={fmtNum(r.totalVentas)} accent="text-vf-red" />
         <StatCard icon={Coins} label="GP Coins directos (monedero)" value={fmtNum(r.gpDirectosTotal)} sub={`hasta ${fmtNum(r.gpPotencialMax)} por ranking si clasificas 1º`} accent="text-gp-gold" />
@@ -153,6 +161,16 @@ export default function Dashboard() {
         <StatCard icon={Repeat} label="Portas activas" value={fmtNum(r.portasActivas)} sub={`de ${fmtNum(r.portasTotales)} solicitadas`} accent="text-emerald-400" />
         <StatCard icon={Repeat} label="Portas pendientes" value={fmtNum(r.portasPendientes)} sub="por activar" accent="text-gp-gold" />
       </div>
+
+      {/* Insignias / logros del mes (estilo perfil de la Biblia App) */}
+      <Card>
+        <SectionTitle right={<Badge tone="gold">{logrosCumplidos}/{logros.length} conseguidas</Badge>}>
+          <span className="flex items-center gap-2"><Trophy size={18} className="text-gp-gold" /> Insignias del mes</span>
+        </SectionTitle>
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
+          {logros.map((l) => <Insignia key={l.id} logro={l} />)}
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
