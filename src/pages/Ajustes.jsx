@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { Card, SectionTitle, Badge } from '../components/ui.jsx';
+import { Card, SectionTitle, Badge, useConfirm } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 import { mesEfectivo } from '../lib/engine.js';
 
@@ -12,21 +12,23 @@ const kb = (b) => `${(b / 1024).toFixed(1)} KB`;
 export default function Ajustes() {
   const { ventas, setVentas, ventasLowi, tarifas, precios } = useApp();
   const [msg, setMsg] = useState(null);
+  const { confirmar, dialogo } = useConfirm();
 
   // Ventas de Vodafone cuyo "mes" guardado no coincide con la regla actual
   // (mes de instalación/activación, con la venta como respaldo)
   const desactualizadas = useMemo(() => ventas.filter((v) => mesEfectivo(v) !== v.mes).length, [ventas]);
 
-  const recalcularMeses = () => {
+  const recalcularMeses = async () => {
     if (desactualizadas === 0) {
       setMsg({ tone: 'green', text: 'Todas las ventas ya tienen el mes correcto. Nada que recalcular.' });
       setTimeout(() => setMsg(null), 5000);
       return;
     }
-    const ok = confirm(
-      `Se recalculará el mes de ${desactualizadas} venta(s) usando la fecha de instalación ` +
-      `(o la de venta si aún no la hay). Esto puede cambiar los números históricos de puntos/GP Coins ` +
-      `por mes. Te recomendamos hacer antes una Copia de seguridad. ¿Continuar?`
+    const ok = await confirmar(
+      `Se recalculará el mes de ${desactualizadas} venta(s) usando la fecha de instalación `
+      + '(o la de venta si aún no la hay). Esto puede cambiar los números históricos de '
+      + 'puntos/GP Coins por mes. Haz antes una Copia de seguridad.',
+      { titulo: 'Recalcular meses', accion: 'Recalcular', peligro: true }
     );
     if (!ok) return;
     setVentas((prev) => prev.map((v) => {
@@ -134,6 +136,7 @@ export default function Ajustes() {
           <li>Las ventas <span className="font-medium">canceladas</span> que ya no necesites puedes eliminarlas para liberar espacio.</li>
         </ul>
       </Card>
+      {dialogo}
     </div>
   );
 }

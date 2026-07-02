@@ -26,7 +26,7 @@ const LowiDashboard = lazy(() => import('./pages/LowiDashboard.jsx'));
 const LowiVentas = lazy(() => import('./pages/LowiVentas.jsx'));
 const Ajustes = lazy(() => import('./pages/Ajustes.jsx'));
 import Login from './pages/Login.jsx';
-import { PageSkeleton } from './components/ui.jsx';
+import { PageSkeleton, useConfirm } from './components/ui.jsx';
 
 export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -78,6 +78,8 @@ export default function App() {
   const [open, setOpen] = useState(false);
   const [prefillVenta, setPrefillVenta] = useState(null); // {marca, sap} para "Vender" desde Catálogo
   const backupRef = useRef(null);
+  // Diálogos de confirmación/aviso con el diseño de la app (sin confirm/alert nativos)
+  const { confirmar, avisar, dialogo } = useConfirm();
 
   // Abre el alta de venta de Vodafone con una marca/modelo ya seleccionados
   const venderModelo = (marca, sap) => {
@@ -92,29 +94,32 @@ export default function App() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!confirm('Restaurar reemplazará TODOS tus datos actuales (ventas, Lowi y tarifas) por los del archivo. ¿Continuar?')) return;
+    const ok = await confirmar('Restaurar reemplazará TODOS tus datos actuales (ventas, Lowi y tarifas) por los del archivo.', { titulo: 'Restaurar copia', accion: 'Restaurar', peligro: true });
+    if (!ok) return;
     try {
       const d = await leerBackup(file);
       setVentas(d.ventas);
       setVentasLowi(d.ventasLowi);
       setTarifas(d.tarifas);
       setPrecios(d.precios);
-      alert('Copia restaurada correctamente.');
+      avisar('Copia restaurada correctamente.', { titulo: 'Restaurado' });
     } catch {
-      alert('No se pudo leer el archivo de copia de seguridad.');
+      avisar('No se pudo leer el archivo de copia de seguridad.', { titulo: 'Error', peligro: true });
     }
   };
 
   // Carga datos de demostración (para presentaciones)
-  const cargarDemo = () => {
-    if (!confirm('Cargar datos de DEMOSTRACIÓN reemplazará tus ventas actuales (Vodafone y Lowi). ¿Continuar?')) return;
+  const cargarDemo = async () => {
+    const ok = await confirmar('Cargar datos de DEMOSTRACIÓN reemplazará tus ventas actuales (Vodafone y Lowi).', { titulo: 'Datos de demostración', accion: 'Cargar demo', peligro: true });
+    if (!ok) return;
     setVentas(ventasDemo());
     setVentasLowi(ventasLowiDemo());
   };
 
   // Limpia todas las ventas (Vodafone y Lowi) — para dejar la app a cero
-  const limpiarDatos = () => {
-    if (!confirm('Esto borrará TODAS tus ventas de Vodafone y Lowi. ¿Continuar?')) return;
+  const limpiarDatos = async () => {
+    const ok = await confirmar('Esto borrará TODAS tus ventas de Vodafone y Lowi.', { titulo: 'Borrar todo', accion: 'Borrar todo', peligro: true });
+    if (!ok) return;
     setVentas([]);
     setVentasLowi([]);
   };
@@ -358,6 +363,7 @@ export default function App() {
           </main>
         </div>
       </div>
+      {dialogo}
     </AppCtx.Provider>
   );
 }

@@ -1,5 +1,48 @@
-import { Star } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Star, AlertTriangle, Info } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+// ---------------------------------------------------------------------------
+//  Diálogo de confirmación con el diseño de la app (sustituye a confirm/alert)
+//  Uso:  const { confirmar, avisar, dialogo } = useConfirm();
+//        if (!(await confirmar('¿Eliminar esta venta?', { peligro: true }))) return;
+//        Renderiza {dialogo} una vez en el componente.
+// ---------------------------------------------------------------------------
+export function useConfirm() {
+  const [estado, setEstado] = useState(null);
+  const confirmar = useCallback((mensaje, opts = {}) =>
+    new Promise((resolve) => setEstado({ mensaje, resolve, ...opts })), []);
+  const avisar = useCallback((mensaje, opts = {}) =>
+    new Promise((resolve) => setEstado({ mensaje, resolve, soloAviso: true, ...opts })), []);
+  const cerrar = (ok) => { estado?.resolve(ok); setEstado(null); };
+
+  const dialogo = estado ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 fade-in" onClick={() => cerrar(false)}>
+      <div
+        className="card w-full max-w-sm p-6 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+        role="alertdialog" aria-modal="true" aria-label={estado.titulo || 'Confirmación'}
+      >
+        <div className="flex items-start gap-3">
+          <span className={`p-2.5 rounded-xl shrink-0 ${estado.peligro ? 'bg-vf-red/10 text-vf-red' : 'bg-sky-500/10 text-sky-400'}`}>
+            {estado.peligro ? <AlertTriangle size={20} /> : <Info size={20} />}
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-fg">{estado.titulo || (estado.soloAviso ? 'Aviso' : '¿Confirmar?')}</h2>
+            <p className="text-sm text-fg-soft mt-1 leading-relaxed">{estado.mensaje}</p>
+          </div>
+        </div>
+        <div className="flex gap-2 justify-end">
+          {!estado.soloAviso && <button className="btn-ghost" onClick={() => cerrar(false)} autoFocus>Cancelar</button>}
+          <button className="btn-primary" onClick={() => cerrar(true)}>
+            {estado.soloAviso ? 'Entendido' : (estado.accion || 'Confirmar')}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  return { confirmar, avisar, dialogo };
+}
 
 export function Card({ children, className = '', accent = false }) {
   // accent: true|'red' = barra roja de marca · 'green' = éxito

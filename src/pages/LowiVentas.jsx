@@ -12,7 +12,7 @@ import { OPERADORES_PORTA, lineaMovilVacia, INCIDENCIAS_PORTA } from '../data/mo
 import { nuevoId } from '../lib/id.js';
 import { importarLowi, exportarLowi, plantillaLowi } from '../lib/excelLowi.js';
 import { avisosContacto } from '../lib/validacion.js';
-import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
+import { Card, SectionTitle, Badge, EmptyState, useConfirm } from '../components/ui.jsx';
 import { ventanaRelevante, fmtVentana, TONO_VENTANA, ETIQUETA_VENTANA } from '../lib/portabilidad.js';
 import { fmtFecha, fmtEur } from '../lib/format.js';
 
@@ -221,6 +221,7 @@ export default function LowiVentas() {
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
+  const { confirmar, dialogo } = useConfirm();
 
   // Meses disponibles (mes de instalación, o de venta si aún no hay instalación) para el filtro
   const meses = useMemo(() => {
@@ -260,8 +261,9 @@ export default function LowiVentas() {
     setVentasLowi((prev) => prev.map((p) => (p.id === id ? { ...p, estado } : p)));
   };
 
-  const eliminar = (id) => {
-    if (confirm('¿Eliminar esta venta de Lowi?')) setVentasLowi((prev) => prev.filter((p) => p.id !== id));
+  const eliminar = async (id) => {
+    const ok = await confirmar('¿Eliminar esta venta de Lowi? Esta acción no se puede deshacer.', { titulo: 'Eliminar venta', accion: 'Eliminar', peligro: true });
+    if (ok) setVentasLowi((prev) => prev.filter((p) => p.id !== id));
   };
 
   const onImport = async (e) => {
@@ -441,6 +443,7 @@ export default function LowiVentas() {
           </div>
         )}
       </Card>
+      {dialogo}
     </div>
   );
 }

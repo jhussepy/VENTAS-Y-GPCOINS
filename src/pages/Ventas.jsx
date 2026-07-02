@@ -10,7 +10,7 @@ import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.j
 import { CATALOGO, PERIODO, udsDe, TV_CONTENIDOS } from '../data/incentivos.js';
 import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas, INCIDENCIAS_PORTA } from '../data/movil.js';
 import { nuevoId } from '../lib/id.js';
-import { Card, SectionTitle, Badge, EmptyState } from '../components/ui.jsx';
+import { Card, SectionTitle, Badge, EmptyState, useConfirm } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
 import { ventanaRelevante, fmtVentana, TONO_VENTANA, ETIQUETA_VENTANA } from '../lib/portabilidad.js';
 
@@ -365,6 +365,7 @@ export default function Ventas() {
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
+  const { confirmar, dialogo } = useConfirm();
 
   // Si llegamos desde "Vender" del Catálogo, abrimos el alta ya prerrellenada
   useEffect(() => {
@@ -438,8 +439,9 @@ export default function Ventas() {
     }
   };
 
-  const eliminar = (id) => {
-    if (confirm('¿Eliminar esta venta?')) setVentas((prev) => prev.filter((p) => p.id !== id));
+  const eliminar = async (id) => {
+    const ok = await confirmar('¿Eliminar esta venta? Esta acción no se puede deshacer.', { titulo: 'Eliminar venta', accion: 'Eliminar', peligro: true });
+    if (ok) setVentas((prev) => prev.filter((p) => p.id !== id));
   };
 
   // Cambio rápido de estado desde la tabla (mantiene instalacionActiva en sync)
@@ -650,6 +652,7 @@ export default function Ventas() {
           </div>
         )}
       </Card>
+      {dialogo}
     </div>
   );
 }
