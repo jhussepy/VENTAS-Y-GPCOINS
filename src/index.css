@@ -22,18 +22,20 @@
 
 .light {
   color-scheme: light;
-  --bg-base: #F1F3F7;
+  /* Fondo un punto más profundo para que las tarjetas blancas destaquen,
+     bordes más definidos y texto secundario con mejor contraste (AA). */
+  --bg-base: #EDF0F5;
   --bg-surface: #FFFFFF;
-  --bg-surface2: #F4F6F9;
-  --bg-border: #E4E7ED;
+  --bg-surface2: #F3F5F9;
+  --bg-border: #DDE2EA;
   --fg: #0A0A0F;
   --fg-soft: #1F2937;
-  --fg-muted: #64748B;
-  --shadow-sm: 0 1px 2px 0 rgba(16, 24, 40, 0.06);
-  --shadow-md: 0 6px 18px -6px rgba(16, 24, 40, 0.12);
-  --shadow-lg: 0 20px 44px -18px rgba(16, 24, 40, 0.18);
-  --ring-soft: rgba(16, 24, 40, 0.04);
-  --grad-surface: linear-gradient(180deg, rgba(16, 24, 40, 0.015), rgba(16, 24, 40, 0));
+  --fg-muted: #57677D;
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 8px 22px -8px rgba(16, 24, 40, 0.16);
+  --shadow-lg: 0 22px 48px -18px rgba(16, 24, 40, 0.22);
+  --ring-soft: rgba(16, 24, 40, 0.05);
+  --grad-surface: linear-gradient(180deg, rgba(16, 24, 40, 0.018), rgba(16, 24, 40, 0));
 }
 
 html, body, #root {

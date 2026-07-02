@@ -112,15 +112,15 @@ export default function LowiDashboard() {
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer>
               <BarChart data={dataChart} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" />
-                <XAxis dataKey="nombre" stroke="var(--fg-muted)" fontSize={12} />
-                <YAxis stroke="var(--fg-muted)" fontSize={12} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" vertical={false} />
+                <XAxis dataKey="nombre" stroke="var(--fg-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--fg-muted)" fontSize={12} allowDecimals={false} tickLine={false} axisLine={false} />
                 <Tooltip
-                  cursor={{ fill: 'var(--bg-surface2)' }}
-                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8, color: 'var(--fg)' }}
+                  cursor={{ fill: 'var(--bg-surface2)', radius: 6 }}
+                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
                   formatter={(v) => [fmtNum(v), 'Ventas']}
                 />
-                <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="valor" radius={[8, 8, 0, 0]} maxBarSize={84} animationDuration={700}>
                   {dataChart.map((d, i) => <Cell key={i} fill={d.color} />)}
                 </Bar>
               </BarChart>
