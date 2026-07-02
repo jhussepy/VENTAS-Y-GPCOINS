@@ -18,6 +18,17 @@ const VELOCIDADES_FIBRA = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
 import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner, FocoDelDia, Insignia } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
+// Degradado de color por incentivo para las tarjetas de ranking (estilo
+// categorías de la Biblia App: cada tema con su color).
+const GRAD_INCENTIVO = {
+  clienteNuevo: 'from-vf-redDark to-vf-red',
+  xiaomi: 'from-orange-600 to-amber-600',
+  samsung: 'from-sky-700 to-blue-600',
+  honor: 'from-cyan-700 to-teal-600',
+  motorola: 'from-violet-700 to-purple-600',
+  jbl: 'from-rose-700 to-pink-600',
+};
+
 // Etiquetas cortas para los chips de llaves del resumen de clasificación
 const ETIQUETA_LLAVE = {
   clientes34: 'Cli 3P/4P',
@@ -494,16 +505,22 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {r.estados.filter((e) => INCENTIVOS[e.incentivoId].premios.length).map((e) => {
             const inc = INCENTIVOS[e.incentivoId];
+            const grad = GRAD_INCENTIVO[e.incentivoId] || 'from-slate-600 to-slate-700';
             return (
-              <div key={e.incentivoId} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-fg">{e.nombre}</span>
-                  {e.clasifica ? <Badge tone="green">Clasificas</Badge> : <Badge tone="red">No clasificas</Badge>}
+              <div key={e.incentivoId} className={`relative overflow-hidden rounded-xl p-4 text-white bg-gradient-to-br ${grad} shadow-md`}>
+                <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-2 gap-2">
+                    <span className="font-semibold text-base">{e.nombre}</span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${e.clasifica ? 'bg-white/25' : 'bg-black/25'}`}>
+                      {e.clasifica ? '✓ Clasificas' : 'No clasificas'}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold tabnum leading-none">{fmtNum(e.puntos)}<span className="text-sm font-medium text-white/80"> pts</span></p>
+                  <p className="text-xs text-white/80 mt-1.5">
+                    Top {inc.premiados} · 1º: <span className="font-semibold">{inc.premios[0].gpcoins} GP Coins</span>
+                  </p>
                 </div>
-                <p className="text-sm text-fg-muted tabnum">{fmtNum(e.puntos)} pts acumulados</p>
-                <p className="text-xs text-fg-muted mt-1">
-                  Top {inc.premiados} · 1º: {inc.premios[0].gpcoins} GP Coins
-                </p>
               </div>
             );
           })}

@@ -3,12 +3,13 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 import { useApp } from '../App.jsx';
 import { resumenGlobal, mesEfectivo } from '../lib/engine.js';
+import { rachaVentas } from '../lib/logros.js';
 import { resumenLowi } from '../lib/lowi.js';
 import { ESTADOS, estadoDe } from '../lib/estados.js';
 import { ORDEN_INCENTIVOS, CATALOGO } from '../data/incentivos.js';
 import { Card, StatCard, Badge, EmptyState, SectionTitle, PageSkeleton } from '../components/ui.jsx';
 import { fmtNum, fmtFecha, fmtEur } from '../lib/format.js';
-import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X, Wifi, Repeat } from 'lucide-react';
+import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X, Wifi, Repeat, Flame } from 'lucide-react';
 
 export default function Admin() {
   const { mes, admin } = useApp();
@@ -57,7 +58,8 @@ export default function Admin() {
     // Igual que Vodafone: solo las ventas Lowi cuyo mes efectivo (instalación,
     // o venta si aún no la hay) caiga en el Período activo de la cabecera.
     const lowi = resumenLowi(a.ventasLowi.filter((v) => mesEfectivo(v) === mes));
-    return { ...a, resumen: r, lowi };
+    const racha = rachaVentas(a.ventas);
+    return { ...a, resumen: r, lowi, racha };
   }).sort((x, y) =>
     (y.resumen.gpDirectosTotal + y.resumen.gpPotencialRanking) -
     (x.resumen.gpDirectosTotal + x.resumen.gpPotencialRanking)
@@ -138,6 +140,7 @@ export default function Admin() {
                 <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
                   <th className="px-4 py-3 font-semibold">#</th>
                   <th className="px-4 py-3 font-semibold">Agente</th>
+                  <th className="px-4 py-3 font-semibold text-center">Racha</th>
                   <th className="px-4 py-3 font-semibold text-center">Ventas</th>
                   <th className="px-4 py-3 font-semibold text-center">Clientes nuevos</th>
                   <th className="px-4 py-3 font-semibold text-center">Instal. activas</th>
@@ -167,6 +170,11 @@ export default function Admin() {
                           <div className="text-[11px] text-fg-muted truncate">{f.email}</div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-center tabnum">
+                      {f.racha > 0
+                        ? <span className="inline-flex items-center gap-1 text-gp-gold font-semibold"><Flame size={13} /> {f.racha}</span>
+                        : <span className="text-fg-muted">—</span>}
                     </td>
                     <td className="px-4 py-3 text-center tabnum text-fg-soft">{fmtNum(f.resumen.totalVentas)}</td>
                     <td className="px-4 py-3 text-center tabnum text-fg-soft">{fmtNum(f.resumen.clientesNuevos)}</td>
