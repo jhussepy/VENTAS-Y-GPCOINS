@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat, Smartphone, Tv,
+  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat, Smartphone, Tv, BookOpen,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList,
@@ -9,6 +9,7 @@ import {
 import { useApp } from '../App.jsx';
 import { resumenGlobal, portasCruzadas } from '../lib/engine.js';
 import { rachaVentas, calcularLogros, focoDelDia } from '../lib/logros.js';
+import { versiculoDelDia } from '../data/biblia.js';
 import { fmtVentana } from '../lib/portabilidad.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
 import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
@@ -526,6 +527,24 @@ export default function Dashboard() {
           })}
         </div>
       </Card>
+
+      {/* Versículo del día (rincón de fe) */}
+      {(() => {
+        const vd = versiculoDelDia();
+        return (
+          <div className="relative overflow-hidden rounded-2xl p-5 text-white shadow-md bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700">
+            <div className="absolute -top-10 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
+            <div className="relative flex items-start gap-4">
+              <span className="p-2.5 rounded-xl bg-white/15 backdrop-blur shrink-0"><BookOpen size={20} /></span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Versículo del día</p>
+                <p className="font-serif text-lg leading-relaxed mt-1">“{vd.texto}”</p>
+                <p className="text-xs font-semibold text-white/85 mt-2">{vd.cita} · Reina-Valera 1909</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
