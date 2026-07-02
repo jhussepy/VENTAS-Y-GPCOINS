@@ -32,6 +32,26 @@ export const VERSICULOS = [
   { cita: 'Filipenses 4:19', texto: 'Mi Dios, pues, suplirá todo lo que os falta conforme á sus riquezas en gloria en Cristo Jesús.' },
 ];
 
+// Nombre de la versión bíblica empaquetada (dominio público)
+export const VERSION_BIBLICA = 'Reina-Valera 1909';
+
+// Versículo lema de la app: trabajar como para el Señor (ideal para ventas)
+export const LEMA = {
+  cita: 'Colosenses 3:23',
+  texto: 'Y todo lo que hagáis, hacedlo de corazón, como para el Señor, y no para los hombres.',
+};
+
+// Bendiciones cortas para el saludo del Dashboard (rotan por día)
+export const BENDICIONES = [
+  'El gozo de Jehová es tu fortaleza.',
+  'Todo lo puedes en Cristo que te fortalece.',
+  'Encomienda a Jehová tu camino y él hará.',
+  'Esfuérzate y sé valiente; Dios está contigo.',
+  'Este es el día que hizo Jehová; gózate en él.',
+  'Jehová es tu pastor; nada te faltará.',
+  'Fíate de Jehová de todo tu corazón.',
+];
+
 // Día del año (1-366) para elegir el versículo de forma estable a lo largo del día
 const diaDelAnio = (d) => {
   const inicio = new Date(d.getFullYear(), 0, 0);
@@ -41,6 +61,10 @@ const diaDelAnio = (d) => {
 // Devuelve el versículo del día (mismo para todo el día, distinto cada día)
 export const versiculoDelDia = (fecha = new Date()) =>
   VERSICULOS[diaDelAnio(fecha) % VERSICULOS.length];
+
+// Bendición corta del día (para el saludo)
+export const bendicionDelDia = (fecha = new Date()) =>
+  BENDICIONES[diaDelAnio(fecha) % BENDICIONES.length];
 
 // Planes de lectura incluidos. Cada plan tiene días con su cita y texto.
 export const PLANES = [

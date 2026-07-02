@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { mesDesdeFecha } from './lib/engine.js';
+import { versiculoDelDia, LEMA } from './data/biblia.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useCloudData } from './hooks/useCloudData.js';
 import { cerrarSesion } from './lib/firebase.js';
@@ -59,11 +60,13 @@ const OPERADORES = {
 };
 
 function Spinner() {
+  const vd = versiculoDelDia();
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-bg-base">
-      <div className="flex flex-col items-center gap-3">
+    <div className="min-h-dvh flex items-center justify-center bg-bg-base p-6">
+      <div className="flex flex-col items-center gap-4 max-w-md text-center">
         <Loader2 size={32} className="text-vf-red animate-spin" />
-        <p className="text-fg-muted text-sm">Cargando…</p>
+        <p className="font-serif text-fg-soft leading-relaxed">“{vd.texto}”</p>
+        <p className="text-xs font-semibold text-fg-muted">{vd.cita}</p>
       </div>
     </div>
   );
@@ -287,6 +290,11 @@ export default function App() {
                 Período {PERIODO.inicio} → {PERIODO.fin}
               </p>
             )}
+            {/* Versículo lema: trabajar como para el Señor */}
+            <div className="px-2 pt-1">
+              <p className="font-serif text-[11px] text-fg-muted leading-snug italic">“{LEMA.texto}”</p>
+              <p className="text-[10px] font-semibold text-fg-muted/80 mt-0.5">{LEMA.cita}</p>
+            </div>
           </div>
         </aside>
 

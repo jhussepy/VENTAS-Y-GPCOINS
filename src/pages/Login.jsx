@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { loginConGoogle } from '../lib/firebase.js';
+import { LEMA } from '../data/biblia.js';
 
 function GoogleIcon() {
   return (
@@ -51,6 +52,12 @@ export default function Login() {
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-vf-red/15 text-vf-redLight border border-vf-red/30">Vodafone</span>
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-600/15 text-sky-400 border border-sky-600/30">Lowi</span>
           </div>
+        </div>
+
+        {/* Versículo lema: trabajar como para el Señor */}
+        <div className="rounded-xl bg-indigo-500/10 border border-indigo-500/25 px-4 py-3">
+          <p className="font-serif text-sm text-fg-soft leading-relaxed">“{LEMA.texto}”</p>
+          <p className="text-[11px] font-semibold text-indigo-300 mt-1">{LEMA.cita}</p>
         </div>
 
         <div className="h-px bg-bg-border" />

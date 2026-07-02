@@ -9,7 +9,7 @@ import {
 import { useApp } from '../App.jsx';
 import { resumenGlobal, portasCruzadas } from '../lib/engine.js';
 import { rachaVentas, calcularLogros, focoDelDia } from '../lib/logros.js';
-import { versiculoDelDia } from '../data/biblia.js';
+import { versiculoDelDia, bendicionDelDia, VERSION_BIBLICA } from '../data/biblia.js';
 import { fmtVentana } from '../lib/portabilidad.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
 import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
@@ -153,7 +153,7 @@ export default function Dashboard() {
       <HeroBanner
         saludo={saludo}
         titulo={`Tu progreso de ${PERIODO.etiquetas[mes]}`}
-        subtitulo="Resumen en tiempo real de ventas, GP Coins y clasificación del período activo."
+        subtitulo={`✝ ${bendicionDelDia()}`}
         chip={`Período ${PERIODO.inicio} → ${PERIODO.fin}`}
         accent="vf"
         highlights={[
@@ -539,7 +539,7 @@ export default function Dashboard() {
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Versículo del día</p>
                 <p className="font-serif text-lg leading-relaxed mt-1">“{vd.texto}”</p>
-                <p className="text-xs font-semibold text-white/85 mt-2">{vd.cita} · Reina-Valera 1909</p>
+                <p className="text-xs font-semibold text-white/85 mt-2">{vd.cita} · {VERSION_BIBLICA}</p>
               </div>
             </div>
           </div>

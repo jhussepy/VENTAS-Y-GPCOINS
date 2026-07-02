@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, Heart, Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { versiculoDelDia, PLANES, planPorId } from '../data/biblia.js';
+import { versiculoDelDia, PLANES, planPorId, VERSION_BIBLICA } from '../data/biblia.js';
 import {
   leerProgreso, alternarDia, resumenPlan,
   leerFavoritos, alternarFavorito, esFavorito,
@@ -25,7 +25,7 @@ function VersiculoDelDia({ versiculo, favorito, onFav }) {
           </button>
         </div>
         <p className="font-serif text-xl sm:text-2xl leading-relaxed mt-3">“{versiculo.texto}”</p>
-        <p className="text-sm font-semibold text-white/85 mt-4">{versiculo.cita} · Reina-Valera 1909</p>
+        <p className="text-sm font-semibold text-white/85 mt-4">{versiculo.cita} · {VERSION_BIBLICA}</p>
       </div>
     </div>
   );
