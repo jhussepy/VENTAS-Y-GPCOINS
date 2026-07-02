@@ -162,6 +162,25 @@ export function Badge({ children, tone = 'neutral' }) {
   );
 }
 
+// Avatar con las iniciales del cliente y color estable derivado del nombre
+const AVATAR_COLORES = ['#E60000', '#0284C7', '#059669', '#D97706', '#7C3AED', '#DB2777', '#0891B2', '#65A30D'];
+export function Avatar({ nombre = '', apellido = '' }) {
+  const texto = `${nombre} ${apellido}`.trim();
+  const iniciales = (((nombre || '')[0] || '') + ((apellido || '')[0] || '')).toUpperCase() || '?';
+  let h = 0;
+  for (const c of texto) h = ((h * 31 + c.charCodeAt(0)) >>> 0);
+  const color = AVATAR_COLORES[h % AVATAR_COLORES.length];
+  return (
+    <span
+      className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ring-2 ring-white/10"
+      style={{ background: `linear-gradient(135deg, ${color}, ${color}CC)` }}
+      aria-hidden="true"
+    >
+      {iniciales}
+    </span>
+  );
+}
+
 export function EstrellaTag({ tipo = 'ESTRELLA' }) {
   return (
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gp-gold/15 text-gp-gold text-[10px] font-semibold border border-gp-gold/30">

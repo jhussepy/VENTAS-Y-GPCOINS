@@ -10,7 +10,7 @@ import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.j
 import { CATALOGO, PERIODO, udsDe, TV_CONTENIDOS } from '../data/incentivos.js';
 import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas, INCIDENCIAS_PORTA } from '../data/movil.js';
 import { nuevoId } from '../lib/id.js';
-import { Card, SectionTitle, Badge, EmptyState, useConfirm } from '../components/ui.jsx';
+import { Card, SectionTitle, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
 import { ventanaRelevante, fmtVentana, TONO_VENTANA, ETIQUETA_VENTANA } from '../lib/portabilidad.js';
 
@@ -565,15 +565,20 @@ export default function Ventas() {
                   return (
                     <tr key={v.id} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                       <td className="px-4 py-3">
-                        <div className="font-medium text-fg">{v.nombre} {v.apellido}</div>
-                        {(v.dni || v.telefono) && (
-                          <div className="text-[11px] text-fg-muted mt-0.5">
-                            {[v.dni, v.telefono].filter(Boolean).join(' · ')}
+                        <div className="flex items-center gap-3">
+                          <Avatar nombre={v.nombre} apellido={v.apellido} />
+                          <div className="min-w-0">
+                            <div className="font-medium text-fg">{v.nombre} {v.apellido}</div>
+                            {(v.dni || v.telefono) && (
+                              <div className="text-[11px] text-fg-muted mt-0.5">
+                                {[v.dni, v.telefono].filter(Boolean).join(' · ')}
+                              </div>
+                            )}
+                            <div className="flex gap-1 mt-1">
+                              {v.clienteNuevo && <Badge tone="red">Nuevo</Badge>}
+                              {v.fibraActiva && <Badge tone="neutral">Fibra</Badge>}
+                            </div>
                           </div>
-                        )}
-                        <div className="flex gap-1 mt-1">
-                          {v.clienteNuevo && <Badge tone="red">Nuevo</Badge>}
-                          {v.fibraActiva && <Badge tone="neutral">Fibra</Badge>}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-fg-muted tabnum">{fmtFecha(v.fechaVenta)}</td>

@@ -217,8 +217,8 @@ export default function App() {
                 className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                             transition-all duration-200 cursor-pointer
                             ${page === n.id
-                              ? (esLowi ? 'bg-sky-600 text-white shadow-md' : 'bg-vf-red text-white shadow-md')
-                              : 'text-fg-muted hover:text-fg hover:bg-bg-surface2'}`}
+                              ? (esLowi ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white shadow-md' : 'bg-gradient-to-r from-vf-red to-vf-redDark text-white shadow-md')
+                              : 'text-fg-muted hover:text-fg hover:bg-bg-surface2 hover:translate-x-0.5'}`}
                 aria-current={page === n.id ? 'page' : undefined}
               >
                 {page === n.id && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-white/80" />}
@@ -299,8 +299,11 @@ export default function App() {
               <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)} aria-label="Abrir menú">
                 <Menu size={20} />
               </button>
-              <h1 className="text-base font-semibold text-fg capitalize">
-                {nav.find((n) => n.id === page)?.label}
+              <h1 className="flex items-center gap-2 text-base font-semibold text-fg capitalize">
+                {(() => { const N = nav.find((n) => n.id === page); if (!N) return null; return (<>
+                  <span className={`p-1.5 rounded-lg ${esLowi ? 'bg-sky-500/10 text-sky-500' : 'bg-vf-red/10 text-vf-red'}`}><N.icon size={16} /></span>
+                  {N.label}
+                </>); })()}
               </h1>
             </div>
             <div className="flex items-center gap-2">
