@@ -9,7 +9,7 @@ import { ESTADOS, estadoDe } from '../lib/estados.js';
 import { ORDEN_INCENTIVOS, CATALOGO } from '../data/incentivos.js';
 import { Card, StatCard, Badge, EmptyState, SectionTitle, PageSkeleton } from '../components/ui.jsx';
 import { fmtNum, fmtFecha, fmtEur } from '../lib/format.js';
-import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X, Wifi, Repeat, Flame } from 'lucide-react';
+import { Users, ShoppingCart, Coins, Trophy, RefreshCw, ShieldAlert, Eye, X, Wifi, Repeat, Flame, Smartphone, Layers } from 'lucide-react';
 
 export default function Admin() {
   const { mes, admin } = useApp();
@@ -57,9 +57,20 @@ export default function Admin() {
     const r = resumenGlobal(a.ventas, mes);
     // Igual que Vodafone: solo las ventas Lowi cuyo mes efectivo (instalación,
     // o venta si aún no la hay) caiga en el Período activo de la cabecera.
-    const lowi = resumenLowi(a.ventasLowi.filter((v) => mesEfectivo(v) === mes));
+    const ventasLowiMes = a.ventasLowi.filter((v) => mesEfectivo(v) === mes);
+    const lowi = resumenLowi(ventasLowiMes);
     const racha = rachaVentas(a.ventas);
-    return { ...a, resumen: r, lowi, racha };
+
+    // Combinado Vodafone + Lowi: ventas de fibra y líneas móviles del mes,
+    // sumando ambos operadores (solo informativo, no afecta a incentivos).
+    const ventasVfMes = a.ventas.filter((v) => v.mes === mes);
+    const vfFibra = ventasVfMes.filter((v) => v.convergencia).length;
+    const vfMovil = ventasVfMes.reduce((acc, v) => acc + (v.lineasMoviles?.length || Number(v.lineasVoz) || 0), 0);
+    const lowiFibra = ventasLowiMes.filter((v) => v.producto === 'fibra' || v.producto === 'fibra_movil').length;
+    const lowiMovil = ventasLowiMes.reduce((acc, v) => acc + (v.lineasMoviles?.length || Number(v.lineas) || 0), 0);
+    const combinado = { fibra: vfFibra + lowiFibra, movil: vfMovil + lowiMovil, total: ventasVfMes.length + ventasLowiMes.length };
+
+    return { ...a, resumen: r, lowi, racha, combinado };
   }).sort((x, y) =>
     (y.resumen.gpDirectosTotal + y.resumen.gpPotencialRanking) -
     (x.resumen.gpDirectosTotal + x.resumen.gpPotencialRanking)
@@ -77,7 +88,10 @@ export default function Admin() {
     lowiFact: acc.lowiFact + f.lowi.facturacionActiva,
     lowiPortasActivas: acc.lowiPortasActivas + (f.lowi.portasActivas || 0),
     lowiPortasPendientes: acc.lowiPortasPendientes + (f.lowi.portasPendientes || 0),
-  }), { ventas: 0, gp: 0, clientes: 0, portasActivas: 0, portasPendientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0, lowiPortasActivas: 0, lowiPortasPendientes: 0 });
+    combFibra: acc.combFibra + f.combinado.fibra,
+    combMovil: acc.combMovil + f.combinado.movil,
+    combTotal: acc.combTotal + f.combinado.total,
+  }), { ventas: 0, gp: 0, clientes: 0, portasActivas: 0, portasPendientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0, lowiPortasActivas: 0, lowiPortasPendientes: 0, combFibra: 0, combMovil: 0, combTotal: 0 });
 
   return (
     <div className="space-y-6">
@@ -106,6 +120,22 @@ export default function Admin() {
         <StatCard icon={Repeat} label="Portas activas (equipo)" value={fmtNum(tot.portasActivas)} accent="text-emerald-400" />
         <StatCard icon={Repeat} label="Portas pendientes (equipo)" value={fmtNum(tot.portasPendientes)} accent="text-gp-gold" />
       </div>
+
+      {/* Resumen combinado Vodafone + Lowi (solo informativo, no afecta incentivos) */}
+      <Card>
+        <SectionTitle right={<Badge tone="neutral">{mes}</Badge>}>
+          <span className="flex items-center gap-2"><Layers size={18} className="text-vf-red" /> Total combinado Vodafone + Lowi</span>
+        </SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard icon={ShoppingCart} label="Ventas totales (ambos operadores)" value={fmtNum(tot.combTotal)} accent="text-vf-red" />
+          <StatCard icon={Wifi} label="Ventas de fibra (Vodafone + Lowi)" value={fmtNum(tot.combFibra)} accent="text-sky-400" />
+          <StatCard icon={Smartphone} label="Líneas móviles (Vodafone + Lowi)" value={fmtNum(tot.combMovil)} accent="text-emerald-400" />
+        </div>
+        <p className="text-[11px] text-fg-muted mt-3">
+          Suma cruda de fibra y líneas móviles de ambos operadores, solo a nivel informativo — no afecta al cálculo de
+          incentivos ni GP Coins de ninguno de los dos (que siguen siendo independientes).
+        </p>
+      </Card>
 
       {/* KPIs de Lowi del equipo */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
