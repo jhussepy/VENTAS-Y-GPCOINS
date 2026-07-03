@@ -488,13 +488,27 @@ export default function Dashboard() {
               {fmtNum(cruzadas.length)} {cruzadas.length === 1 ? 'porta viene' : 'portas vienen'} de venta{cruzadas.length === 1 ? '' : 's'} de otro mes
             </p>
             <div className="mt-2 space-y-1">
-              {cruzadas.map(({ venta, linea, mesVenta }, i) => (
-                <p key={i} className="text-[11px] text-fg-muted">
-                  <span className="text-fg-soft">{[venta.nombre, venta.apellido].filter(Boolean).join(' ') || 'Cliente sin nombre'}</span>
-                  {' '}· venta de <span className="capitalize">{mesVenta}</span> · ventana {fmtVentana(linea.ventanaPorta)}
-                  {linea.activa ? <span className="text-emerald-400"> · activa</span> : <span className="text-gp-gold"> · pendiente</span>}
-                </p>
-              ))}
+              {(() => {
+                // Un mismo cliente puede tener varias líneas portadas con la misma
+                // fecha de ventana (varios números portados a la vez); agrupamos
+                // esas filas idénticas con un contador en vez de repetirlas, para
+                // que no parezca un dato duplicado por error.
+                const grupos = [];
+                for (const c of cruzadas) {
+                  const clave = `${c.venta.id}|${c.linea.ventanaPorta}|${c.linea.activa}`;
+                  const existente = grupos.find((g) => g.clave === clave);
+                  if (existente) existente.n += 1;
+                  else grupos.push({ clave, n: 1, ...c });
+                }
+                return grupos.map((g, i) => (
+                  <p key={i} className="text-[11px] text-fg-muted">
+                    <span className="text-fg-soft">{[g.venta.nombre, g.venta.apellido].filter(Boolean).join(' ') || 'Cliente sin nombre'}</span>
+                    {' '}· venta de <span className="capitalize">{g.mesVenta}</span> · ventana {fmtVentana(g.linea.ventanaPorta)}
+                    {g.linea.activa ? <span className="text-emerald-400"> · activa</span> : <span className="text-gp-gold"> · pendiente</span>}
+                    {g.n > 1 && <span className="text-sky-400 font-semibold"> ×{g.n}</span>}
+                  </p>
+                ));
+              })()}
             </div>
           </div>
         )}
