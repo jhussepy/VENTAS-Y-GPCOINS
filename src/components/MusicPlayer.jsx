@@ -50,7 +50,9 @@ export default function MusicPlayer() {
           src={EMBED_URL}
           title="Música cristiana de fondo"
           className="w-full h-40 border-0 block"
-          allow="autoplay; encrypted-media"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
         />
       </div>
 
