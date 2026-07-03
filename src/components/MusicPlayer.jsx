@@ -9,12 +9,19 @@
 import { useState } from 'react';
 import { Music, X, Minus } from 'lucide-react';
 
-const PLAYLIST_ID = '0wLtqnI9JV1AyaM4c9ZS6b';
-const EMBED_URL = `https://open.spotify.com/embed/playlist/${PLAYLIST_ID}?utm_source=generator`;
+// El widget de Spotify solo carga las primeras 100 canciones de una
+// playlist; para no perder el resto, la música se reparte en varias
+// playlists (cada una <100 canciones) y se elige cuál sonar aquí.
+const PLAYLISTS = [
+  { id: '0wLtqnI9JV1AyaM4c9ZS6b', label: 'Cristiana 1' },
+  { id: '3AFtzyQfCeAFRW4hagIvBq', label: 'Cristiana 2' },
+];
+const embedUrl = (id) => `https://open.spotify.com/embed/playlist/${id}?utm_source=generator`;
 
 export default function MusicPlayer() {
   const [activado, setActivado] = useState(false); // el usuario aún no ha pulsado play
   const [minimizado, setMinimizado] = useState(false);
+  const [sel, setSel] = useState(0); // índice de la playlist activa
 
   if (!activado) {
     return (
@@ -37,8 +44,18 @@ export default function MusicPlayer() {
         aria-hidden={minimizado}
       >
         <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 text-white">
-          <Music size={15} aria-label="Música cristiana" />
-          <div className="flex items-center gap-1">
+          <Music size={15} aria-label="Música cristiana" className="shrink-0" />
+          {PLAYLISTS.length > 1 && (
+            <select
+              value={sel}
+              onChange={(e) => setSel(Number(e.target.value))}
+              className="bg-white/15 text-white text-xs rounded px-1.5 py-0.5 mx-2 flex-1 min-w-0 cursor-pointer focus:outline-none"
+              aria-label="Elegir playlist"
+            >
+              {PLAYLISTS.map((p, i) => <option key={p.id} value={i} className="text-fg bg-bg-surface">{p.label}</option>)}
+            </select>
+          )}
+          <div className="flex items-center gap-1 shrink-0">
             <button onClick={() => setMinimizado(true)} className="p-1 hover:bg-white/20 rounded cursor-pointer" aria-label="Minimizar reproductor" title="Minimizar">
               <Minus size={14} />
             </button>
@@ -48,8 +65,9 @@ export default function MusicPlayer() {
           </div>
         </div>
         <iframe
-          src={EMBED_URL}
-          title="Música cristiana de fondo (Spotify)"
+          key={PLAYLISTS[sel].id}
+          src={embedUrl(PLAYLISTS[sel].id)}
+          title={`Música cristiana de fondo (Spotify) — ${PLAYLISTS[sel].label}`}
           className="w-full h-[352px] border-0 block"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
