@@ -114,21 +114,11 @@ export default function Admin() {
         <div className="text-sm px-4 py-2 rounded-lg bg-vf-red/15 text-vf-redLight" role="alert">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users} label="Agentes" value={fmtNum(agentes.length)} accent="text-vf-red" />
-        <StatCard icon={ShoppingCart} label="Ventas del equipo" value={fmtNum(tot.ventas)} accent="text-vf-red" />
-        <StatCard icon={Coins} label="GP Coins directos (equipo)" value={fmtNum(tot.gp)} accent="text-gp-gold" />
-        <StatCard icon={Trophy} label="Clientes nuevos (equipo)" value={fmtNum(tot.clientes)} accent="text-emerald-400" />
-      </div>
+      {/* Agentes: cifra global, no pertenece a un operador concreto */}
+      <StatCard icon={Users} label="Agentes con datos registrados" value={fmtNum(agentes.length)} accent="text-vf-red" />
 
-      {/* Portabilidad móvil del equipo */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard icon={Repeat} label="Portas activas (equipo)" value={fmtNum(tot.portasActivas)} accent="text-emerald-400" />
-        <StatCard icon={Repeat} label="Portas pendientes (equipo)" value={fmtNum(tot.portasPendientes)} accent="text-gp-gold" />
-      </div>
-
-      {/* Resumen combinado Vodafone + Lowi (solo informativo, no afecta incentivos) */}
-      <Card>
+      {/* Resumen combinado Vodafone + Lowi: la cifra "titular" primero, antes del detalle por operador */}
+      <Card accent>
         <SectionTitle right={<Badge tone="neutral">{mes}</Badge>}>
           <span className="flex items-center gap-2"><Layers size={18} className="text-vf-red" /> Total combinado Vodafone + Lowi</span>
         </SectionTitle>
@@ -144,17 +134,27 @@ export default function Admin() {
         </p>
       </Card>
 
-      {/* KPIs de Lowi del equipo */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard icon={Wifi} label="Ventas Lowi (equipo)" value={fmtNum(tot.lowiTotal)} accent="text-sky-400" />
-        <StatCard icon={Wifi} label="Lowi activas (equipo)" value={fmtNum(tot.lowiActivas)} accent="text-emerald-400" />
-        <StatCard icon={Coins} label="Facturación Lowi activa" value={fmtEur(tot.lowiFact)} sub="Suma de cuotas mensuales activas" accent="text-sky-400" />
+      {/* Detalle por operador: Vodafone primero, Lowi después, cada uno con su propia sección */}
+      <div>
+        <SectionTitle right={<Badge tone="red">Vodafone</Badge>}>Equipo Vodafone</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard icon={ShoppingCart} label="Ventas del equipo" value={fmtNum(tot.ventas)} accent="text-vf-red" />
+          <StatCard icon={Coins} label="GP Coins directos (equipo)" value={fmtNum(tot.gp)} accent="text-gp-gold" />
+          <StatCard icon={Trophy} label="Clientes nuevos (equipo)" value={fmtNum(tot.clientes)} accent="text-emerald-400" />
+          <StatCard icon={Repeat} label="Portas activas (equipo)" value={fmtNum(tot.portasActivas)} accent="text-emerald-400" />
+          <StatCard icon={Repeat} label="Portas pendientes (equipo)" value={fmtNum(tot.portasPendientes)} accent="text-gp-gold" />
+        </div>
       </div>
 
-      {/* Portabilidad Lowi del equipo */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard icon={Repeat} label="Portas Lowi activas (equipo)" value={fmtNum(tot.lowiPortasActivas)} accent="text-emerald-400" />
-        <StatCard icon={Repeat} label="Portas Lowi pendientes (equipo)" value={fmtNum(tot.lowiPortasPendientes)} accent="text-gp-gold" />
+      <div>
+        <SectionTitle right={<Badge tone="neutral">Lowi</Badge>}>Equipo Lowi</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard icon={Wifi} label="Ventas Lowi (equipo)" value={fmtNum(tot.lowiTotal)} accent="text-sky-400" />
+          <StatCard icon={Wifi} label="Lowi activas (equipo)" value={fmtNum(tot.lowiActivas)} accent="text-emerald-400" />
+          <StatCard icon={Coins} label="Facturación Lowi activa" value={fmtEur(tot.lowiFact)} sub="Suma de cuotas mensuales activas" accent="text-sky-400" />
+          <StatCard icon={Repeat} label="Portas Lowi activas (equipo)" value={fmtNum(tot.lowiPortasActivas)} accent="text-emerald-400" />
+          <StatCard icon={Repeat} label="Portas Lowi pendientes (equipo)" value={fmtNum(tot.lowiPortasPendientes)} accent="text-gp-gold" />
+        </div>
       </div>
 
       {/* Drill-down: detalle del agente seleccionado */}
