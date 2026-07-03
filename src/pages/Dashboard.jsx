@@ -164,6 +164,8 @@ export default function Dashboard() {
         ]}
       />
 
+      <VersiculoDelDiaCard />
+
       <FocoDelDia foco={foco} racha={racha} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -542,26 +544,24 @@ export default function Dashboard() {
           })}
         </div>
       </Card>
-
-      {/* Versículo del día (rincón de fe) */}
-      <VersiculoDelDiaCard />
     </div>
   );
 }
 
-// Tarjeta compacta del versículo del día (usa la versión configurada si la hay)
+// Tarjeta editorial del versículo del día: discreta y consistente con el
+// resto del panel (no un banner llamativo), con acento dorado de marca.
 function VersiculoDelDiaCard() {
   const vd = versiculoDelDia();
   const { texto, version } = useVersiculo(vd.cita, vd.texto, vd.pid);
   return (
-    <div className="relative overflow-hidden rounded-2xl p-5 text-white shadow-md bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700">
-      <div className="absolute -top-10 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
-      <div className="relative flex items-start gap-4">
-        <span className="p-2.5 rounded-xl bg-white/15 backdrop-blur shrink-0"><BookOpen size={20} /></span>
+    <div className="relative overflow-hidden rounded-2xl border border-bg-border bg-bg-surface shadow-sm">
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gp-gold to-vf-red" aria-hidden="true" />
+      <div className="flex items-start gap-4 p-5 pl-6">
+        <span className="p-2 rounded-lg bg-gp-gold/10 text-gp-gold shrink-0" aria-hidden="true"><BookOpen size={17} /></span>
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Versículo del día</p>
-          <p className="font-serif text-lg leading-relaxed mt-1">“{texto}”</p>
-          <p className="text-xs font-semibold text-white/85 mt-2">{vd.cita} · {version}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">Versículo del día</p>
+          <p className="font-serif text-[15px] text-fg-soft leading-relaxed mt-1.5">“{texto}”</p>
+          <p className="text-xs font-semibold text-fg-muted mt-2">{vd.cita} <span className="font-normal">· {version}</span></p>
         </div>
       </div>
     </div>
