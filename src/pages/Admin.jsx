@@ -63,12 +63,15 @@ export default function Admin() {
 
     // Combinado Vodafone + Lowi: ventas de fibra y líneas móviles del mes,
     // sumando ambos operadores (solo informativo, no afecta a incentivos).
-    const ventasVfMes = a.ventas.filter((v) => v.mes === mes);
-    const vfFibra = ventasVfMes.filter((v) => v.convergencia).length;
-    const vfMovil = ventasVfMes.reduce((acc, v) => acc + (v.lineasMoviles?.length || Number(v.lineasVoz) || 0), 0);
-    const lowiFibra = ventasLowiMes.filter((v) => v.producto === 'fibra' || v.producto === 'fibra_movil').length;
-    const lowiMovil = ventasLowiMes.reduce((acc, v) => acc + (v.lineasMoviles?.length || Number(v.lineas) || 0), 0);
-    const combinado = { fibra: vfFibra + lowiFibra, movil: vfMovil + lowiMovil, total: ventasVfMes.length + ventasLowiMes.length };
+    // Solo cuentan las ventas ACTIVAS (igual que el resto del panel); una venta
+    // pendiente, de baja o cancelada no debe sumar como fibra/línea real.
+    const ventasVfMesActivas = a.ventas.filter((v) => v.mes === mes && estadoDe(v) === 'activa');
+    const ventasLowiMesActivas = ventasLowiMes.filter((v) => v.estado === 'activa');
+    const vfFibra = ventasVfMesActivas.filter((v) => v.convergencia).length;
+    const vfMovil = ventasVfMesActivas.reduce((acc, v) => acc + (v.lineasMoviles?.length || Number(v.lineasVoz) || 0), 0);
+    const lowiFibra = ventasLowiMesActivas.filter((v) => v.producto === 'fibra' || v.producto === 'fibra_movil').length;
+    const lowiMovil = ventasLowiMesActivas.reduce((acc, v) => acc + (v.lineasMoviles?.length || Number(v.lineas) || 0), 0);
+    const combinado = { fibra: vfFibra + lowiFibra, movil: vfMovil + lowiMovil, total: ventasVfMesActivas.length + ventasLowiMesActivas.length };
 
     return { ...a, resumen: r, lowi, racha, combinado };
   }).sort((x, y) =>
@@ -127,13 +130,14 @@ export default function Admin() {
           <span className="flex items-center gap-2"><Layers size={18} className="text-vf-red" /> Total combinado Vodafone + Lowi</span>
         </SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard icon={ShoppingCart} label="Ventas totales (ambos operadores)" value={fmtNum(tot.combTotal)} accent="text-vf-red" />
-          <StatCard icon={Wifi} label="Ventas de fibra (Vodafone + Lowi)" value={fmtNum(tot.combFibra)} accent="text-sky-400" />
-          <StatCard icon={Smartphone} label="Líneas móviles (Vodafone + Lowi)" value={fmtNum(tot.combMovil)} accent="text-emerald-400" />
+          <StatCard icon={ShoppingCart} label="Ventas activas (ambos operadores)" value={fmtNum(tot.combTotal)} accent="text-vf-red" />
+          <StatCard icon={Wifi} label="Fibra activa (Vodafone + Lowi)" value={fmtNum(tot.combFibra)} accent="text-sky-400" />
+          <StatCard icon={Smartphone} label="Líneas móviles activas (Vodafone + Lowi)" value={fmtNum(tot.combMovil)} accent="text-emerald-400" />
         </div>
         <p className="text-[11px] text-fg-muted mt-3">
-          Suma cruda de fibra y líneas móviles de ambos operadores, solo a nivel informativo — no afecta al cálculo de
-          incentivos ni GP Coins de ninguno de los dos (que siguen siendo independientes).
+          Solo cuenta ventas <span className="text-fg-soft font-medium">activas</span> de ambos operadores (no
+          pendientes, bajas ni canceladas), solo a nivel informativo — no afecta al cálculo de incentivos ni GP Coins
+          de ninguno de los dos (que siguen siendo independientes).
         </p>
       </Card>
 
