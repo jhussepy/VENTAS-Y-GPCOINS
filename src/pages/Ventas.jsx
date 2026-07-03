@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search, Tv,
+  Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search, Tv, CalendarClock,
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { ventaVacia, mesDesdeFecha, unidadesVendidas, estadoEntregaTerminal, ETIQUETAS_ENTREGA, lineaPrincipal } from '../lib/engine.js';
+import { ventaVacia, mesDesdeFecha, unidadesVendidas, estadoEntregaTerminal, ETIQUETAS_ENTREGA, lineaPrincipal, mesesImplicados, portasDeVenta } from '../lib/engine.js';
 import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js';
 import { avisosContacto } from '../lib/validacion.js';
 import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.js';
@@ -383,7 +383,9 @@ export default function Ventas() {
 
   const q = busqueda.trim().toLowerCase();
   const lista = ventas.filter((v) => {
-    if (filtroMes !== 'todos' && v.mes !== filtroMes) return false;
+    // Una venta aparece en su mes propio y también en el mes de la ventana de
+    // portabilidad de sus portas (una porta de julio se ve al filtrar julio).
+    if (filtroMes !== 'todos' && !mesesImplicados(v).has(filtroMes)) return false;
     if (filtroEstado !== 'todos' && estadoDe(v) !== filtroEstado) return false;
     if (!q) return true;
     return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido, v.idWeb]
@@ -610,12 +612,24 @@ export default function Ventas() {
                           </span>
                         ) : <span className="text-fg-muted">—</span>}
                         {(() => {
+                          // Fecha(s) de portabilidad móvil, siempre visibles. Verde si ya
+                          // activó; si sigue pendiente, tono según cercanía de la ventana.
+                          const portas = portasDeVenta(v);
+                          if (!portas.length) return null;
                           const vt = ventanaRelevante(v.lineasMoviles);
-                          if (!vt) return null;
                           return (
-                            <span className="flex justify-center mt-1" title={`${ETIQUETA_VENTANA[vt.estado]}: ${fmtVentana(vt.fecha)}`}>
-                              <Badge tone={TONO_VENTANA[vt.estado]}>{vt.estado === 'vencida' ? 'Vencida' : fmtVentana(vt.fecha)}</Badge>
-                            </span>
+                            <div className="flex flex-col items-center gap-1 mt-1">
+                              {portas.map((p, i) => {
+                                const tono = p.activa ? 'green' : (vt && vt.fecha === p.raw ? TONO_VENTANA[vt.estado] : 'neutral');
+                                return (
+                                  <span key={i} className="inline-flex items-center gap-1" title={`Portabilidad móvil: ${fmtVentana(p.raw)}${p.activa ? ' · activada' : ''}${p.otroMes ? ` · cuenta en ${p.mes}` : ''}`}>
+                                    <CalendarClock size={11} className="text-fg-muted" />
+                                    <Badge tone={tono}>{fmtVentana(p.raw)}</Badge>
+                                    {p.otroMes && <span className="text-[10px] font-semibold text-fg-muted">{p.mes === 'julio' ? 'Jul' : 'Jun'}</span>}
+                                  </span>
+                                );
+                              })}
+                            </div>
                           );
                         })()}
                         {(() => {
@@ -629,7 +643,21 @@ export default function Ventas() {
                           );
                         })()}
                       </td>
-                      <td className="px-4 py-3 text-center"><Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge></td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge>
+                          {(() => {
+                            // Si alguna porta activa en otro mes, se indica aquí
+                            const otros = [...mesesImplicados(v)].filter((m) => m !== v.mes);
+                            if (!otros.length) return null;
+                            return otros.map((m) => (
+                              <span key={m} className="text-[10px] font-semibold text-vf-redLight" title="Porta que cuenta en este mes">
+                                +{m === 'julio' ? 'Jul' : 'Jun'} (porta)
+                              </span>
+                            ));
+                          })()}
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: ESTADOS[estadoDe(v)]?.color }} aria-hidden="true" />

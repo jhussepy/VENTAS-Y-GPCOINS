@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ventanaRelevante, fmtVentana } from './portabilidad.js';
+import { mesesImplicados, portasDeVenta } from './engine.js';
 
 const ahora = new Date('2026-06-30T12:00:00');
 
@@ -43,5 +44,44 @@ describe('fmtVentana', () => {
   });
   it('vacío si no hay valor', () => {
     expect(fmtVentana('')).toBe('');
+  });
+});
+
+describe('mesesImplicados', () => {
+  it('incluye solo el mes propio sin portas', () => {
+    const m = mesesImplicados({ mes: 'junio', lineasMoviles: [] });
+    expect([...m]).toEqual(['junio']);
+  });
+
+  it('añade el mes de la ventana de portabilidad de otro mes', () => {
+    const m = mesesImplicados({
+      mes: 'junio',
+      lineasMoviles: [{ tipo: 'porta', ventanaPorta: '2026-07-02T02:00' }],
+    });
+    expect(m.has('junio')).toBe(true);
+    expect(m.has('julio')).toBe(true);
+  });
+
+  it('ignora portas canceladas (ES M1)', () => {
+    const m = mesesImplicados({
+      mes: 'junio',
+      lineasMoviles: [{ tipo: 'porta', ventanaPorta: '2026-07-02T02:00', incidenciaPorta: 'cancelada_m1' }],
+    });
+    expect(m.has('julio')).toBe(false);
+  });
+});
+
+describe('portasDeVenta', () => {
+  it('marca otroMes cuando la ventana cae fuera del mes de la venta', () => {
+    const p = portasDeVenta({
+      mes: 'junio',
+      lineasMoviles: [
+        { tipo: 'porta', ventanaPorta: '2026-07-02T02:00', activa: false },
+        { tipo: 'nueva' },
+      ],
+    });
+    expect(p).toHaveLength(1);
+    expect(p[0].mes).toBe('julio');
+    expect(p[0].otroMes).toBe(true);
   });
 });

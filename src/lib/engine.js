@@ -271,6 +271,32 @@ export function portasCruzadas(ventas, mes) {
   return out;
 }
 
+// --- Meses en los que una venta tiene impacto -------------------------------
+// El mes propio de la venta (fibra/activación) MÁS el mes de la ventana de
+// portabilidad de cada línea porta, que puede caer en un mes distinto. Así una
+// venta de junio con una porta que activa en julio "impacta" en ambos meses.
+export function mesesImplicados(v) {
+  const meses = new Set([v.mes]);
+  for (const l of v.lineasMoviles || []) {
+    if (l.tipo === 'porta' && l.ventanaPorta && l.incidenciaPorta !== 'cancelada_m1') {
+      meses.add(mesDesdeFecha(l.ventanaPorta));
+    }
+  }
+  return meses;
+}
+
+// Portas de una venta con su fecha de ventana (para mostrarlas en la tabla).
+// Devuelve [{ raw, mes, activa, otroMes }] ordenadas por fecha.
+export function portasDeVenta(v) {
+  return (v.lineasMoviles || [])
+    .filter((l) => l.tipo === 'porta' && l.ventanaPorta)
+    .map((l) => {
+      const mes = mesDesdeFecha(l.ventanaPorta);
+      return { raw: l.ventanaPorta, mes, activa: !!l.activa, otroMes: mes !== v.mes };
+    })
+    .sort((a, b) => new Date(a.raw) - new Date(b.raw));
+}
+
 // --- Estado de entrega del terminal ------------------------------------------
 // El terminal no puede entregarse hasta que la línea portada esté activa y
 // hayan pasado 48h desde su ventana de portabilidad. Durante la entrega puede
