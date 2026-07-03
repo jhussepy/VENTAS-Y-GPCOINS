@@ -195,6 +195,18 @@ describe('portas atribuidas al mes de su ventana de portabilidad', () => {
     expect(resumenGlobal([v], 'julio').portasActivas).toBe(0);
   });
 
+  it('una venta CANCELADA no cuenta sus portas como solicitadas/pendientes', () => {
+    const v = {
+      ...ventaVacia(), mes: 'julio', estado: 'cancelada',
+      lineasMoviles: [{ tipo: 'porta', activa: false, ventanaPorta: '2026-07-06T02:00', tarifa: 'total' }],
+    };
+    const r = resumenGlobal([v], 'julio');
+    expect(r.portasTotales).toBe(0);
+    expect(r.portasActivas).toBe(0);
+    expect(r.portasPendientes).toBe(0);
+    expect(portasCruzadas([v], 'julio')).toHaveLength(0);
+  });
+
   it('portasCruzadas detecta la venta de junio cuya ventana cae en julio', () => {
     const cruzadas = portasCruzadas([ventaCruzada], 'julio');
     expect(cruzadas).toHaveLength(2);

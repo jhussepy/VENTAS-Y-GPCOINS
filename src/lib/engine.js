@@ -226,6 +226,11 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
 export function portasPorMes(ventas, mes) {
   let portas = 0; let solicitadas = 0; let lineas = 0;
   for (const v of ventas) {
+    // Una venta CANCELADA (todo el pedido, no solo una línea) nunca se va a
+    // activar: sus portas no deben seguir contando como "pendientes"
+    // indefinidamente, igual que ya se excluye una porta individual marcada
+    // como "cancelada_m1".
+    if (estadoDe(v) === 'cancelada') continue;
     const lm = v.lineasMoviles || [];
     if (lm.length > 0) {
       for (const l of lm) {
@@ -257,6 +262,7 @@ export function portasPorMes(ventas, mes) {
 export function portasCruzadas(ventas, mes) {
   const out = [];
   for (const v of ventas) {
+    if (estadoDe(v) === 'cancelada') continue;
     for (const l of v.lineasMoviles || []) {
       if (l.tipo !== 'porta' || !l.ventanaPorta) continue;
       // Una porta cancelada por el cliente (ES M1) nunca se activará: no aporta
