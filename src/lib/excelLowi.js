@@ -48,7 +48,10 @@ const aProducto = (x) => {
   return '';
 };
 
-const claveLowi = (v) => [v.nombre, v.apellido, v.fechaVenta, v.pedido]
+// Incluye el DNI: sin él, dos clientes distintos con mismo nombre+apellido,
+// misma fecha y sin ID Smart (venta sin ese dato) compartirían clave y una
+// se descartaría como duplicada de la otra.
+const claveLowi = (v) => [v.nombre, v.apellido, v.dni, v.fechaVenta, v.pedido]
   .map((x) => String(x ?? '').trim().toLowerCase()).join('|');
 
 export async function importarLowi(file, existentes = []) {

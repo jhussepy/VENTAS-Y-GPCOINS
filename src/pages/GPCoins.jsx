@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Coins, Wallet, Trophy, TrendingUp, Wifi } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { resumenGlobal, puntosClienteNuevo, portasDetalle } from '../lib/engine.js';
+import { estadoDe } from '../lib/estados.js';
 import { INCENTIVOS, PUNTOS_CONVERGENCIA, PERIODO, convPts } from '../data/incentivos.js';
 import { StatCard, Card, SectionTitle, Badge } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
@@ -10,9 +11,12 @@ export default function GPCoins() {
   const { ventas, mes } = useApp();
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
 
-  // Desglose de puntos de fibra (Cliente Nuevo) por convergencia
+  // Desglose de puntos de fibra (Cliente Nuevo) por convergencia. Solo ventas
+  // ACTIVAS cuentan (igual que puntosClienteNuevo en engine.js); si no, la
+  // tabla mostraría puntos "fantasma" de ventas pendientes/canceladas que
+  // nunca sumarán al total real.
   const desgloseFibra = useMemo(() => {
-    const delMes = ventas.filter((v) => v.mes === mes && v.convergencia && v.velocidad);
+    const delMes = ventas.filter((v) => v.mes === mes && estadoDe(v) === 'activa' && v.convergencia && v.velocidad);
     return PUNTOS_CONVERGENCIA.map((row) => {
       const count = delMes.filter((v) => v.convergencia === row.tipo && v.velocidad === row.velocidad).length;
       return { ...row, count, total: count * convPts(row, mes) };

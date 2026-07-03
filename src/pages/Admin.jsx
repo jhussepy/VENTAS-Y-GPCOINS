@@ -67,10 +67,13 @@ export default function Admin() {
     // pendiente, de baja o cancelada no debe sumar como fibra/línea real.
     const ventasVfMesActivas = a.ventas.filter((v) => v.mes === mes && estadoDe(v) === 'activa');
     const ventasLowiMesActivas = ventasLowiMes.filter((v) => v.estado === 'activa');
+    // Con `?? ` en vez de `||`: si lineasMoviles existe (aunque esté vacío tras
+    // borrar todas las líneas), su longitud real manda sobre el contador manual
+    // obsoleto; `||` caería a lineasVoz/lineas incluso con length === 0.
     const vfFibra = ventasVfMesActivas.filter((v) => v.convergencia).length;
-    const vfMovil = ventasVfMesActivas.reduce((acc, v) => acc + (v.lineasMoviles?.length || Number(v.lineasVoz) || 0), 0);
+    const vfMovil = ventasVfMesActivas.reduce((acc, v) => acc + (v.lineasMoviles?.length ?? Number(v.lineasVoz) ?? 0), 0);
     const lowiFibra = ventasLowiMesActivas.filter((v) => v.producto === 'fibra' || v.producto === 'fibra_movil').length;
-    const lowiMovil = ventasLowiMesActivas.reduce((acc, v) => acc + (v.lineasMoviles?.length || Number(v.lineas) || 0), 0);
+    const lowiMovil = ventasLowiMesActivas.reduce((acc, v) => acc + (v.lineasMoviles?.length ?? Number(v.lineas) ?? 0), 0);
     const combinado = { fibra: vfFibra + lowiFibra, movil: vfMovil + lowiMovil, total: ventasVfMesActivas.length + ventasLowiMesActivas.length };
 
     return { ...a, resumen: r, lowi, racha, combinado };

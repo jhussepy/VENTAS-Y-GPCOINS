@@ -56,8 +56,11 @@ const aFecha = (XLSX, x) => {
   return s;
 };
 
-// Clave de deduplicación de una venta
-const claveVenta = (v) => [v.nombre, v.apellido, v.fechaVenta, v.sap, v.pedido]
+// Clave de deduplicación de una venta. Incluye el DNI: dos clientes distintos
+// con el mismo nombre+apellido, misma fecha y sin terminal/ID Smart (venta
+// solo de fibra/móvil) tendrían la misma clave sin él, y se descartaría uno
+// como si fuera un duplicado del otro.
+const claveVenta = (v) => [v.nombre, v.apellido, v.dni, v.fechaVenta, v.sap, v.pedido]
   .map((x) => String(x ?? '').trim().toLowerCase())
   .join('|');
 

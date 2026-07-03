@@ -45,3 +45,15 @@ describe('importarVentas: el mes lo manda la instalación', () => {
     expect(ventas[0].mes).toBe('junio');
   });
 });
+
+describe('importarVentas: deduplicación distingue por DNI', () => {
+  it('no descarta como duplicada una venta de otro cliente con mismo nombre/apellido/fecha sin terminal', async () => {
+    const file = filaAExcel([
+      { nombre: 'Juan', apellido: 'Pérez', dni: '11111111A', fechaVenta: '2026-06-18' },
+      { nombre: 'Juan', apellido: 'Pérez', dni: '22222222B', fechaVenta: '2026-06-18' },
+    ]);
+    const { ventas, duplicadas } = await importarVentas(file, []);
+    expect(ventas).toHaveLength(2);
+    expect(duplicadas).toBe(0);
+  });
+});

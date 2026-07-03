@@ -149,8 +149,11 @@ export default function Dashboard() {
     const finMes = new Date(anio, mesIdx + 1, 0); // último día del mes
     const diasTotales = contarLaborables(inicioMes, finMes);
 
-    const hoy = new Date();
-    // Día de referencia: hoy si cae dentro del mes activo; si no, el mes completo
+    const hoy = soloFecha(new Date());
+    // Día de referencia: hoy si cae dentro del mes activo; si no, el mes completo.
+    // Se normaliza a medianoche para no salir de "dentro" al pasar la medianoche
+    // del último día del mes (comparar con hora real vs. finMes a las 00:00 lo
+    // sacaba del período durante todo ese último día).
     const dentro = hoy >= inicioMes && hoy <= finMes;
     const diasTranscurridos = dentro ? Math.max(1, contarLaborables(inicioMes, hoy)) : diasTotales;
     const diasRestantes = dentro ? Math.max(0, contarLaborables(hoy, finMes) - (esLaborable(hoy) ? 1 : 0)) : 0;
