@@ -23,12 +23,11 @@ export default function MusicPlayer() {
     return (
       <button
         onClick={() => setActivado(true)}
-        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700 text-white shadow-lg hover:scale-105 transition-transform cursor-pointer"
+        className="fixed bottom-4 right-4 z-50 w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700 text-white shadow-lg hover:scale-105 transition-transform cursor-pointer"
         aria-label="Reproducir música cristiana de fondo"
         title="Música cristiana de fondo"
       >
         <Music size={18} />
-        <span className="text-sm font-semibold hidden sm:inline">Música cristiana</span>
       </button>
     );
   }
@@ -41,7 +40,7 @@ export default function MusicPlayer() {
         aria-hidden={minimizado}
       >
         <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-indigo-700 via-violet-700 to-fuchsia-700 text-white">
-          <span className="text-xs font-semibold flex items-center gap-1.5"><Music size={13} /> Música cristiana</span>
+          <Music size={15} aria-label="Música cristiana" />
           <div className="flex items-center gap-1">
             <button onClick={() => setMinimizado(true)} className="p-1 hover:bg-white/20 rounded cursor-pointer" aria-label="Minimizar reproductor" title="Minimizar">
               <Minus size={14} />
