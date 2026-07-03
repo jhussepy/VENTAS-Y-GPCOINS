@@ -126,21 +126,34 @@ export default function Dashboard() {
   }, [ventas, mes]);
 
   // --- Proyección / ritmo del mes activo --------------------------------------
+  // Se trabaja de lunes a viernes, así que el ritmo y la proyección se calculan
+  // en días laborables, no en días de calendario (los findes no cuentan).
+  const esLaborable = (d) => d.getDay() !== 0 && d.getDay() !== 6;
+  // Normalizamos a medianoche para que comparar fechas no dependa de la hora
+  // actual (si no, el último día del rango podría quedar fuera por unos minutos).
+  const soloFecha = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const contarLaborables = (desde, hasta) => {
+    let n = 0;
+    const fin = soloFecha(hasta);
+    for (let d = soloFecha(desde); d <= fin; d.setDate(d.getDate() + 1)) {
+      if (esLaborable(d)) n += 1;
+    }
+    return n;
+  };
+
   const proyeccion = useMemo(() => {
     // Año del período (2026) y mes activo (junio=5, julio=6 en base 0)
     const anio = Number(PERIODO.inicio.slice(0, 4));
     const mesIdx = mes === 'julio' ? 6 : 5;
     const inicioMes = new Date(anio, mesIdx, 1);
     const finMes = new Date(anio, mesIdx + 1, 0); // último día del mes
-    const diasTotales = finMes.getDate();
+    const diasTotales = contarLaborables(inicioMes, finMes);
 
     const hoy = new Date();
     // Día de referencia: hoy si cae dentro del mes activo; si no, el mes completo
     const dentro = hoy >= inicioMes && hoy <= finMes;
-    const diaActual = dentro ? hoy.getDate() : diasTotales;
-
-    const diasTranscurridos = Math.max(1, diaActual); // evita división por cero
-    const diasRestantes = Math.max(0, diasTotales - diaActual);
+    const diasTranscurridos = dentro ? Math.max(1, contarLaborables(inicioMes, hoy)) : diasTotales;
+    const diasRestantes = dentro ? Math.max(0, contarLaborables(hoy, finMes) - (esLaborable(hoy) ? 1 : 0)) : 0;
 
     const ventasActuales = r.totalVentas;
     const proyectada = Math.round((ventasActuales / diasTranscurridos) * diasTotales);
@@ -294,14 +307,14 @@ export default function Dashboard() {
         </SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
-            <p className="text-xs text-fg-muted">Días restantes del mes</p>
+            <p className="text-xs text-fg-muted">Días laborables restantes</p>
             <p className="text-2xl font-semibold text-fg tabnum mt-1">{fmtNum(proyeccion.diasRestantes)}</p>
             {proyeccion.dentro && proyeccion.diasRestantes <= 3 ? (
               <p className="text-xs text-vf-redLight font-medium mt-1">
-                {proyeccion.diasRestantes === 0 ? '¡Último día del mes!' : '¡Recta final del mes!'}
+                {proyeccion.diasRestantes === 0 ? '¡Último día laborable del mes!' : '¡Recta final del mes!'}
               </p>
             ) : (
-              <p className="text-xs text-fg-muted mt-1">de {proyeccion.diasTotales} días totales</p>
+              <p className="text-xs text-fg-muted mt-1">de {proyeccion.diasTotales} laborables (lun-vie)</p>
             )}
           </div>
           <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
