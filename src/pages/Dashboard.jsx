@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import { useApp } from '../App.jsx';
 import { resumenGlobal, portasCruzadas } from '../lib/engine.js';
-import { rachaVentas, calcularLogros, focoDelDia } from '../lib/logros.js';
+import { rachaVentas, calcularLogros } from '../lib/logros.js';
 import { versiculoDelDia, bendicionDelDia } from '../data/biblia.js';
 import { useVersiculo } from '../lib/bibliaApi.js';
 import { fmtVentana } from '../lib/portabilidad.js';
@@ -17,7 +17,7 @@ import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { TARIFAS_MOVIL } from '../data/movil.js';
 
 const VELOCIDADES_FIBRA = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
-import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner, FocoDelDia, Insignia } from '../components/ui.jsx';
+import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner, Insignia } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
 // Degradado de color por incentivo para las tarjetas de ranking (estilo
@@ -50,7 +50,6 @@ export default function Dashboard() {
   // Gamificación: racha de ventas (global, no por mes), insignias y foco del día
   const racha = useMemo(() => rachaVentas(ventas), [ventas]);
   const logros = useMemo(() => calcularLogros(r, racha, objetivosLogros), [r, racha, objetivosLogros]);
-  const foco = useMemo(() => focoDelDia(r), [r]);
   const logrosCumplidos = logros.filter((l) => l.cumplido).length;
 
   // Saludo según la hora del día
@@ -165,8 +164,6 @@ export default function Dashboard() {
       />
 
       <VersiculoDelDiaCard />
-
-      <FocoDelDia foco={foco} racha={racha} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={ShoppingCart} label={`Ventas en ${PERIODO.etiquetas[mes]}`} value={fmtNum(r.totalVentas)} accent="text-vf-red" />
