@@ -538,7 +538,7 @@ export default function Dashboard() {
 // Tarjeta compacta del versículo del día (usa la versión configurada si la hay)
 function VersiculoDelDiaCard() {
   const vd = versiculoDelDia();
-  const { texto, version } = useVersiculo(vd.cita, vd.texto);
+  const { texto, version } = useVersiculo(vd.cita, vd.texto, vd.pid);
   return (
     <div className="relative overflow-hidden rounded-2xl p-5 text-white shadow-md bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700">
       <div className="absolute -top-10 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />

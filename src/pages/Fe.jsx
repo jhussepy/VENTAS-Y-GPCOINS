@@ -12,7 +12,7 @@ import { useVersiculo } from '../lib/bibliaApi.js';
 function VersiculoDelDia({ versiculo, favorito, onFav }) {
   // Muestra RVR1909 al instante y lo sustituye por la versión configurada
   // (p. ej. NTV) si el usuario conectó su clave de API.Bible.
-  const { texto, version } = useVersiculo(versiculo.cita, versiculo.texto);
+  const { texto, version } = useVersiculo(versiculo.cita, versiculo.texto, versiculo.pid);
   return (
     <div className="relative overflow-hidden rounded-2xl p-6 text-white shadow-lg bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700">
       <div className="absolute -top-14 -right-10 w-52 h-52 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
