@@ -8,7 +8,8 @@
 import { useEffect, useState } from 'react';
 import { VERSION_BIBLICA } from '../data/biblia.js';
 
-const BASE = 'https://api.scripture.api.bible/v1';
+// Servidor oficial según el spec OpenAPI de API.Bible (v1.6.3)
+const BASE = 'https://rest.api.bible/v1';
 const KEY_LS = 'fe_api_key';
 const BIBLE_LS = 'fe_api_bible'; // { id, nombre, abrev }
 
