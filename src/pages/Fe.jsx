@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { BookOpen, Heart, Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { versiculoDelDia, PLANES, planPorId, VERSION_BIBLICA } from '../data/biblia.js';
+import { versiculoDelDia, PLANES, planPorId } from '../data/biblia.js';
 import {
   leerProgreso, alternarDia, resumenPlan,
   leerFavoritos, alternarFavorito, esFavorito,
 } from '../lib/fe.js';
 import { Card, SectionTitle, Badge } from '../components/ui.jsx';
+import { useVersiculo } from '../lib/bibliaApi.js';
 
 // Tarjeta grande del versículo del día con botón de favorito
 function VersiculoDelDia({ versiculo, favorito, onFav }) {
+  // Muestra RVR1909 al instante y lo sustituye por la versión configurada
+  // (p. ej. NTV) si el usuario conectó su clave de API.Bible.
+  const { texto, version } = useVersiculo(versiculo.cita, versiculo.texto);
   return (
     <div className="relative overflow-hidden rounded-2xl p-6 text-white shadow-lg bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700">
       <div className="absolute -top-14 -right-10 w-52 h-52 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
@@ -24,8 +28,8 @@ function VersiculoDelDia({ versiculo, favorito, onFav }) {
             <Heart size={20} className={favorito ? 'fill-white text-white' : 'text-white/80'} />
           </button>
         </div>
-        <p className="font-serif text-xl sm:text-2xl leading-relaxed mt-3">“{versiculo.texto}”</p>
-        <p className="text-sm font-semibold text-white/85 mt-4">{versiculo.cita} · {VERSION_BIBLICA}</p>
+        <p className="font-serif text-xl sm:text-2xl leading-relaxed mt-3">“{texto}”</p>
+        <p className="text-sm font-semibold text-white/85 mt-4">{versiculo.cita} · {version}</p>
       </div>
     </div>
   );

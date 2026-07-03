@@ -1,13 +1,100 @@
 import { useMemo, useState } from 'react';
-import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock } from 'lucide-react';
+import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock, BookOpen, Loader2, Check } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { Card, SectionTitle, Badge, useConfirm } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 import { mesEfectivo } from '../lib/engine.js';
+import { VERSION_BIBLICA } from '../data/biblia.js';
+import { getApiKey, setApiKey, getBible, setBible, listarBiblias } from '../lib/bibliaApi.js';
 
 const LIMITE = 1024 * 1024; // 1 MB por documento de usuario en Firestore
 const tam = (obj) => { try { return new Blob([JSON.stringify(obj ?? null)]).size; } catch { return 0; } };
 const kb = (b) => `${(b / 1024).toFixed(1)} KB`;
+
+// --- Configuración de la versión bíblica (API.Bible, opcional) --------------
+function VersionBiblica() {
+  const [clave, setClave] = useState(getApiKey());
+  const [biblias, setBiblias] = useState([]);
+  const [sel, setSel] = useState(getBible()?.id || '');
+  const [cargando, setCargando] = useState(false);
+  const [aviso, setAviso] = useState(null);
+  const guardada = getBible();
+
+  const buscar = async () => {
+    setAviso(null); setCargando(true);
+    try {
+      const lista = await listarBiblias(clave.trim());
+      setBiblias(lista);
+      if (lista.length === 0) setAviso({ tone: 'red', text: 'Tu clave no da acceso a ninguna versión en español.' });
+      else setAviso({ tone: 'green', text: `${lista.length} versiones disponibles. Elige una y guarda.` });
+    } catch (e) {
+      setAviso({ tone: 'red', text: e.message || 'Error al conectar con API.Bible.' });
+    }
+    setCargando(false);
+  };
+
+  const guardar = () => {
+    const b = biblias.find((x) => x.id === sel);
+    if (!clave.trim() || !b) { setAviso({ tone: 'red', text: 'Introduce la clave y elige una versión.' }); return; }
+    setApiKey(clave.trim());
+    setBible(b);
+    setAviso({ tone: 'green', text: `Guardado. Los versículos se mostrarán en ${b.abrev || b.nombre}.` });
+  };
+
+  const desconectar = () => {
+    setApiKey(null); setBible(null); setSel(''); setBiblias([]); setClave('');
+    setAviso({ tone: 'green', text: `Desconectado. Se usará ${VERSION_BIBLICA} sin conexión.` });
+  };
+
+  return (
+    <Card>
+      <SectionTitle right={guardada ? <Badge tone="green">{guardada.abrev || guardada.nombre}</Badge> : <Badge tone="neutral">{VERSION_BIBLICA}</Badge>}>
+        <span className="flex items-center gap-2"><BookOpen size={18} className="text-vf-red" /> Versión bíblica</span>
+      </SectionTitle>
+      <p className="text-sm text-fg-soft mb-3">
+        Por defecto se usa la <span className="font-medium">{VERSION_BIBLICA}</span> sin conexión. Para versiones con
+        derechos de autor (como la <span className="font-medium">NTV</span>), conecta tu clave gratuita de{' '}
+        <span className="font-medium">API.Bible</span>: los versículos se mostrarán en esa versión cuando haya internet.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
+        <div>
+          <label className="label">Clave API (se guarda solo en este dispositivo)</label>
+          <input className="input font-mono" value={clave} onChange={(e) => setClave(e.target.value)} placeholder="Pega aquí tu API key" />
+        </div>
+        <button className="btn-ghost" onClick={buscar} disabled={!clave.trim() || cargando}>
+          {cargando ? <Loader2 size={16} className="animate-spin" /> : <BookOpen size={16} />} Buscar versiones
+        </button>
+      </div>
+
+      {biblias.length > 0 && (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
+          <div>
+            <label className="label">Versión a usar</label>
+            <select className="input" value={sel} onChange={(e) => setSel(e.target.value)}>
+              <option value="">— Elige una versión —</option>
+              {biblias.map((b) => <option key={b.id} value={b.id}>{b.nombre} ({b.abrev})</option>)}
+            </select>
+          </div>
+          <button className="btn-primary" onClick={guardar}><Check size={16} /> Guardar</button>
+        </div>
+      )}
+
+      {aviso && <div className={`mt-3 text-sm px-4 py-2 rounded-lg ${aviso.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`}>{aviso.text}</div>}
+
+      {guardada && (
+        <button className="mt-3 text-xs text-fg-muted hover:text-vf-redLight cursor-pointer" onClick={desconectar}>
+          Desconectar y volver a {VERSION_BIBLICA} sin conexión
+        </button>
+      )}
+
+      <p className="text-[11px] text-fg-muted mt-3">
+        ¿No tienes clave? Regístrate gratis en scripture.api.bible. Si la NTV no aparece en tu lista, tu plan aún no
+        tiene acceso a esa versión (algunas requieren aprobación aparte).
+      </p>
+    </Card>
+  );
+}
 
 export default function Ajustes() {
   const { ventas, setVentas, ventasLowi, tarifas, precios } = useApp();
@@ -127,6 +214,8 @@ export default function Ajustes() {
           Recalcular mes de {fmtNum(desactualizadas)} venta{desactualizadas === 1 ? '' : 's'}
         </button>
       </Card>
+
+      <VersionBiblica />
 
       <Card>
         <SectionTitle>Consejos</SectionTitle>
