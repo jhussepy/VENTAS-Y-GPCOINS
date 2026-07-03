@@ -47,6 +47,9 @@ export function Insignia({ logro }) {
       <div className="w-full h-1 bg-bg-surface2 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${c ? 'bg-gp-gold' : 'bg-vf-red'}`} style={{ width: `${logro.pct}%` }} />
       </div>
+      <span className="text-[10px] text-fg-muted leading-tight">
+        {c ? 'Conseguida' : `Faltan ${Math.max(0, logro.objetivo - logro.valor)}`}
+      </span>
     </div>
   );
 }
