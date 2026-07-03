@@ -8,7 +8,11 @@ import { useState } from 'react';
 import { Music, X, Minus } from 'lucide-react';
 
 const PLAYLIST_ID = 'PLGMFMW8QtlsMq2pAalCOWV2kxIDUIBv6u';
-const EMBED_URL = `https://www.youtube.com/embed/videoseries?list=${PLAYLIST_ID}&autoplay=1&modestbranding=1&rel=0`;
+// Varias canciones de la playlist bloquean el embed en webs externas (lo
+// decide el propio canal/discográfica); "8vbgAYYoy-I" sí lo permite, así que
+// arrancamos por ahí y seguimos con el resto de la lista en orden.
+const VIDEO_INICIAL = '8vbgAYYoy-I';
+const EMBED_URL = `https://www.youtube.com/embed/${VIDEO_INICIAL}?list=${PLAYLIST_ID}&autoplay=1&modestbranding=1&rel=0`;
 
 export default function MusicPlayer() {
   const [activado, setActivado] = useState(false); // el usuario aún no ha pulsado play
