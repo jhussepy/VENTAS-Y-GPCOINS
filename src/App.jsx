@@ -29,6 +29,7 @@ const Ajustes = lazy(() => import('./pages/Ajustes.jsx'));
 const Fe = lazy(() => import('./pages/Fe.jsx'));
 import Login from './pages/Login.jsx';
 import { PageSkeleton, useConfirm } from './components/ui.jsx';
+import MusicPlayer from './components/MusicPlayer.jsx';
 
 export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -377,6 +378,7 @@ export default function App() {
         </div>
       </div>
       {dialogo}
+      <MusicPlayer />
     </AppCtx.Provider>
   );
 }
