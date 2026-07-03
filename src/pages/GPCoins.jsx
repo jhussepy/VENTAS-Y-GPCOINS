@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Coins, Wallet, Trophy, TrendingUp, Wifi } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { resumenGlobal, puntosClienteNuevo, portasDetalle } from '../lib/engine.js';
@@ -26,6 +26,24 @@ export default function GPCoins() {
   // Objetivo de portas (75%) tomado de la llave 'portas' de cualquier incentivo
   const objetivoPortas = INCENTIVOS.clienteNuevo.llaves.find((l) => l.id === 'portas')?.objetivo ?? 75;
 
+  // En la tabla de incentivos, separamos los que ya tienen actividad de los
+  // que siguen en 0 (sin puntos ni GP), para que resalte lo relevante y no se
+  // pierda entre filas vacías. Los inactivos quedan colapsados tras un toggle.
+  const [verInactivos, setVerInactivos] = useState(false);
+  const { activos: incentivosActivos, inactivos: incentivosInactivos } = useMemo(() => {
+    const activos = []; const inactivos = [];
+    for (const e of r.estados) ((e.puntos || e.gp) ? activos : inactivos).push(e);
+    return { activos, inactivos };
+  }, [r.estados]);
+  // Semáforo: verde si se cumple el objetivo, ámbar si está cerca (≥70% del
+  // objetivo), rojo si queda mucho por avanzar
+  const nivelPortas = portas.pct >= objetivoPortas ? 'verde' : (portas.pct >= objetivoPortas * 0.7 ? 'ambar' : 'rojo');
+  const COLOR_PORTAS = {
+    verde: { texto: 'text-emerald-400', barra: 'from-emerald-500 to-emerald-400' },
+    ambar: { texto: 'text-gp-gold', barra: 'from-amber-500 to-gp-gold' },
+    rojo: { texto: 'text-vf-redLight', barra: 'from-vf-red to-vf-redLight' },
+  }[nivelPortas];
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -41,7 +59,7 @@ export default function GPCoins() {
           Portas voz móvil (Individual)
         </SectionTitle>
         <div className="flex items-baseline gap-3 mb-3">
-          <p className={`text-3xl font-bold tabnum ${portas.pct >= objetivoPortas ? 'text-emerald-400' : 'text-fg'}`}>
+          <p className={`text-3xl font-bold tabnum ${COLOR_PORTAS.texto}`}>
             {portas.pct}%
           </p>
           <span className="text-sm text-fg-soft tabnum">{portas.portas}/{portas.lineas} portas activas</span>
@@ -50,7 +68,7 @@ export default function GPCoins() {
         {/* Barra con marca de objetivo */}
         <div className="relative w-full h-2.5 bg-bg-surface2 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${portas.pct >= objetivoPortas ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-vf-red to-vf-redLight'}`}
+            className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${COLOR_PORTAS.barra}`}
             style={{ width: `${Math.min(100, portas.pct)}%` }}
           />
           <div className="absolute inset-y-0 w-0.5 bg-fg/60" style={{ left: `${Math.min(100, objetivoPortas)}%` }} title={`Objetivo ${objetivoPortas}%`} />
@@ -74,7 +92,7 @@ export default function GPCoins() {
               </tr>
             </thead>
             <tbody>
-              {r.estados.map((e) => (
+              {incentivosActivos.map((e) => (
                 <tr key={e.incentivoId} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                   <td className="px-4 py-3 font-medium text-fg">{e.nombre}</td>
                   <td className="px-4 py-3">
@@ -89,12 +107,36 @@ export default function GPCoins() {
                   </td>
                 </tr>
               ))}
+              {incentivosActivos.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-6 text-center text-fg-muted text-sm">Sin actividad todavía este mes.</td></tr>
+              )}
+              {verInactivos && incentivosInactivos.map((e) => (
+                <tr key={e.incentivoId} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 opacity-50">
+                  <td className="px-4 py-3 font-medium text-fg">{e.nombre}</td>
+                  <td className="px-4 py-3">
+                    <Badge tone={e.mecanica === 'directo' ? 'gold' : e.mecanica === 'mixta' ? 'red' : 'neutral'}>
+                      {e.mecanica}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-right tabnum text-fg-soft">—</td>
+                  <td className="px-4 py-3 text-right tabnum text-gp-gold">—</td>
+                  <td className="px-4 py-3 text-center"><Badge tone="neutral">No</Badge></td>
+                </tr>
+              ))}
             </tbody>
           </table>
+          {incentivosInactivos.length > 0 && (
+            <button
+              onClick={() => setVerInactivos((v) => !v)}
+              className="w-full text-xs text-fg-muted hover:text-fg py-2.5 cursor-pointer border-t border-bg-border"
+            >
+              {verInactivos ? 'Ocultar' : 'Mostrar'} {incentivosInactivos.length} sin actividad este mes
+            </button>
+          )}
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <Card>
           <SectionTitle right={<Wifi size={18} className="text-vf-red" />}>
             Desglose puntos de fibra (Cliente Nuevo)
