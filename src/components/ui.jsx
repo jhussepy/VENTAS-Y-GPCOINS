@@ -204,6 +204,7 @@ export function Badge({ children, tone = 'neutral' }) {
     red: 'bg-vf-red/15 text-vf-redLight border-vf-red/30',
     gold: 'bg-gp-gold/15 text-gp-gold border-gp-gold/30',
     green: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    sky: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
   };
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${tones[tone]}`}>

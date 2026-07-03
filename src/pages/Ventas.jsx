@@ -543,6 +543,12 @@ export default function Ventas() {
             <Badge tone="neutral">{lista.length} registros</Badge>
           </div>
         </div>
+        {filtroMes !== 'todos' && lista.some((v) => v.mes !== filtroMes) && (
+          <div className="px-5 py-2 border-b border-bg-border bg-sky-500/[0.06] text-xs text-sky-300 flex items-center gap-2">
+            <CalendarClock size={13} className="shrink-0" />
+            Las filas resaltadas en azul son ventas de otro mes que aparecen aquí porque su porta activa en {filtroMes === 'julio' ? 'julio' : 'junio'}.
+          </div>
+        )}
         {lista.length === 0 ? (
           <EmptyState icon={ShoppingCart} title="Sin ventas registradas" hint="Añade una venta manualmente o importa tu Excel para empezar." />
         ) : (
@@ -564,8 +570,12 @@ export default function Ventas() {
               <tbody>
                 {lista.map((v) => {
                   const prod = v.marca ? CATALOGO[v.marca]?.productos.find((p) => p.sap === v.sap) : null;
+                  // ¿Esta fila se muestra en el mes filtrado solo por una porta cruzada
+                  // (la venta es de otro mes)? Se resalta para no confundir con las
+                  // ventas propias del mes.
+                  const porPortaCruzada = filtroMes !== 'todos' && v.mes !== filtroMes;
                   return (
-                    <tr key={v.id} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
+                    <tr key={v.id} className={`border-b border-bg-border/60 hover:bg-bg-surface2/60 transition-colors ${porPortaCruzada ? 'bg-sky-500/[0.05] border-l-2 border-l-sky-500/50' : 'odd:bg-bg-surface2/25'}`}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <Avatar nombre={v.nombre} apellido={v.apellido} />
@@ -645,14 +655,14 @@ export default function Ventas() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <Badge tone="neutral">{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge>
+                          <Badge tone={porPortaCruzada ? 'sky' : 'neutral'}>{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge>
                           {(() => {
                             // Si alguna porta activa en otro mes, se indica aquí
                             const otros = [...mesesImplicados(v)].filter((m) => m !== v.mes);
                             if (!otros.length) return null;
                             return otros.map((m) => (
-                              <span key={m} className="text-[10px] font-semibold text-vf-redLight" title="Porta que cuenta en este mes">
-                                +{m === 'julio' ? 'Jul' : 'Jun'} (porta)
+                              <span key={m} title={`Esta venta es de ${v.mes}, pero su porta activa en ${m} y por eso también cuenta en ese mes`}>
+                                <Badge tone="sky">↳ cuenta en {m === 'julio' ? 'Jul' : 'Jun'}</Badge>
                               </span>
                             ));
                           })()}
