@@ -28,11 +28,11 @@ export default function MusicPlayer() {
     return (
       <button
         onClick={() => setActivado(true)}
-        className="fixed bottom-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-bg-surface2 border border-bg-border text-fg-muted shadow-sm opacity-40 hover:opacity-100 hover:scale-105 transition-all cursor-pointer"
+        className="fixed bottom-3 right-3 z-50 w-6 h-6 flex items-center justify-center rounded-full text-fg-muted opacity-20 hover:opacity-90 hover:bg-bg-surface2 transition-all cursor-pointer"
         aria-label="Reproducir música cristiana de fondo"
         title="Música cristiana de fondo"
       >
-        <Music size={13} />
+        <Music size={11} />
       </button>
     );
   }
@@ -78,11 +78,11 @@ export default function MusicPlayer() {
       {minimizado && (
         <button
           onClick={() => setMinimizado(false)}
-          className="fixed z-50 bottom-4 right-4 w-8 h-8 rounded-full bg-bg-surface2 border border-bg-border text-fg-muted shadow-sm opacity-40 hover:opacity-100 hover:scale-105 transition-all cursor-pointer flex items-center justify-center"
+          className="fixed z-50 bottom-3 right-3 w-6 h-6 rounded-full text-fg-muted opacity-20 hover:opacity-90 hover:bg-bg-surface2 transition-all cursor-pointer flex items-center justify-center"
           aria-label="Expandir reproductor de música"
           title="Música cristiana (sonando)"
         >
-          <Music size={13} />
+          <Music size={11} />
         </button>
       )}
     </>
