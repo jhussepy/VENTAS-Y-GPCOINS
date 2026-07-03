@@ -85,6 +85,7 @@ export default function Admin() {
   // Totales globales del equipo
   const tot = filas.reduce((acc, f) => ({
     ventas: acc.ventas + f.resumen.totalVentas,
+    ventasActivas: acc.ventasActivas + f.resumen.instalacionesActivas,
     gp: acc.gp + f.resumen.gpDirectosTotal,
     clientes: acc.clientes + f.resumen.clientesNuevos,
     portasActivas: acc.portasActivas + f.resumen.portasActivas,
@@ -97,7 +98,7 @@ export default function Admin() {
     combFibra: acc.combFibra + f.combinado.fibra,
     combMovil: acc.combMovil + f.combinado.movil,
     combTotal: acc.combTotal + f.combinado.total,
-  }), { ventas: 0, gp: 0, clientes: 0, portasActivas: 0, portasPendientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0, lowiPortasActivas: 0, lowiPortasPendientes: 0, combFibra: 0, combMovil: 0, combTotal: 0 });
+  }), { ventas: 0, ventasActivas: 0, gp: 0, clientes: 0, portasActivas: 0, portasPendientes: 0, lowiTotal: 0, lowiActivas: 0, lowiFact: 0, lowiPortasActivas: 0, lowiPortasPendientes: 0, combFibra: 0, combMovil: 0, combTotal: 0 });
 
   return (
     <div className="space-y-6">
@@ -138,7 +139,8 @@ export default function Admin() {
       <div>
         <SectionTitle right={<Badge tone="red">Vodafone</Badge>}>Equipo Vodafone</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={ShoppingCart} label="Ventas del equipo" value={fmtNum(tot.ventas)} accent="text-vf-red" />
+          <StatCard icon={ShoppingCart} label="Ventas del equipo (todas)" value={fmtNum(tot.ventas)} accent="text-vf-red" />
+          <StatCard icon={ShoppingCart} label="Ventas activas (equipo)" value={fmtNum(tot.ventasActivas)} accent="text-emerald-400" />
           <StatCard icon={Coins} label="GP Coins directos (equipo)" value={fmtNum(tot.gp)} accent="text-gp-gold" />
           <StatCard icon={Trophy} label="Clientes nuevos (equipo)" value={fmtNum(tot.clientes)} accent="text-emerald-400" />
           <StatCard icon={Repeat} label="Portas activas (equipo)" value={fmtNum(tot.portasActivas)} accent="text-emerald-400" />
@@ -149,7 +151,7 @@ export default function Admin() {
       <div>
         <SectionTitle right={<Badge tone="neutral">Lowi</Badge>}>Equipo Lowi</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={Wifi} label="Ventas Lowi (equipo)" value={fmtNum(tot.lowiTotal)} accent="text-sky-400" />
+          <StatCard icon={Wifi} label="Ventas Lowi (todas)" value={fmtNum(tot.lowiTotal)} accent="text-sky-400" />
           <StatCard icon={Wifi} label="Lowi activas (equipo)" value={fmtNum(tot.lowiActivas)} accent="text-emerald-400" />
           <StatCard icon={Coins} label="Facturación Lowi activa" value={fmtEur(tot.lowiFact)} sub="Suma de cuotas mensuales activas" accent="text-sky-400" />
           <StatCard icon={Repeat} label="Portas Lowi activas (equipo)" value={fmtNum(tot.lowiPortasActivas)} accent="text-emerald-400" />
