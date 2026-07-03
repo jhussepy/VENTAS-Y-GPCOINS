@@ -86,10 +86,33 @@ export default function Fe() {
   const [progreso, setProgreso] = useState(() => leerProgreso());
   const [favs, setFavs] = useState(() => leerFavoritos());
   const [planAbierto, setPlanAbierto] = useState(null);
+  const [webAbierta, setWebAbierta] = useState(false);
 
   const vd = versiculoDelDia();
   const toggleDia = (planId, i) => setProgreso(alternarDia(planId, i));
   const toggleFav = (v) => setFavs(alternarFavorito(v));
+
+  if (webAbierta) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <button onClick={() => setWebAbierta(false)} className="btn-ghost text-sm"><ChevronLeft size={16} /> Volver</button>
+          <a href={PLANES_YOUVERSION_URL} target="_blank" rel="noopener noreferrer" className="btn-ghost text-sm">
+            Abrir en YouVersion <ExternalLink size={14} />
+          </a>
+        </div>
+        <div className="rounded-2xl overflow-hidden border border-bg-border shadow-sm bg-bg-surface">
+          <iframe
+            src={PLANES_YOUVERSION_URL}
+            title="Planes de YouVersion"
+            className="w-full"
+            style={{ height: 'calc(100dvh - 8rem)', border: 0 }}
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (planAbierto) {
     return (
@@ -151,11 +174,9 @@ export default function Fe() {
           <span className="flex items-center gap-2"><Sparkles size={18} className="text-vf-red" /> Explorar más planes</span>
         </SectionTitle>
         <p className="text-xs text-fg-muted -mt-2 mb-3">Cientos de planes de la Bible App (YouVersion) para iniciarlos en tu cuenta.</p>
-        <a
-          href={PLANES_YOUVERSION_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group block"
+        <button
+          onClick={() => setWebAbierta(true)}
+          className="group block w-full text-left"
         >
           <div className="relative overflow-hidden rounded-2xl p-5 text-white shadow-md bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700 transition-transform group-hover:-translate-y-0.5">
             <div className="absolute -top-8 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
@@ -165,10 +186,10 @@ export default function Fe() {
                 <h3 className="text-lg font-bold leading-tight">Explorar planes en YouVersion</h3>
                 <p className="text-xs text-white/80 mt-0.5">Paz, oración, familia, finanzas, la Biblia en un año y más.</p>
               </div>
-              <ExternalLink size={18} className="text-white/80 shrink-0" />
+              <ChevronRight size={18} className="text-white/80 shrink-0" />
             </div>
           </div>
-        </a>
+        </button>
       </div>
 
       {/* Versículos favoritos */}
