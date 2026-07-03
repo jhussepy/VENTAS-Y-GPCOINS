@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 import { useApp } from '../App.jsx';
-import { resumenGlobal, mesEfectivo } from '../lib/engine.js';
+import { resumenGlobal, mesEfectivo, mesDesdeFecha } from '../lib/engine.js';
 import { rachaVentas } from '../lib/logros.js';
-import { resumenLowi, resumenLineasLowi } from '../lib/lowi.js';
+import { resumenLowi } from '../lib/lowi.js';
 import { ESTADOS, estadoDe } from '../lib/estados.js';
 import { ORDEN_INCENTIVOS, CATALOGO } from '../data/incentivos.js';
 import { Card, StatCard, Badge, EmptyState, SectionTitle, PageSkeleton } from '../components/ui.jsx';
@@ -63,37 +63,58 @@ export default function Admin() {
 
     // Combinado Vodafone + Lowi: ventas de fibra y líneas móviles del mes,
     // sumando ambos operadores (solo informativo, no afecta a incentivos).
-    // Fibra y "ventas activas" sí exigen que la VENTA esté en estado activa.
-    // Las LÍNEAS MÓVILES son distintas: una porta cuenta por su propia
-    // activación aunque la venta (fibra) siga pendiente — igual que en
-    // "Portas activas (equipo)" — así que aquí no se filtra por estado de la
-    // venta para las portas, solo para las líneas nuevas (que no tienen
-    // activación propia y solo "cuentan" cuando la venta ya está activa).
-    const ventasVfMes = a.ventas.filter((v) => v.mes === mes);
-    const ventasVfMesActivas = ventasVfMes.filter((v) => estadoDe(v) === 'activa');
+    // Fibra y "ventas activas" sí exigen que la VENTA esté en estado activa y
+    // que sea SU mes. Las LÍNEAS MÓVILES son distintas: una porta cuenta en el
+    // mes de SU PROPIA ventana de portabilidad (no en el mes de la venta) y
+    // por su propia activación, igual que portasPorMes() en engine.js — una
+    // venta de junio con la porta activando en julio debe sumar en julio.
+    const ventasVfMesActivas = a.ventas.filter((v) => v.mes === mes && estadoDe(v) === 'activa');
     const ventasLowiMesActivas = ventasLowiMes.filter((v) => v.estado === 'activa');
 
     const vfFibra = ventasVfMesActivas.filter((v) => v.convergencia).length;
     const lowiFibra = ventasLowiMesActivas.filter((v) => v.producto === 'fibra' || v.producto === 'fibra_movil').length;
 
-    const lineasVfDeVenta = (v) => {
-      if (v.lineasMoviles?.length) {
-        const portasAct = v.lineasMoviles.filter((l) => l.tipo === 'porta' && l.activa).length;
-        const nuevas = v.lineasMoviles.filter((l) => l.tipo === 'nueva').length;
-        return portasAct + (estadoDe(v) === 'activa' ? nuevas : 0);
+    // Líneas móviles activas de Vodafone: recorre TODAS las ventas (no solo
+    // las del mes) para no perder las portas cruzadas de otro mes.
+    let vfMovil = 0;
+    for (const v of a.ventas) {
+      if (estadoDe(v) === 'cancelada') continue;
+      const lm = v.lineasMoviles || [];
+      if (lm.length > 0) {
+        for (const l of lm) {
+          if (l.tipo === 'porta') {
+            if (l.incidenciaPorta === 'cancelada_m1' || !l.activa) continue;
+            const mLinea = l.ventanaPorta ? mesDesdeFecha(l.ventanaPorta) : v.mes;
+            if (mLinea === mes) vfMovil += 1;
+          } else if (l.tipo === 'nueva' && v.mes === mes && estadoDe(v) === 'activa') {
+            vfMovil += 1;
+          }
+        }
+      } else if (v.mes === mes && estadoDe(v) === 'activa') {
+        vfMovil += Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0);
+        vfMovil += Math.max(0, (Number(v.lineasVoz) || 0) - (Number(v.portasVoz) || 0));
       }
-      const portasAct = Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0);
-      const nuevas = Math.max(0, (Number(v.lineasVoz) || 0) - (Number(v.portasVoz) || 0));
-      return portasAct + (estadoDe(v) === 'activa' ? nuevas : 0);
-    };
-    const vfMovil = ventasVfMes.reduce((acc, v) => acc + lineasVfDeVenta(v), 0);
+    }
 
-    const lineasLowiDeVenta = (v) => {
-      const { portas, portasActivas, lineas } = resumenLineasLowi(v.lineasMoviles || []);
-      const nuevas = Math.max(0, lineas - portas);
-      return portasActivas + (v.estado === 'activa' ? nuevas : 0);
-    };
-    const lowiMovil = ventasLowiMes.reduce((acc, v) => acc + lineasLowiDeVenta(v), 0);
+    // Líneas móviles activas de Lowi: misma lógica, sobre TODAS las ventas Lowi.
+    let lowiMovil = 0;
+    for (const v of a.ventasLowi) {
+      if (v.estado === 'cancelada') continue;
+      const lm = v.lineasMoviles || [];
+      const vMes = mesEfectivo(v);
+      for (const l of lm) {
+        if (l.tipo === 'porta') {
+          if (l.incidenciaPorta === 'cancelada_m1' || !l.activa) continue;
+          const mLinea = l.ventanaPorta ? mesDesdeFecha(l.ventanaPorta) : vMes;
+          if (mLinea === mes) lowiMovil += 1;
+        } else if (l.tipo === 'nueva' && vMes === mes && v.estado === 'activa') {
+          lowiMovil += 1;
+        }
+      }
+      if (lm.length === 0 && vMes === mes && v.estado === 'activa') {
+        lowiMovil += Number(v.lineas) || 0;
+      }
+    }
 
     const combinado = { fibra: vfFibra + lowiFibra, movil: vfMovil + lowiMovil, total: ventasVfMesActivas.length + ventasLowiMesActivas.length };
 
