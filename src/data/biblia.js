@@ -177,6 +177,84 @@ export const PLANES = [
       { cita: 'Juan 14:27', texto: 'La paz os dejo, mi paz os doy: no como el mundo la da, yo os la doy. No se turbe vuestro corazón, ni tenga miedo.' },
     ],
   },
+  {
+    id: 'gratitud',
+    titulo: 'Corazón agradecido',
+    desc: 'Cinco días para cultivar la gratitud.',
+    color: 'from-rose-600 to-pink-600',
+    dias: [
+      { cita: '1 Tesalonicenses 5:16-18', texto: 'Estad siempre gozosos. Orad sin cesar. Dad gracias en todo; porque esta es la voluntad de Dios para con vosotros en Cristo Jesús.' },
+      { cita: 'Salmos 100:4', texto: 'Entrad por sus puertas con reconocimiento, por sus atrios con alabanza: alabadle, bendecid su nombre.' },
+      { cita: 'Salmos 103:2', texto: 'Bendice, alma mía, á Jehová, y no olvides ninguno de sus beneficios.' },
+      { cita: 'Colosenses 3:15', texto: 'Y la paz de Dios gobierne en vuestros corazones, á la cual asimismo sois llamados en un cuerpo; y sed agradecidos.' },
+      { cita: 'Salmos 118:24', texto: 'Este es el día que hizo Jehová; nos gozaremos y alegraremos en él.' },
+    ],
+  },
+  {
+    id: 'fortaleza',
+    titulo: 'Fuerza para el trabajo',
+    desc: 'Cinco pasajes para dar lo mejor cada día.',
+    color: 'from-red-600 to-rose-700',
+    dias: [
+      { cita: 'Colosenses 3:23', texto: 'Y todo lo que hagáis, hacedlo de corazón, como para el Señor, y no para los hombres.' },
+      { cita: 'Filipenses 4:13', texto: 'Todo lo puedo en Cristo que me fortalece.' },
+      { cita: 'Isaías 40:31', texto: 'Mas los que esperan á Jehová tendrán nuevas fuerzas; levantarán las alas como águilas, correrán, y no se cansarán.' },
+      { cita: 'Gálatas 6:9', texto: 'No nos cansemos, pues, de hacer bien; que á su tiempo segaremos, si no hubiéremos desmayado.' },
+      { cita: 'Proverbios 16:3', texto: 'Encomienda á Jehová tus obras, y tus pensamientos serán afirmados.' },
+    ],
+  },
+  {
+    id: 'sabiduria',
+    titulo: 'Sabiduría de Proverbios',
+    desc: 'Cinco días para decidir con prudencia.',
+    color: 'from-amber-500 to-yellow-600',
+    dias: [
+      { cita: 'Proverbios 3:5-6', texto: 'Fíate de Jehová de todo tu corazón, y no estribes en tu prudencia. Reconócelo en todos tus caminos, y él enderezará tus veredas.' },
+      { cita: 'Santiago 1:5', texto: 'Y si alguno de vosotros tiene falta de sabiduría, demándela á Dios, el cual da á todos abundantemente, y no zahiere; y le será dada.' },
+      { cita: 'Proverbios 4:23', texto: 'Sobre toda cosa guardada guarda tu corazón; porque de él mana la vida.' },
+      { cita: 'Proverbios 16:9', texto: 'El corazón del hombre piensa su camino: mas Jehová endereza sus pasos.' },
+      { cita: 'Salmos 32:8', texto: 'Te haré entender, y te enseñaré el camino en que debes andar: sobre ti fijaré mis ojos.' },
+    ],
+  },
+  {
+    id: 'esperanza',
+    titulo: 'Esperanza y ánimo',
+    desc: 'Cinco pasajes para renovar la esperanza.',
+    color: 'from-cyan-600 to-sky-700',
+    dias: [
+      { cita: 'Romanos 15:13', texto: 'Y el Dios de esperanza os llene de todo gozo y paz creyendo, para que abundéis en esperanza por la virtud del Espíritu Santo.' },
+      { cita: 'Lamentaciones 3:22-23', texto: 'Es por la misericordia de Jehová que no somos consumidos, porque nunca decayeron sus misericordias. Nuevas son cada mañana: grande es tu fidelidad.' },
+      { cita: 'Salmos 30:5', texto: 'Por la tarde durará el lloro, y á la mañana vendrá la alegría.' },
+      { cita: 'Jeremías 29:11', texto: 'Porque yo sé los pensamientos que tengo acerca de vosotros, dice Jehová, pensamientos de paz, y no de mal, para daros el fin que esperáis.' },
+      { cita: 'Isaías 40:29', texto: 'El da esfuerzo al cansado, y multiplica las fuerzas al que no tiene ningunas.' },
+    ],
+  },
+  {
+    id: 'identidad',
+    titulo: 'Quién soy en Cristo',
+    desc: 'Cinco verdades sobre tu identidad.',
+    color: 'from-violet-600 to-purple-700',
+    dias: [
+      { cita: '2 Corintios 5:17', texto: 'De modo que si alguno está en Cristo, nueva criatura es: las cosas viejas pasaron; he aquí todas son hechas nuevas.' },
+      { cita: 'Gálatas 2:20', texto: 'Con Cristo estoy juntamente crucificado, y vivo, no ya yo, mas vive Cristo en mí.' },
+      { cita: 'Efesios 2:8', texto: 'Porque por gracia sois salvos por la fe; y esto no de vosotros, pues es don de Dios.' },
+      { cita: '1 Juan 4:19', texto: 'Nosotros le amamos á él, porque él nos amó primero.' },
+      { cita: 'Mateo 5:16', texto: 'Así alumbre vuestra luz delante de los hombres, para que vean vuestras buenas obras, y glorifiquen á vuestro Padre que está en los cielos.' },
+    ],
+  },
 ];
 
 export const planPorId = (id) => PLANES.find((p) => p.id === id);
+
+// Directorio de planes de YouVersion (Bible App). Su contenido tiene derechos
+// de autor, así que no se empaqueta: cada tema abre los planes reales en
+// YouVersion (bible.com), donde el usuario puede iniciarlos en su cuenta.
+const yvUrl = (q) => `https://www.bible.com/search/plans?q=${encodeURIComponent(q)}`;
+export const PLANES_YOUVERSION = [
+  { titulo: 'Paz y ansiedad', desc: 'Planes para calmar el corazón.', icono: '🕊️', url: yvUrl('paz ansiedad') },
+  { titulo: 'Nuevo en la fe', desc: 'Primeros pasos con Jesús.', icono: '🌱', url: yvUrl('nuevo creyente') },
+  { titulo: 'Oración', desc: 'Aprende a orar cada día.', icono: '🙏', url: yvUrl('oración') },
+  { titulo: 'Matrimonio y familia', desc: 'Planes para el hogar.', icono: '💍', url: yvUrl('matrimonio familia') },
+  { titulo: 'Finanzas y trabajo', desc: 'Sabiduría para tus finanzas.', icono: '💼', url: yvUrl('finanzas trabajo') },
+  { titulo: 'Leer la Biblia en un año', desc: 'Plan anual completo.', icono: '📖', url: yvUrl('biblia en un año') },
+];

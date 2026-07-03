@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { BookOpen, Heart, Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { versiculoDelDia, PLANES, planPorId } from '../data/biblia.js';
+import { BookOpen, Heart, Check, ChevronLeft, ChevronRight, Sparkles, ExternalLink } from 'lucide-react';
+import { versiculoDelDia, PLANES, planPorId, PLANES_YOUVERSION } from '../data/biblia.js';
 import {
   leerProgreso, alternarDia, resumenPlan,
   leerFavoritos, alternarFavorito, esFavorito,
@@ -142,6 +142,38 @@ export default function Fe() {
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* Explorar planes en YouVersion (Bible App) */}
+      <div>
+        <SectionTitle right={<Badge tone="neutral">YouVersion</Badge>}>
+          <span className="flex items-center gap-2"><Sparkles size={18} className="text-vf-red" /> Explorar más planes</span>
+        </SectionTitle>
+        <p className="text-xs text-fg-muted -mt-2 mb-3">Abre los planes de la Bible App (YouVersion) para iniciarlos en tu cuenta.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {PLANES_YOUVERSION.map((p) => (
+            <a
+              key={p.titulo}
+              href={p.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block"
+            >
+              <Card className="h-full transition-transform group-hover:-translate-y-0.5">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl leading-none shrink-0" aria-hidden="true">{p.icono}</span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-fg flex items-center gap-1.5">
+                      {p.titulo}
+                      <ExternalLink size={13} className="text-fg-muted group-hover:text-vf-red transition-colors" />
+                    </h3>
+                    <p className="text-xs text-fg-muted mt-0.5">{p.desc}</p>
+                  </div>
+                </div>
+              </Card>
+            </a>
+          ))}
         </div>
       </div>
 
