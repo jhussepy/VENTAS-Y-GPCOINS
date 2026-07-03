@@ -7,12 +7,13 @@
 import { useState } from 'react';
 import { Music, X, Minus } from 'lucide-react';
 
-const PLAYLIST_ID = 'PLGMFMW8QtlsMq2pAalCOWV2kxIDUIBv6u';
-// Varias canciones de la playlist bloquean el embed en webs externas (lo
-// decide el propio canal/discográfica); "8vbgAYYoy-I" sí lo permite, así que
-// arrancamos por ahí y seguimos con el resto de la lista en orden.
-const VIDEO_INICIAL = '8vbgAYYoy-I';
-const EMBED_URL = `https://www.youtube.com/embed/${VIDEO_INICIAL}?list=${PLAYLIST_ID}&autoplay=1&modestbranding=1&rel=0`;
+// La playlist original de YouTube falla al insertarse en webs externas
+// (error 153: el parámetro `list=` de esta playlist da error de configuración
+// del reproductor, incluso combinado con un vídeo que sí permite embed en
+// solitario). Para no depender de ese mecanismo roto, reproducimos en bucle
+// el vídeo que se confirmó que SÍ funciona embebido.
+const VIDEO_ID = '8vbgAYYoy-I';
+const EMBED_URL = `https://www.youtube.com/embed/${VIDEO_ID}?autoplay=1&modestbranding=1&rel=0&loop=1&playlist=${VIDEO_ID}`;
 
 export default function MusicPlayer() {
   const [activado, setActivado] = useState(false); // el usuario aún no ha pulsado play
