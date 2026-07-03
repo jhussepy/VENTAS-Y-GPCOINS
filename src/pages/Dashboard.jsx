@@ -43,13 +43,13 @@ const ETIQUETA_LLAVE = {
 };
 
 export default function Dashboard() {
-  const { ventas, mes, user } = useApp();
+  const { ventas, mes, user, objetivosLogros } = useApp();
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
   // Portas cuya venta se cerró en otro mes pero cuya ventana de portabilidad cae en el mes activo
   const cruzadas = useMemo(() => portasCruzadas(ventas, mes), [ventas, mes]);
   // Gamificación: racha de ventas (global, no por mes), insignias y foco del día
   const racha = useMemo(() => rachaVentas(ventas), [ventas]);
-  const logros = useMemo(() => calcularLogros(r, racha), [r, racha]);
+  const logros = useMemo(() => calcularLogros(r, racha, objetivosLogros), [r, racha, objetivosLogros]);
   const foco = useMemo(() => focoDelDia(r), [r]);
   const logrosCumplidos = logros.filter((l) => l.cumplido).length;
 

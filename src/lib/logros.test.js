@@ -54,6 +54,19 @@ describe('calcularLogros', () => {
     const logros = calcularLogros({}, 7);
     expect(logros.find((l) => l.id === 'racha7').cumplido).toBe(true);
   });
+
+  it('usa el objetivo personalizado cuando hay override', () => {
+    const logros = calcularLogros({ totalVentas: 3 }, 0, { diez: 3 });
+    const diez = logros.find((l) => l.id === 'diez');
+    expect(diez.objetivo).toBe(3);
+    expect(diez.cumplido).toBe(true);
+  });
+
+  it('ignora overrides inválidos (0, negativos) y usa el valor por defecto', () => {
+    const logros = calcularLogros({}, 0, { diez: 0, portas: -5 });
+    expect(logros.find((l) => l.id === 'diez').objetivo).toBe(10);
+    expect(logros.find((l) => l.id === 'portas').objetivo).toBe(5);
+  });
 });
 
 describe('focoDelDia', () => {

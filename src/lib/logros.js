@@ -31,19 +31,31 @@ export function rachaVentas(ventas = [], hoy = new Date()) {
   return racha;
 }
 
+// Objetivos por defecto de cada insignia (editables por el usuario en Ajustes;
+// ver `overrides` en calcularLogros).
+export const OBJETIVOS_LOGROS_DEFECTO = {
+  primera: 1, diez: 10, portas: 5, clientes: 5, gp: 1, clasifica: 1, instalador: 8, racha7: 7,
+};
+
 // Insignias/logros del mes activo. Devuelve {id, label, desc, icono, valor,
 // objetivo, cumplido, pct}. `icono` es el nombre de un icono de lucide-react.
-export function calcularLogros(resumen, racha = 0) {
+// `overrides` = { [id]: objetivoPersonalizado } — objetivos editados por el
+// usuario en Ajustes; si no hay override para un id, se usa el valor por defecto.
+export function calcularLogros(resumen, racha = 0, overrides = {}) {
   const r = resumen || {};
+  const obj = (id) => {
+    const custom = Number(overrides?.[id]);
+    return custom > 0 ? custom : OBJETIVOS_LOGROS_DEFECTO[id];
+  };
   const def = [
-    { id: 'primera', label: 'Primera venta', desc: 'Registra tu primera venta del mes', icono: 'Sparkles', valor: r.totalVentas || 0, objetivo: 1 },
-    { id: 'diez', label: 'Diez del tirón', desc: '10 ventas en el mes', icono: 'ShoppingCart', valor: r.totalVentas || 0, objetivo: 10 },
-    { id: 'portas', label: 'Portador', desc: '5 portas activadas', icono: 'Repeat', valor: r.portasActivas || 0, objetivo: 5 },
-    { id: 'clientes', label: 'Captador', desc: '5 clientes nuevos', icono: 'UserPlus', valor: r.clientesNuevos || 0, objetivo: 5 },
-    { id: 'gp', label: 'Monedero', desc: 'Genera tus primeros GP Coins directos', icono: 'Coins', valor: r.gpDirectosTotal || 0, objetivo: 1 },
-    { id: 'clasifica', label: 'En el podio', desc: 'Clasifica en un incentivo', icono: 'Trophy', valor: r.incentivosClasificados || 0, objetivo: 1 },
-    { id: 'instalador', label: 'Instalador', desc: '8 instalaciones activas', icono: 'Wifi', valor: r.instalacionesActivas || 0, objetivo: 8 },
-    { id: 'racha7', label: 'Constante', desc: '7 días seguidos vendiendo', icono: 'Flame', valor: racha, objetivo: 7 },
+    { id: 'primera', label: 'Primera venta', desc: 'Registra tu primera venta del mes', icono: 'Sparkles', valor: r.totalVentas || 0, objetivo: obj('primera') },
+    { id: 'diez', label: 'Diez del tirón', desc: 'Ventas en el mes', icono: 'ShoppingCart', valor: r.totalVentas || 0, objetivo: obj('diez') },
+    { id: 'portas', label: 'Portador', desc: 'Portas activadas', icono: 'Repeat', valor: r.portasActivas || 0, objetivo: obj('portas') },
+    { id: 'clientes', label: 'Captador', desc: 'Clientes nuevos', icono: 'UserPlus', valor: r.clientesNuevos || 0, objetivo: obj('clientes') },
+    { id: 'gp', label: 'Monedero', desc: 'Genera tus primeros GP Coins directos', icono: 'Coins', valor: r.gpDirectosTotal || 0, objetivo: obj('gp') },
+    { id: 'clasifica', label: 'En el podio', desc: 'Clasifica en un incentivo', icono: 'Trophy', valor: r.incentivosClasificados || 0, objetivo: obj('clasifica') },
+    { id: 'instalador', label: 'Instalador', desc: 'Instalaciones activas', icono: 'Wifi', valor: r.instalacionesActivas || 0, objetivo: obj('instalador') },
+    { id: 'racha7', label: 'Constante', desc: 'Días seguidos vendiendo', icono: 'Flame', valor: racha, objetivo: obj('racha7') },
   ];
   return def.map((l) => {
     const pct = l.objetivo ? Math.min(100, Math.round((l.valor / l.objetivo) * 100)) : 0;

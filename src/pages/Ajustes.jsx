@@ -1,11 +1,68 @@
 import { useMemo, useState } from 'react';
-import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock, BookOpen, Loader2, Check } from 'lucide-react';
+import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock, BookOpen, Loader2, Check, Trophy, RotateCcw } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { Card, SectionTitle, Badge, useConfirm } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 import { mesEfectivo } from '../lib/engine.js';
+import { OBJETIVOS_LOGROS_DEFECTO, calcularLogros } from '../lib/logros.js';
 import { VERSION_BIBLICA } from '../data/biblia.js';
 import { getApiKey, setApiKey, getBible, setBible, listarBiblias } from '../lib/bibliaApi.js';
+
+// --- Objetivos de las insignias del Dashboard (editables por el usuario) ----
+function ObjetivosInsignias() {
+  const { objetivosLogros, guardarObjetivoLogro } = useApp();
+  // Etiquetas legibles: reutilizamos los mismos textos que calcularLogros(),
+  // pasándole un resumen vacío (solo nos interesan label/desc/id, no valores).
+  const filas = useMemo(() => calcularLogros({}, 0, {}), []);
+
+  const cambiar = (id, valor) => {
+    const n = Number(valor);
+    guardarObjetivoLogro(id, n > 0 ? n : 0);
+  };
+
+  return (
+    <Card>
+      <SectionTitle>
+        <span className="flex items-center gap-2"><Trophy size={18} className="text-vf-red" /> Objetivos de insignias</span>
+      </SectionTitle>
+      <p className="text-sm text-fg-soft mb-4">
+        Ajusta a mano cuánto hace falta para conseguir cada insignia del Dashboard. Deja el valor por defecto o
+        personalízalo; se guarda igual que el resto de tus datos.
+      </p>
+      <div className="space-y-3">
+        {filas.map((l) => {
+          const actual = Number(objetivosLogros?.[l.id]) > 0 ? Number(objetivosLogros[l.id]) : OBJETIVOS_LOGROS_DEFECTO[l.id];
+          const personalizado = Number(objetivosLogros?.[l.id]) > 0;
+          return (
+            <div key={l.id} className="flex items-center justify-between gap-3 bg-bg-surface2/50 rounded-lg p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-fg">{l.label}</p>
+                <p className="text-xs text-fg-muted">{l.desc} · por defecto {OBJETIVOS_LOGROS_DEFECTO[l.id]}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <input
+                  type="number" min="1" className="input w-20 text-center"
+                  value={actual}
+                  onChange={(e) => cambiar(l.id, e.target.value)}
+                />
+                {personalizado && (
+                  <button
+                    className="p-2 rounded-lg hover:bg-bg-border text-fg-muted hover:text-fg cursor-pointer"
+                    onClick={() => guardarObjetivoLogro(l.id, 0)}
+                    aria-label="Restablecer al valor por defecto"
+                    title="Restablecer al valor por defecto"
+                  >
+                    <RotateCcw size={15} />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
 
 const LIMITE = 1024 * 1024; // 1 MB por documento de usuario en Firestore
 const tam = (obj) => { try { return new Blob([JSON.stringify(obj ?? null)]).size; } catch { return 0; } };
@@ -214,6 +271,8 @@ export default function Ajustes() {
           Recalcular mes de {fmtNum(desactualizadas)} venta{desactualizadas === 1 ? '' : 's'}
         </button>
       </Card>
+
+      <ObjetivosInsignias />
 
       <VersionBiblica />
 

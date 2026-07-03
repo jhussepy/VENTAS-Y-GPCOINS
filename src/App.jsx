@@ -75,7 +75,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, tema, setTema, loading, estadoGuardado } = useCloudData(user);
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
   // El período activo arranca en el mes real de hoy (no siempre "junio"),
@@ -108,6 +108,7 @@ export default function App() {
       setVentasLowi(d.ventasLowi);
       setTarifas(d.tarifas);
       setPrecios(d.precios);
+      setObjetivosLogros(d.objetivosLogros);
       avisar('Copia restaurada correctamente.', { titulo: 'Restaurado' });
     } catch {
       avisar('No se pudo leer el archivo de copia de seguridad.', { titulo: 'Error', peligro: true });
@@ -174,7 +175,7 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
   const Active = nav.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   return (
@@ -248,7 +249,7 @@ export default function App() {
             {/* Copia de seguridad de todos los datos */}
             <div className="flex gap-1">
               <button
-                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas, precios })}
+                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas, precios, objetivosLogros })}
                 className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
                 title="Descargar copia de seguridad (JSON)"
               >

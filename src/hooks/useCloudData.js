@@ -10,6 +10,7 @@ export function useCloudData(user) {
   const [ventasLowi, setVentasLowiState] = useState([]);
   const [tarifas, setTarifasState] = useState([]);
   const [precios, setPreciosState] = useState({}); // { [sap]: { junio, julio } }
+  const [objetivosLogros, setObjetivosLogrosState] = useState({}); // { [idLogro]: objetivoPersonalizado }
   const [tema, setTemaState] = useState('dark');
   const [loading, setLoading] = useState(true);
   const [estadoGuardado, setEstadoGuardado] = useState('idle'); // idle | guardando | guardado | error
@@ -23,6 +24,7 @@ export function useCloudData(user) {
     setVentasLowiState([]);
     setTarifasState([]);
     setPreciosState({});
+    setObjetivosLogrosState({});
     const ref = doc(db, 'usuarios', uid);
     // Guarda/actualiza el perfil para que el admin pueda identificar al agente
     setDoc(ref, {
@@ -38,6 +40,7 @@ export function useCloudData(user) {
         if (Array.isArray(d.ventasLowi)) setVentasLowiState(d.ventasLowi);
         if (Array.isArray(d.tarifas)) setTarifasState(d.tarifas);
         if (d.precios && typeof d.precios === 'object') setPreciosState(d.precios);
+        if (d.objetivosLogros && typeof d.objetivosLogros === 'object') setObjetivosLogrosState(d.objetivosLogros);
         if (d.tema) {
           setTemaState(d.tema);
           try { localStorage.setItem('vf_tema', JSON.stringify(d.tema)); } catch { /* ignore */ }
@@ -111,6 +114,23 @@ export function useCloudData(user) {
     });
   };
 
+  // Reemplaza todos los objetivos personalizados de insignias (usado al restaurar copia de seguridad)
+  const setObjetivosLogros = (obj) => {
+    const next = obj && typeof obj === 'object' ? obj : {};
+    setObjetivosLogrosState(next);
+    if (uid) persist('objetivosLogros', next);
+  };
+
+  // Guarda/borra el objetivo personalizado de una sola insignia
+  const guardarObjetivoLogro = (id, valor) => {
+    setObjetivosLogrosState((prev) => {
+      const next = { ...prev };
+      if (valor > 0) next[id] = valor; else delete next[id];
+      if (uid) persist('objetivosLogros', next);
+      return next;
+    });
+  };
+
   const setTema = (t) => {
     setTemaState(t);
     // Persistimos también en localStorage para el anti-parpadeo de index.html
@@ -121,5 +141,5 @@ export function useCloudData(user) {
     if (uid) persist('tema', t);
   };
 
-  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, tema, setTema, loading, estadoGuardado };
+  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, tema, setTema, loading, estadoGuardado };
 }
