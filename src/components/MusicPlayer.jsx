@@ -15,6 +15,7 @@ import { Music, X, Minus } from 'lucide-react';
 const PLAYLISTS = [
   { id: '0wLtqnI9JV1AyaM4c9ZS6b', label: 'Cristiana 1' },
   { id: '3AFtzyQfCeAFRW4hagIvBq', label: 'Cristiana 2' },
+  { id: '3XRUzKrwpOQ6kfm7lmEBzk', label: 'Cristiana 3' },
 ];
 const embedUrl = (id) => `https://open.spotify.com/embed/playlist/${id}?utm_source=generator`;
 
