@@ -249,7 +249,7 @@ export const planPorId = (id) => PLANES.find((p) => p.id === id);
 // Directorio de planes de YouVersion (Bible App). Su contenido tiene derechos
 // de autor, así que no se empaqueta: cada tema abre los planes reales en
 // YouVersion (bible.com), donde el usuario puede iniciarlos en su cuenta.
-const yvUrl = (q) => `https://www.bible.com/search/plans?q=${encodeURIComponent(q)}`;
+const yvUrl = (q) => `https://www.bible.com/es/search/plans?q=${encodeURIComponent(q)}`;
 export const PLANES_YOUVERSION = [
   { titulo: 'Paz y ansiedad', desc: 'Planes para calmar el corazón.', icono: '🕊️', url: yvUrl('paz ansiedad') },
   { titulo: 'Nuevo en la fe', desc: 'Primeros pasos con Jesús.', icono: '🌱', url: yvUrl('nuevo creyente') },
