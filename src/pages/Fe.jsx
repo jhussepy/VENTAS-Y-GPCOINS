@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, Heart, Check, ChevronLeft, ChevronRight, Sparkles, ExternalLink } from 'lucide-react';
-import { versiculoDelDia, PLANES, planPorId, PLANES_YOUVERSION } from '../data/biblia.js';
+import { versiculoDelDia, PLANES, planPorId, PLANES_YOUVERSION_URL } from '../data/biblia.js';
 import {
   leerProgreso, alternarDia, resumenPlan,
   leerFavoritos, alternarFavorito, esFavorito,
@@ -150,31 +150,25 @@ export default function Fe() {
         <SectionTitle right={<Badge tone="neutral">YouVersion</Badge>}>
           <span className="flex items-center gap-2"><Sparkles size={18} className="text-vf-red" /> Explorar más planes</span>
         </SectionTitle>
-        <p className="text-xs text-fg-muted -mt-2 mb-3">Abre los planes de la Bible App (YouVersion) para iniciarlos en tu cuenta.</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {PLANES_YOUVERSION.map((p) => (
-            <a
-              key={p.titulo}
-              href={p.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block"
-            >
-              <Card className="h-full transition-transform group-hover:-translate-y-0.5">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl leading-none shrink-0" aria-hidden="true">{p.icono}</span>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-bold text-fg flex items-center gap-1.5">
-                      {p.titulo}
-                      <ExternalLink size={13} className="text-fg-muted group-hover:text-vf-red transition-colors" />
-                    </h3>
-                    <p className="text-xs text-fg-muted mt-0.5">{p.desc}</p>
-                  </div>
-                </div>
-              </Card>
-            </a>
-          ))}
-        </div>
+        <p className="text-xs text-fg-muted -mt-2 mb-3">Cientos de planes de la Bible App (YouVersion) para iniciarlos en tu cuenta.</p>
+        <a
+          href={PLANES_YOUVERSION_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group block"
+        >
+          <div className="relative overflow-hidden rounded-2xl p-5 text-white shadow-md bg-gradient-to-br from-indigo-700 via-violet-700 to-fuchsia-700 transition-transform group-hover:-translate-y-0.5">
+            <div className="absolute -top-8 -right-6 w-32 h-32 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
+            <div className="relative flex items-center gap-4">
+              <span className="text-3xl leading-none shrink-0" aria-hidden="true">📖</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-bold leading-tight">Explorar planes en YouVersion</h3>
+                <p className="text-xs text-white/80 mt-0.5">Paz, oración, familia, finanzas, la Biblia en un año y más.</p>
+              </div>
+              <ExternalLink size={18} className="text-white/80 shrink-0" />
+            </div>
+          </div>
+        </a>
       </div>
 
       {/* Versículos favoritos */}

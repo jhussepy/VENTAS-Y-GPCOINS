@@ -247,14 +247,6 @@ export const PLANES = [
 export const planPorId = (id) => PLANES.find((p) => p.id === id);
 
 // Directorio de planes de YouVersion (Bible App). Su contenido tiene derechos
-// de autor, así que no se empaqueta: cada tema abre los planes reales en
+// de autor, así que no se empaqueta: se enlaza al catálogo web de planes de
 // YouVersion (bible.com), donde el usuario puede iniciarlos en su cuenta.
-const yvUrl = (q) => `https://www.bible.com/es/search/plans?q=${encodeURIComponent(q)}`;
-export const PLANES_YOUVERSION = [
-  { titulo: 'Paz y ansiedad', desc: 'Planes para calmar el corazón.', icono: '🕊️', url: yvUrl('paz ansiedad') },
-  { titulo: 'Nuevo en la fe', desc: 'Primeros pasos con Jesús.', icono: '🌱', url: yvUrl('nuevo creyente') },
-  { titulo: 'Oración', desc: 'Aprende a orar cada día.', icono: '🙏', url: yvUrl('oración') },
-  { titulo: 'Matrimonio y familia', desc: 'Planes para el hogar.', icono: '💍', url: yvUrl('matrimonio familia') },
-  { titulo: 'Finanzas y trabajo', desc: 'Sabiduría para tus finanzas.', icono: '💼', url: yvUrl('finanzas trabajo') },
-  { titulo: 'Leer la Biblia en un año', desc: 'Plan anual completo.', icono: '📖', url: yvUrl('biblia en un año') },
-];
+export const PLANES_YOUVERSION_URL = 'https://www.bible.com/es/reading-plans';
