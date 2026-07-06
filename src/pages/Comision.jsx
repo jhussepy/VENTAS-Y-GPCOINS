@@ -70,13 +70,19 @@ export default function Comision() {
 
   // Precarga contando las ventas Vodafone ACTIVAS del período activo
   const precargar = () => {
-    const { fijo: f, movil: m } = contarDesdeVentas(ventas, mes, (v) => estadoDe(v) === 'activa');
+    const { fijo: f, movil: m, sinClasificar } = contarDesdeVentas(ventas, mes, (v) => estadoDe(v) === 'activa');
     setFijo(f); setMovil(m);
     const totalUds = Object.values(f).reduce((a, b) => a + b, 0) + Object.values(m).reduce((a, b) => a + b, 0);
-    setMsg(totalUds > 0
-      ? { tone: 'green', text: `Cargadas ${totalUds} unidades activas de ${PERIODO.etiquetas[mes]}. Puedes ajustar los números a mano.` }
-      : { tone: 'red', text: `No hay ventas Vodafone activas en ${PERIODO.etiquetas[mes]} que clasificar.` });
-    setTimeout(() => setMsg(null), 6000);
+    if (totalUds === 0 && sinClasificar === 0) {
+      setMsg({ tone: 'red', text: `No hay ventas Vodafone activas en ${PERIODO.etiquetas[mes]} que clasificar.` });
+    } else {
+      let text = `Cargadas ${totalUds} unidades activas de ${PERIODO.etiquetas[mes]}. Puedes ajustar los números a mano.`;
+      if (sinClasificar > 0) {
+        text += ` ⚠️ ${sinClasificar} línea${sinClasificar === 1 ? '' : 's'} móvil sin tarifa registrada no se pudo clasificar por valor: añádela${sinClasificar === 1 ? '' : 's'} a mano en Bajo/Medio/Alto.`;
+      }
+      setMsg({ tone: sinClasificar > 0 ? 'red' : 'green', text });
+    }
+    setTimeout(() => setMsg(null), 9000);
   };
 
   return (

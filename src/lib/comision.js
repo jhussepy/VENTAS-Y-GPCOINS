@@ -72,10 +72,14 @@ export const MOVIL_POR_TARIFA = {
 //    activadas (l.activa) y se excluyen las canceladas por el cliente (M1).
 //  · La LÍNEA MÓVIL nueva cuenta en el mes de la venta si está activa.
 //
-// Devuelve { fijo: {BV,MV,AV}, movil: {BA,MV,AV} }.
+// Devuelve { fijo: {BV,MV,AV}, movil: {BA,MV,AV}, sinClasificar }.
+// `sinClasificar` = líneas móviles activas del mes que NO se pudieron clasificar
+// por valor (sin tarifa registrada, o ventas con contadores manuales sin
+// detalle de líneas): se cuentan aparte para avisar y que se añadan a mano.
 export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
   const fijo = { BV: 0, MV: 0, AV: 0 };
   const movil = { BA: 0, MV: 0, AV: 0 };
+  let sinClasificar = 0;
   for (const v of ventas) {
     // Fibra: mes propio de la venta y activa
     if (v.mes === mes && estadoActivo(v) && v.convergencia && v.velocidad) {
@@ -83,19 +87,31 @@ export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
       if (b) fijo[b] += 1;
     }
     // Líneas móviles
-    for (const l of v.lineasMoviles || []) {
-      const b = MOVIL_POR_TARIFA[l.tarifa];
-      if (!b) continue;
-      if (l.tipo === 'porta') {
-        if (l.incidenciaPorta === 'cancelada_m1' || !l.activa) continue;
-        const mLinea = l.ventanaPorta ? mesDesdeFecha(l.ventanaPorta) : v.mes;
-        if (mLinea === mes) movil[b] += 1;
-      } else if (v.mes === mes && estadoActivo(v)) {
-        movil[b] += 1; // línea nueva: activa con la venta, en su mes
+    const lm = v.lineasMoviles || [];
+    if (lm.length > 0) {
+      for (const l of lm) {
+        // ¿La línea activa en el mes indicado?
+        let enMes = false;
+        if (l.tipo === 'porta') {
+          if (l.incidenciaPorta === 'cancelada_m1' || !l.activa) continue;
+          const mLinea = l.ventanaPorta ? mesDesdeFecha(l.ventanaPorta) : v.mes;
+          enMes = mLinea === mes;
+        } else {
+          enMes = v.mes === mes && estadoActivo(v); // nueva: activa con la venta
+        }
+        if (!enMes) continue;
+        const b = MOVIL_POR_TARIFA[l.tarifa];
+        if (b) movil[b] += 1;
+        else sinClasificar += 1; // línea activa pero sin tarifa reconocible
       }
+    } else if (v.mes === mes && estadoActivo(v)) {
+      // Sin detalle de líneas: contadores manuales (activas pero sin tarifa)
+      const portasAct = Math.min(Number(v.portasActivas) || 0, Number(v.portasVoz) || 0);
+      const nuevas = Math.max(0, (Number(v.lineasVoz) || 0) - (Number(v.portasVoz) || 0));
+      sinClasificar += portasAct + nuevas;
     }
   }
-  return { fijo, movil };
+  return { fijo, movil, sinClasificar };
 }
 
 // Índice de la valla alcanzada con `total` unidades (0..3), o -1 si no llega a

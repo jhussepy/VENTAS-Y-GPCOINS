@@ -91,6 +91,20 @@ describe('contarDesdeVentas', () => {
     expect(jun.movil).toEqual({ BA: 0, MV: 0, AV: 0 });
   });
 
+  it('reporta líneas activas sin tarifa (o con contadores manuales) como sin clasificar', () => {
+    const v = [
+      // línea activa sin tarifa → no se puede clasificar
+      { mes: 'julio', estado: 'activa', convergencia: '', velocidad: '',
+        lineasMoviles: [{ tipo: 'nueva', tarifa: '' }] },
+      // venta con contadores manuales: 2 portas activas + 1 línea nueva
+      { mes: 'julio', estado: 'activa', convergencia: '3P', velocidad: 'Fibra 300 MB',
+        lineasMoviles: [], portasVoz: 2, portasActivas: 2, lineasVoz: 3 },
+    ];
+    const r = contarDesdeVentas(v, 'julio', activa);
+    expect(r.movil).toEqual({ BA: 0, MV: 0, AV: 0 });
+    expect(r.sinClasificar).toBe(1 + 3); // 1 sin tarifa + (2 portas + 1 nueva) manuales
+  });
+
   it('no cuenta portas sin activar ni canceladas por el cliente (ES M1)', () => {
     const v = [{ mes: 'julio', estado: 'activa', convergencia: '', velocidad: '',
       lineasMoviles: [
