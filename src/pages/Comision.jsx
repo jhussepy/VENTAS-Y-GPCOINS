@@ -6,16 +6,23 @@ import { PERIODO } from '../data/incentivos.js';
 import { Card, SectionTitle, Badge } from '../components/ui.jsx';
 import {
   SUBTIPOS, TARIFA_COMISION, UMBRALES_VALLA, ETIQUETA_CATEGORIA,
-  comisionCategoria, comisionTotal, faltanParaSiguiente, contarDesdeVentas, fmtSol,
+  comisionCategoria, comisionTotal, faltanParaSiguiente, contarDesdeVentas, prorratearUmbrales, fmtSol,
 } from '../lib/comision.js';
 
 const contadorVacio = (cat) => Object.fromEntries(SUBTIPOS[cat].map((s) => [s.id, 0]));
 const ROMANOS = ['1ª', '2ª', '3ª', '4ª'];
 
+// Días naturales del mes activo (para prorratear por vacaciones/ausencias)
+const diasDelMes = (mes) => {
+  const anio = Number(PERIODO.inicio.slice(0, 4));
+  const idx = mes === 'julio' ? 6 : 5;
+  return new Date(anio, idx + 1, 0).getDate();
+};
+
 // Bloque de una categoría (Fijo o Móvil): inputs por subtipo + su comisión
-function BloqueCategoria({ cat, icon: Icon, counts, setCounts }) {
-  const r = comisionCategoria(cat, counts);
-  const falta = faltanParaSiguiente(r.total, UMBRALES_VALLA[cat]);
+function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, reducida }) {
+  const r = comisionCategoria(cat, counts, umbrales);
+  const falta = faltanParaSiguiente(r.total, umbrales);
   const set = (id, v) => setCounts((p) => ({ ...p, [id]: Math.max(0, Number(v) || 0) }));
 
   return (
@@ -46,7 +53,7 @@ function BloqueCategoria({ cat, icon: Icon, counts, setCounts }) {
         <div className="text-sm text-fg-soft">
           <span className="tabnum font-semibold">{r.total}</span> unidades
           {falta
-            ? <span className="text-fg-muted"> · faltan <span className="text-vf-redLight font-semibold tabnum">{falta.faltan}</span> para la {ROMANOS[falta.valla]} valla</span>
+            ? <span className="text-fg-muted"> · faltan <span className="text-vf-redLight font-semibold tabnum">{falta.faltan}</span> para la {ROMANOS[falta.valla]} valla{reducida ? ' (cuota reducida)' : ''}</span>
             : r.valla >= 0 && <span className="text-emerald-400"> · ¡valla máxima!</span>}
         </div>
         <div className="text-right">
@@ -63,10 +70,20 @@ export default function Comision() {
   const [fijo, setFijo] = useState(() => contadorVacio('fijo'));
   const [movil, setMovil] = useState(() => contadorVacio('movil'));
   const [msg, setMsg] = useState(null);
+  // Días trabajados del mes (para prorratear las vallas por vacaciones/ausencias)
+  const diasMes = diasDelMes(mes);
+  const [diasTrab, setDiasTrab] = useState(diasMes);
 
-  const total = useMemo(() => comisionTotal(fijo, movil), [fijo, movil]);
+  const factor = Math.max(0, Math.min(1, (Number(diasTrab) || 0) / diasMes));
+  const reducida = factor < 1;
+  const umbrales = useMemo(() => ({
+    fijo: reducida ? prorratearUmbrales(UMBRALES_VALLA.fijo, factor) : UMBRALES_VALLA.fijo,
+    movil: reducida ? prorratearUmbrales(UMBRALES_VALLA.movil, factor) : UMBRALES_VALLA.movil,
+  }), [factor, reducida]);
 
-  const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setMsg(null); };
+  const total = useMemo(() => comisionTotal(fijo, movil, umbrales), [fijo, movil, umbrales]);
+
+  const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setDiasTrab(diasMes); setMsg(null); };
 
   // Precarga contando las ventas Vodafone ACTIVAS del período activo
   const precargar = () => {
@@ -101,6 +118,31 @@ export default function Comision() {
 
       {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
 
+      {/* Ajuste por días trabajados (vacaciones / ausencias) */}
+      <Card>
+        <div className="flex flex-wrap items-center gap-3 justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-fg">Días trabajados este mes <span className="text-fg-muted font-normal">(vacaciones / ausencias)</span></p>
+            <p className="text-[11px] text-fg-muted mt-0.5">Reduce proporcionalmente la cuota de cada valla. Ej.: 15 de 30 días = mitad de unidades.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="number" min="1" max={diasMes}
+              className="input w-20 text-center"
+              value={diasTrab}
+              onChange={(e) => setDiasTrab(Math.max(1, Math.min(diasMes, Number(e.target.value) || 1)))}
+            />
+            <span className="text-sm text-fg-muted">de {diasMes} días</span>
+            <Badge tone={reducida ? 'gold' : 'neutral'}>{Math.round(factor * 100)}% de cuota</Badge>
+          </div>
+        </div>
+        {reducida && (
+          <p className="text-[11px] text-fg-soft mt-3">
+            Cuota reducida — vallas: Fijo ≥{umbrales.fijo.join(' / ')} · Móvil ≥{umbrales.movil.join(' / ')} unidades.
+          </p>
+        )}
+      </Card>
+
       {/* Total destacado */}
       <div className="relative overflow-hidden rounded-2xl p-6 text-white shadow-md bg-gradient-to-br from-vf-red via-vf-redDark to-rose-900">
         <div className="absolute -top-10 -right-8 w-44 h-44 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
@@ -123,8 +165,8 @@ export default function Comision() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BloqueCategoria cat="fijo" icon={Wifi} counts={fijo} setCounts={setFijo} />
-        <BloqueCategoria cat="movil" icon={Smartphone} counts={movil} setCounts={setMovil} />
+        <BloqueCategoria cat="fijo" icon={Wifi} counts={fijo} setCounts={setFijo} umbrales={umbrales.fijo} reducida={reducida} />
+        <BloqueCategoria cat="movil" icon={Smartphone} counts={movil} setCounts={setMovil} umbrales={umbrales.movil} reducida={reducida} />
       </div>
 
       {/* Tabla de referencia de vallas */}

@@ -114,6 +114,13 @@ export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
   return { fijo, movil, sinClasificar };
 }
 
+// Prorratea los umbrales de valla por un factor (días trabajados / días del
+// mes). Ej. factor 0.5 → la 1ª valla de 6 pasa a 3. Mínimo 1 unidad por valla.
+export function prorratearUmbrales(umbrales, factor) {
+  const f = Math.max(0, Math.min(1, Number(factor) || 0));
+  return umbrales.map((u) => Math.max(1, Math.round(u * f)));
+}
+
 // Índice de la valla alcanzada con `total` unidades (0..3), o -1 si no llega a
 // la 1ª valla.
 export function vallaAlcanzada(total, umbrales) {
@@ -134,11 +141,12 @@ export function faltanParaSiguiente(total, umbrales) {
 }
 
 // Comisión de una categoría ('fijo' | 'movil') dado el recuento por subtipo.
+// `umbrales` permite pasar cuotas prorrateadas (por días trabajados).
 // Devuelve { total, valla, importe, detalle: { [sub]: { n, precio, importe } } }.
-export function comisionCategoria(cat, counts = {}) {
+export function comisionCategoria(cat, counts = {}, umbrales = UMBRALES_VALLA[cat]) {
   const subtipos = SUBTIPOS[cat].map((s) => s.id);
   const total = subtipos.reduce((a, s) => a + (Number(counts[s]) || 0), 0);
-  const valla = vallaAlcanzada(total, UMBRALES_VALLA[cat]);
+  const valla = vallaAlcanzada(total, umbrales);
   const detalle = {};
   let importe = 0;
   for (const s of subtipos) {
@@ -151,9 +159,10 @@ export function comisionCategoria(cat, counts = {}) {
   return { total, valla, importe, detalle };
 }
 
-// Comisión total = fijo + móvil
-export function comisionTotal(fijo = {}, movil = {}) {
-  const rFijo = comisionCategoria('fijo', fijo);
-  const rMovil = comisionCategoria('movil', movil);
+// Comisión total = fijo + móvil. `umbrales` = { fijo:[...], movil:[...] } para
+// pasar cuotas prorrateadas (por días trabajados); por defecto las completas.
+export function comisionTotal(fijo = {}, movil = {}, umbrales = UMBRALES_VALLA) {
+  const rFijo = comisionCategoria('fijo', fijo, umbrales.fijo);
+  const rMovil = comisionCategoria('movil', movil, umbrales.movil);
   return { fijo: rFijo, movil: rMovil, importe: rFijo.importe + rMovil.importe };
 }

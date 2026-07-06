@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { vallaAlcanzada, faltanParaSiguiente, comisionCategoria, comisionTotal, contarDesdeVentas, UMBRALES_VALLA } from './comision.js';
+import { vallaAlcanzada, faltanParaSiguiente, comisionCategoria, comisionTotal, contarDesdeVentas, prorratearUmbrales, UMBRALES_VALLA } from './comision.js';
 
 describe('vallaAlcanzada', () => {
   it('devuelve -1 si no llega a la 1ª valla', () => {
@@ -49,6 +49,22 @@ describe('comisionCategoria', () => {
     const r = comisionCategoria('movil', { BA: 13, MV: 0, AV: 0 });
     expect(r.valla).toBe(0);
     expect(r.importe).toBe(13 * 16);
+  });
+});
+
+describe('prorratearUmbrales (días trabajados)', () => {
+  it('reduce los umbrales al factor indicado (mín. 1)', () => {
+    expect(prorratearUmbrales(UMBRALES_VALLA.fijo, 0.5)).toEqual([3, 6, 8, 12]); // 6/11/16/23 ×0.5
+    expect(prorratearUmbrales(UMBRALES_VALLA.movil, 0.5)).toEqual([7, 12, 17, 21]); // 13/24/34/42 ×0.5
+  });
+  it('con factor 1 deja los umbrales completos', () => {
+    expect(prorratearUmbrales(UMBRALES_VALLA.fijo, 1)).toEqual(UMBRALES_VALLA.fijo);
+  });
+  it('con la cuota reducida se alcanza valla con menos unidades', () => {
+    const umbrales = prorratearUmbrales(UMBRALES_VALLA.fijo, 0.5); // 1ª valla = 3
+    const r = comisionCategoria('fijo', { BV: 3, MV: 0, AV: 0 }, umbrales);
+    expect(r.valla).toBe(0); // con 3 fijos ya clasifica (cuota media)
+    expect(r.importe).toBe(3 * 25);
   });
 });
 
