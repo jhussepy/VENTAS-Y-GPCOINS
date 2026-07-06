@@ -2,7 +2,7 @@ import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo } 
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle,
+  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { mesDesdeFecha } from './lib/engine.js';
@@ -29,6 +29,7 @@ const LowiVentas = lazy(() => import('./pages/LowiVentas.jsx'));
 const Ajustes = lazy(() => import('./pages/Ajustes.jsx'));
 const Fe = lazy(() => import('./pages/Fe.jsx'));
 const Agendados = lazy(() => import('./pages/Agendados.jsx'));
+const Comision = lazy(() => import('./pages/Comision.jsx'));
 import Login from './pages/Login.jsx';
 import { PageSkeleton, useConfirm } from './components/ui.jsx';
 import MusicPlayer from './components/MusicPlayer.jsx';
@@ -40,6 +41,7 @@ const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, Comp: Dashboard },
   { id: 'ventas', label: 'Ventas', icon: ShoppingCart, Comp: Ventas },
   { id: 'gpcoins', label: 'GP Coins', icon: Coins, Comp: GPCoins },
+  { id: 'comision', label: 'Calculadora de comisión', icon: Calculator, Comp: Comision },
   { id: 'llaves', label: 'Llaves', icon: KeyRound, Comp: Llaves },
   { id: 'incentivos', label: 'Incentivos', icon: Trophy, Comp: Incentivos },
   { id: 'tarifas', label: 'Tarifas', icon: Tag, Comp: Tarifas },
