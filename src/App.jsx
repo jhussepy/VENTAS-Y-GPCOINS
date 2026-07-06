@@ -360,7 +360,7 @@ export default function App() {
                   {guardado.text}
                 </span>
               )}
-              {!esLowi && (
+              {!esLowi && !enAgendados && (
                 <>
                   <span className="text-xs text-fg-muted hidden sm:inline">Período activo:</span>
                   <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
