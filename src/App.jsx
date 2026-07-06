@@ -2,7 +2,7 @@ import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo } 
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen,
+  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { mesDesdeFecha } from './lib/engine.js';
@@ -27,6 +27,7 @@ const LowiDashboard = lazy(() => import('./pages/LowiDashboard.jsx'));
 const LowiVentas = lazy(() => import('./pages/LowiVentas.jsx'));
 const Ajustes = lazy(() => import('./pages/Ajustes.jsx'));
 const Fe = lazy(() => import('./pages/Fe.jsx'));
+const Agendados = lazy(() => import('./pages/Agendados.jsx'));
 import Login from './pages/Login.jsx';
 import { PageSkeleton, useConfirm } from './components/ui.jsx';
 import MusicPlayer from './components/MusicPlayer.jsx';
@@ -47,6 +48,9 @@ const NAV = [
 const NAV_ADMIN = { id: 'admin', label: 'Supervisor', icon: ShieldCheck, Comp: Admin };
 const NAV_FE = { id: 'fe', label: 'Fe', icon: BookOpen, Comp: Fe };
 const NAV_AJUSTES = { id: 'ajustes', label: 'Ajustes', icon: Settings, Comp: Ajustes };
+// Agendados: compartido entre Vodafone y Lowi (un mismo agente puede tener
+// agendados de ambos mundos mezclados en su agenda)
+const NAV_AGENDADOS = { id: 'agendados', label: 'Agendados', icon: PhoneCall, Comp: Agendados };
 
 // Menú del mundo Lowi (independiente, sin GP Coins)
 const NAV_LOWI = [
@@ -75,7 +79,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, tema, setTema, loading, estadoGuardado } = useCloudData(user);
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
   // El período activo arranca en el mes real de hoy (no siempre "junio"),
@@ -95,6 +99,21 @@ export default function App() {
     setOpen(false);
   };
 
+  // Abre el alta de venta (Vodafone o Lowi, según el agendado) con los datos
+  // del cliente ya rellenados, desde la sección Agendados
+  const convertirAgendado = (a) => {
+    const datos = { nombre: a.nombre, apellido: a.apellido, dni: a.dni, telefono: a.telefono };
+    if (a.operador === 'lowi') {
+      setOperador('lowi');
+      setPage('lowi-ventas');
+    } else {
+      setOperador('vodafone');
+      setPage('ventas');
+    }
+    setPrefillVenta(datos);
+    setOpen(false);
+  };
+
   // Restaura datos desde un archivo de copia de seguridad (reemplaza los actuales)
   const onRestaurar = async (e) => {
     const file = e.target.files?.[0];
@@ -109,6 +128,7 @@ export default function App() {
       setTarifas(d.tarifas);
       setPrecios(d.precios);
       setObjetivosLogros(d.objetivosLogros);
+      setAgendados(d.agendados);
       avisar('Copia restaurada correctamente.', { titulo: 'Restaurado' });
     } catch {
       avisar('No se pudo leer el archivo de copia de seguridad.', { titulo: 'Error', peligro: true });
@@ -142,8 +162,8 @@ export default function App() {
   // Monitor de tamaño del documento (Firestore limita 1 MB por documento)
   // IMPORTANTE: este hook debe ir ANTES de cualquier return condicional
   const usoDoc = useMemo(() => {
-    try { return new Blob([JSON.stringify({ ventas, ventasLowi, tarifas, precios })]).size; } catch { return 0; }
-  }, [ventas, ventasLowi, tarifas, precios]);
+    try { return new Blob([JSON.stringify({ ventas, ventasLowi, tarifas, precios, agendados })]).size; } catch { return 0; }
+  }, [ventas, ventasLowi, tarifas, precios, agendados]);
   const LIMITE_DOC = 1024 * 1024;
   const pctUso = Math.round((usoDoc / LIMITE_DOC) * 100);
   const cercaLimite = pctUso >= 75;
@@ -165,8 +185,8 @@ export default function App() {
 
   const esLowi = operador === 'lowi';
   const nav = esLowi
-    ? [...NAV_LOWI, NAV_FE, NAV_AJUSTES]
-    : (admin ? [...NAV, NAV_ADMIN, NAV_FE, NAV_AJUSTES] : [...NAV, NAV_FE, NAV_AJUSTES]);
+    ? [...NAV_LOWI, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES]
+    : (admin ? [...NAV, NAV_ADMIN, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES] : [...NAV, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES]);
   const opCfg = OPERADORES[operador];
 
   // Indicador de sincronización con la nube
@@ -175,7 +195,7 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, convertirAgendado, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
   const Active = nav.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   return (
@@ -249,7 +269,7 @@ export default function App() {
             {/* Copia de seguridad de todos los datos */}
             <div className="flex gap-1">
               <button
-                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas, precios, objetivosLogros })}
+                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas, precios, objetivosLogros, agendados })}
                 className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
                 title="Descargar copia de seguridad (JSON)"
               >

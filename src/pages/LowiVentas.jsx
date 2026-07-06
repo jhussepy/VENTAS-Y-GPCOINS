@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, Wifi, Search, Tv,
 } from 'lucide-react';
@@ -213,15 +213,26 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function LowiVentas() {
-  const { ventasLowi, setVentasLowi } = useApp();
+  const { ventasLowi, setVentasLowi, prefillVenta, setPrefillVenta } = useApp();
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [prefab, setPrefab] = useState(null); // nombre/dni/teléfono precargados desde Agendados
   const [filtro, setFiltro] = useState('todos');
   const [filtroMes, setFiltroMes] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
   const { confirmar, dialogo } = useConfirm();
+
+  // Si llegamos desde "Convertir en venta" de Agendados, abrimos el alta ya prerrellenada
+  useEffect(() => {
+    if (prefillVenta) {
+      setEditId(null);
+      setPrefab(prefillVenta);
+      setForm(true);
+      setPrefillVenta(null);
+    }
+  }, [prefillVenta, setPrefillVenta]);
 
   // Meses disponibles (mes de instalación, o de venta si aún no hay instalación) para el filtro
   const meses = useMemo(() => {
@@ -248,7 +259,7 @@ export default function LowiVentas() {
       const existe = prev.some((p) => p.id === venta.id);
       return existe ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
     });
-    setForm(false); setEditId(null);
+    setForm(false); setEditId(null); setPrefab(null);
     const avisos = avisosContacto(venta);
     if (avisos.length) {
       setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
@@ -323,9 +334,9 @@ export default function LowiVentas() {
           <FormLowi
             inicial={editId
               ? { ...ventaLowiVacia(), ...ventasLowi.find((v) => v.id === editId) }
-              : ventaLowiVacia()}
+              : { ...ventaLowiVacia(), ...(prefab || {}) }}
             onGuardar={guardar}
-            onCancelar={() => { setForm(false); setEditId(null); }}
+            onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); }}
           />
         </Card>
       )}
