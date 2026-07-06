@@ -100,9 +100,12 @@ export default function App() {
   };
 
   // Abre el alta de venta (Vodafone o Lowi, según el agendado) con los datos
-  // del cliente ya rellenados, desde la sección Agendados
+  // del cliente ya rellenados. Se pasa `_agendadoId` en el prefill para que, al
+  // GUARDAR la venta, se marque ese agendado como "Convertido" (no antes: si se
+  // cancela el alta, el agendado sigue Pendiente). El id viaja con el prefill,
+  // así queda ligado a ese formulario y no se queda "colgado" al navegar.
   const convertirAgendado = (a) => {
-    const datos = { nombre: a.nombre, apellido: a.apellido, dni: a.dni, telefono: a.telefono };
+    const datos = { nombre: a.nombre, apellido: a.apellido, dni: a.dni, telefono: a.telefono, _agendadoId: a.id };
     if (a.operador === 'lowi') {
       setOperador('lowi');
       setPage('lowi-ventas');
@@ -112,6 +115,13 @@ export default function App() {
     }
     setPrefillVenta(datos);
     setOpen(false);
+  };
+
+  // Marca un agendado como "Convertido" (llamado desde Ventas/LowiVentas al
+  // guardar una venta que venía de la agenda)
+  const marcarAgendadoConvertido = (id) => {
+    if (!id) return;
+    setAgendados((prev) => prev.map((x) => (x.id === id ? { ...x, estado: 'convertido' } : x)));
   };
 
   // Restaura datos desde un archivo de copia de seguridad (reemplaza los actuales)
@@ -199,7 +209,7 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, convertirAgendado, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, convertirAgendado, marcarAgendadoConvertido, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
   const Active = paginas.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   return (

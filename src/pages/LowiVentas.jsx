@@ -213,10 +213,11 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function LowiVentas() {
-  const { ventasLowi, setVentasLowi, prefillVenta, setPrefillVenta } = useApp();
+  const { ventasLowi, setVentasLowi, prefillVenta, setPrefillVenta, marcarAgendadoConvertido } = useApp();
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [prefab, setPrefab] = useState(null); // nombre/dni/teléfono precargados desde Agendados
+  const [agendadoRef, setAgendadoRef] = useState(null); // id del agendado origen (si viene de la agenda)
   const [filtro, setFiltro] = useState('todos');
   const [filtroMes, setFiltroMes] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
@@ -224,11 +225,14 @@ export default function LowiVentas() {
   const fileRef = useRef(null);
   const { confirmar, dialogo } = useConfirm();
 
-  // Si llegamos desde "Convertir en venta" de Agendados, abrimos el alta ya prerrellenada
+  // Si llegamos desde "Convertir en venta" de Agendados, abrimos el alta ya
+  // prerrellenada. `_agendadoId` se separa para marcar el agendado al guardar.
   useEffect(() => {
     if (prefillVenta) {
+      const { _agendadoId, ...datos } = prefillVenta;
       setEditId(null);
-      setPrefab(prefillVenta);
+      setPrefab(datos);
+      setAgendadoRef(_agendadoId || null);
       setForm(true);
       setPrefillVenta(null);
     }
@@ -260,6 +264,8 @@ export default function LowiVentas() {
       return existe ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
     });
     setForm(false); setEditId(null); setPrefab(null);
+    // Si esta alta venía de un agendado, márcalo "Convertido" (solo al guardar)
+    if (agendadoRef) { marcarAgendadoConvertido(agendadoRef); setAgendadoRef(null); }
     const avisos = avisosContacto(venta);
     if (avisos.length) {
       setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
@@ -300,7 +306,7 @@ export default function LowiVentas() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex flex-wrap gap-2">
-          <button className="btn-lowi" onClick={() => { setEditId(null); setForm(true); }}>
+          <button className="btn-lowi" onClick={() => { setEditId(null); setPrefab(null); setAgendadoRef(null); setForm(true); }}>
             <Plus size={16} /> Nueva venta Lowi
           </button>
           <button className="btn-ghost" onClick={() => fileRef.current?.click()}>
@@ -336,7 +342,7 @@ export default function LowiVentas() {
               ? { ...ventaLowiVacia(), ...ventasLowi.find((v) => v.id === editId) }
               : { ...ventaLowiVacia(), ...(prefab || {}) }}
             onGuardar={guardar}
-            onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); }}
+            onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
           />
         </Card>
       )}
@@ -448,7 +454,7 @@ export default function LowiVentas() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1 justify-end">
-                        <button className="p-2 rounded-lg hover:bg-bg-border text-fg-muted hover:text-fg cursor-pointer" onClick={() => { setEditId(v.id); setForm(true); }} aria-label="Editar"><Pencil size={15} /></button>
+                        <button className="p-2 rounded-lg hover:bg-bg-border text-fg-muted hover:text-fg cursor-pointer" onClick={() => { setEditId(v.id); setPrefab(null); setAgendadoRef(null); setForm(true); }} aria-label="Editar"><Pencil size={15} /></button>
                         <button className="p-2 rounded-lg hover:bg-vf-red/20 text-fg-muted hover:text-vf-redLight cursor-pointer" onClick={() => eliminar(v.id)} aria-label="Eliminar"><Trash2 size={15} /></button>
                       </div>
                     </td>

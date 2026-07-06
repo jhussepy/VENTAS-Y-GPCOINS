@@ -53,6 +53,9 @@ function FormAgendado({ inicial, onGuardar, onCancelar }) {
 
 export default function Agendados() {
   const { agendados, setAgendados, user, convertirAgendado } = useApp();
+  // Nota: la conversión a venta NO marca aquí el agendado como "Convertido";
+  // eso ocurre solo cuando la venta se guarda de verdad (App.finalizarConversion),
+  // para no dar un falso positivo si se cancela el alta.
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState('todos');
@@ -97,9 +100,8 @@ export default function Agendados() {
   };
 
   // Abre el alta de Ventas (Vodafone o Lowi, según el agendado) con los datos
-  // del cliente ya rellenados, y marca este agendado como "Convertido".
+  // del cliente ya rellenados. Se marcará "Convertido" al guardar la venta.
   const convertir = (a) => {
-    cambiarEstado(a.id, 'convertido');
     convertirAgendado(a);
   };
 

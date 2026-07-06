@@ -356,10 +356,11 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function Ventas() {
-  const { ventas, setVentas, mes, prefillVenta, setPrefillVenta } = useApp();
+  const { ventas, setVentas, mes, prefillVenta, setPrefillVenta, marcarAgendadoConvertido } = useApp();
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [prefab, setPrefab] = useState(null); // marca/sap precargados desde Catálogo
+  const [prefab, setPrefab] = useState(null); // marca/sap o datos de cliente precargados
+  const [agendadoRef, setAgendadoRef] = useState(null); // id del agendado origen (si la venta viene de la agenda)
   const [filtroMes, setFiltroMes] = useState(mes);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
@@ -367,11 +368,15 @@ export default function Ventas() {
   const fileRef = useRef(null);
   const { confirmar, dialogo } = useConfirm();
 
-  // Si llegamos desde "Vender" del Catálogo, abrimos el alta ya prerrellenada
+  // Si llegamos desde "Vender" del Catálogo o "Convertir" de Agendados, abrimos
+  // el alta ya prerrellenada. `_agendadoId` (si viene de la agenda) se separa
+  // para no guardarlo en la venta y usarlo al marcar el agendado convertido.
   useEffect(() => {
     if (prefillVenta) {
+      const { _agendadoId, ...datos } = prefillVenta;
       setEditId(null);
-      setPrefab(prefillVenta);
+      setPrefab(datos);
+      setAgendadoRef(_agendadoId || null);
       setForm(true);
       setPrefillVenta(null);
     }
@@ -434,6 +439,8 @@ export default function Ventas() {
       return existe ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
     });
     setForm(false); setEditId(null); setPrefab(null);
+    // Si esta alta venía de un agendado, márcalo "Convertido" (solo ahora, al guardar)
+    if (agendadoRef) { marcarAgendadoConvertido(agendadoRef); setAgendadoRef(null); }
 
     if (avisos.length) {
       setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
@@ -480,7 +487,7 @@ export default function Ventas() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex flex-wrap gap-2">
-          <button className="btn-primary" onClick={() => { setEditId(null); setForm(true); }}>
+          <button className="btn-primary" onClick={() => { setEditId(null); setPrefab(null); setAgendadoRef(null); setForm(true); }}>
             <Plus size={16} /> Nueva venta
           </button>
           <button className="btn-ghost" onClick={() => fileRef.current?.click()}>
@@ -522,7 +529,7 @@ export default function Ventas() {
               ? (() => { const f = ventas.find((v) => v.id === editId); return { ...ventaVacia(), ...f, estado: estadoDe(f) }; })()
               : { ...ventaVacia(), mes, ...(prefab || {}) }}
             onGuardar={guardar}
-            onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); }}
+            onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
           />
         </Card>
       )}
@@ -683,7 +690,7 @@ export default function Ventas() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
-                          <button className="p-2 rounded-lg hover:bg-bg-border text-fg-muted hover:text-fg cursor-pointer" onClick={() => { setEditId(v.id); setForm(true); }} aria-label="Editar"><Pencil size={15} /></button>
+                          <button className="p-2 rounded-lg hover:bg-bg-border text-fg-muted hover:text-fg cursor-pointer" onClick={() => { setEditId(v.id); setPrefab(null); setAgendadoRef(null); setForm(true); }} aria-label="Editar"><Pencil size={15} /></button>
                           <button className="p-2 rounded-lg hover:bg-vf-red/20 text-fg-muted hover:text-vf-redLight cursor-pointer" onClick={() => eliminar(v.id)} aria-label="Eliminar"><Trash2 size={15} /></button>
                         </div>
                       </td>
