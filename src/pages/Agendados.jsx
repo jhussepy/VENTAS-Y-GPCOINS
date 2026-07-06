@@ -1,11 +1,34 @@
 import { useMemo, useRef, useState } from 'react';
 import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus, PhoneOutgoing } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ahoraLocalISO, ordenarAgendados } from '../lib/agendados.js';
+import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ahoraLocalISO, fechaHoraAgendado } from '../lib/agendados.js';
 import { importarAgendados, exportarAgendados, plantillaAgendados } from '../lib/excelAgendados.js';
 import { Card, SectionTitle, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
 import { fmtVentana } from '../lib/portabilidad.js';
+
+const NOMBRES_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+// "2026-07" → "Julio 2026"
+const etiquetaMes = (ym) => {
+  const [a, m] = String(ym).split('-');
+  const n = NOMBRES_MES[Number(m) - 1] || m;
+  return `${n.charAt(0).toUpperCase()}${n.slice(1)} ${a}`;
+};
+
+// Comparadores de ordenación (las fechas vacías siempre al final)
+const cmpFecha = (dir) => (a, b) => {
+  const da = fechaHoraAgendado(a); const db = fechaHoraAgendado(b);
+  if (!da && !db) return 0;
+  if (!da) return 1;
+  if (!db) return -1;
+  return dir === 'desc' ? db - da : da - db;
+};
+const ORDENADORES = {
+  fecha_asc: cmpFecha('asc'),
+  fecha_desc: cmpFecha('desc'),
+  intentos_desc: (a, b) => (Number(b.intentos) || 0) - (Number(a.intentos) || 0),
+  cliente: (a, b) => `${a.nombre} ${a.apellido}`.trim().localeCompare(`${b.nombre} ${b.apellido}`.trim(), 'es'),
+};
 
 function FormAgendado({ inicial, onGuardar, onCancelar }) {
   const [a, setA] = useState(inicial);
@@ -67,6 +90,8 @@ export default function Agendados() {
   const [editId, setEditId] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroOperador, setFiltroOperador] = useState('todos');
+  const [filtroMes, setFiltroMes] = useState('todos');
+  const [orden, setOrden] = useState('fecha_asc');
   const [busqueda, setBusqueda] = useState('');
   const [soloHoy, setSoloHoy] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -93,17 +118,24 @@ export default function Agendados() {
     setTimeout(() => setMsg(null), 5000);
   };
 
+  // Meses presentes en los agendados (por fecha de llamada), para el filtro
+  const meses = useMemo(() => {
+    const s = new Set(agendados.map((a) => String(a.fechaLlamada || '').slice(0, 7)).filter((x) => x.length === 7));
+    return [...s].sort().reverse();
+  }, [agendados]);
+
   const q = busqueda.trim().toLowerCase();
   const lista = useMemo(() => {
     const filtrada = agendados.filter((a) => {
       if (filtroEstado !== 'todos' && a.estado !== filtroEstado) return false;
       if (filtroOperador !== 'todos' && a.operador !== filtroOperador) return false;
+      if (filtroMes !== 'todos' && String(a.fechaLlamada || '').slice(0, 7) !== filtroMes) return false;
       if (soloHoy && !esDeHoy(a)) return false;
       if (!q) return true;
       return [a.nombre, a.apellido, a.dni, a.cif, a.telefono, a.usuario, a.observaciones].some((c) => String(c || '').toLowerCase().includes(q));
     });
-    return ordenarAgendados(filtrada);
-  }, [agendados, filtroEstado, filtroOperador, soloHoy, q]);
+    return [...filtrada].sort(ORDENADORES[orden] || ORDENADORES.fecha_asc);
+  }, [agendados, filtroEstado, filtroOperador, filtroMes, soloHoy, orden, q]);
 
   // Resumen rápido para la cabecera (pendientes / hoy / atrasados)
   const resumen = useMemo(() => ({
@@ -187,6 +219,10 @@ export default function Agendados() {
           >
             Solo hoy ({resumen.hoy})
           </button>
+          <select className="input w-auto" value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} title="Filtrar por mes de llamada">
+            <option value="todos">Todos los meses</option>
+            {meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
+          </select>
           <select className="input w-auto" value={filtroOperador} onChange={(e) => setFiltroOperador(e.target.value)}>
             <option value="todos">Vodafone + Lowi</option>
             <option value="vodafone">Vodafone</option>
@@ -195,6 +231,12 @@ export default function Agendados() {
           <select className="input w-auto" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
             <option value="todos">Todos los estados</option>
             {ORDEN_ESTADOS_AGENDA.map((k) => <option key={k} value={k}>{ESTADOS_AGENDA[k].label}</option>)}
+          </select>
+          <select className="input w-auto" value={orden} onChange={(e) => setOrden(e.target.value)} title="Ordenar">
+            <option value="fecha_asc">Fecha ↑ (más próxima)</option>
+            <option value="fecha_desc">Fecha ↓ (más lejana)</option>
+            <option value="intentos_desc">Más intentos primero</option>
+            <option value="cliente">Cliente (A-Z)</option>
           </select>
         </div>
       </div>
