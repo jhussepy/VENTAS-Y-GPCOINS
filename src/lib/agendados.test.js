@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { estaAtrasado, ordenarAgendados, fechaHoraAgendado } from './agendados.js';
+import { estaAtrasado, esDeHoy, ordenarAgendados, fechaHoraAgendado } from './agendados.js';
 
 const ahora = new Date('2026-07-10T12:00:00');
 
@@ -38,6 +38,18 @@ describe('estaAtrasado', () => {
 
   it('no marca atrasado si no hay fecha', () => {
     expect(estaAtrasado({ estado: 'pendiente', fechaLlamada: '' }, ahora)).toBe(false);
+  });
+});
+
+describe('esDeHoy', () => {
+  it('es hoy si la fecha coincide con el día actual', () => {
+    expect(esDeHoy({ fechaLlamada: '2026-07-10' }, ahora)).toBe(true);
+  });
+  it('no es hoy si la fecha es otra', () => {
+    expect(esDeHoy({ fechaLlamada: '2026-07-11' }, ahora)).toBe(false);
+  });
+  it('no es hoy si no hay fecha', () => {
+    expect(esDeHoy({ fechaLlamada: '' }, ahora)).toBe(false);
   });
 });
 

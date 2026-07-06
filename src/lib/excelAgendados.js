@@ -57,8 +57,14 @@ const aHora = (XLSX, x) => {
 
 const limpiar = (x) => String(x ?? '').trim();
 
-// Lee un Excel de agendados y devuelve { agendados, importadas, vacias }
-export async function importarAgendados(file) {
+// Clave de deduplicación: mismo cliente, misma fecha y hora de llamada
+const claveAgendado = (a) => [a.nombre, a.apellido, a.telefono, a.fechaLlamada, a.hora]
+  .map((x) => String(x ?? '').trim().toLowerCase()).join('|');
+
+// Lee un Excel de agendados y devuelve { agendados, importadas, vacias,
+// duplicadas }. `existentes` sirve para no reimportar los que ya están
+// (mismo cliente + misma fecha/hora), evitando duplicados al reimportar.
+export async function importarAgendados(file, existentes = []) {
   const XLSX = await cargarXLSX();
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array' });
@@ -67,15 +73,17 @@ export async function importarAgendados(file) {
   const ws = wb.Sheets[nombreHoja];
   const filas = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
+  const vistos = new Set(existentes.map(claveAgendado));
   const agendados = [];
   let vacias = 0;
+  let duplicadas = 0;
   for (const f of filas) {
     const nombre = limpiar(f['NOMBRE']);
     const apellido = limpiar(f['APELLIDO']);
     const telefono = limpiar(f['NUMERO DE CONTACTO']);
     // Fila vacía: sin nombre, apellido ni teléfono, no aporta nada
     if (!nombre && !apellido && !telefono) { vacias += 1; continue; }
-    agendados.push({
+    const a = {
       ...agendadoVacio(),
       nombre,
       apellido,
@@ -88,9 +96,13 @@ export async function importarAgendados(file) {
       observaciones: limpiar(f['OBSERVACIONES']),
       usuario: limpiar(f['USUARIO']),
       operador: aOperador(f['VODAFONE O LOWI']),
-    });
+    };
+    const clave = claveAgendado(a);
+    if (vistos.has(clave)) { duplicadas += 1; continue; } // ya existe o repetido en el archivo
+    vistos.add(clave);
+    agendados.push(a);
   }
-  return { agendados, importadas: agendados.length, vacias };
+  return { agendados, importadas: agendados.length, vacias, duplicadas };
 }
 
 // Descarga una plantilla vacía con las cabeceras correctas

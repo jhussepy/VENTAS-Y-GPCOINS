@@ -44,6 +44,14 @@ export function estaAtrasado(a, ahora = new Date()) {
   return !!d && d < ahora;
 }
 
+// Fecha local YYYY-MM-DD (sin desfase de zona horaria)
+const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// ¿La llamada está programada para hoy?
+export function esDeHoy(a, ahora = new Date()) {
+  return !!a?.fechaLlamada && a.fechaLlamada.slice(0, 10) === isoLocal(ahora);
+}
+
 // Orden ascendente por fecha+hora; los que no tienen fecha van al final
 export function ordenarAgendados(lista) {
   return [...lista].sort((a, b) => {

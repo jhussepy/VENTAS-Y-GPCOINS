@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, ordenarAgendados } from '../lib/agendados.js';
+import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, ordenarAgendados } from '../lib/agendados.js';
 import { importarAgendados, exportarAgendados, plantillaAgendados } from '../lib/excelAgendados.js';
 import { Card, SectionTitle, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
@@ -42,7 +42,7 @@ function FormAgendado({ inicial, onGuardar, onCancelar }) {
         <div><label className="label">Usuario <span className="text-fg-muted font-normal">(quién agenda)</span></label><input className="input" value={a.usuario} onChange={(e) => set('usuario', e.target.value)} /></div>
       </div>
 
-      <div><label className="label">Observaciones</label><input className="input" value={a.observaciones} onChange={(e) => set('observaciones', e.target.value)} placeholder="Prefiere que le llamen por la tarde, quiere comparar precio con..." /></div>
+      <div><label className="label">Observaciones</label><textarea className="input min-h-24 resize-y" value={a.observaciones} onChange={(e) => set('observaciones', e.target.value)} placeholder="Prefiere que le llamen por la tarde, oferta comentada, email del cliente..." /></div>
 
       <div className="flex gap-2 justify-end">
         <button className="btn-ghost" onClick={onCancelar}><X size={16} /> Cancelar</button>
@@ -62,6 +62,7 @@ export default function Agendados() {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroOperador, setFiltroOperador] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
+  const [soloHoy, setSoloHoy] = useState(false);
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
   const { confirmar, dialogo } = useConfirm();
@@ -70,10 +71,13 @@ export default function Agendados() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { agendados: nuevos, importadas, vacias } = await importarAgendados(file);
+      const { agendados: nuevos, importadas, vacias, duplicadas } = await importarAgendados(file, agendados);
       setAgendados((prev) => [...nuevos, ...prev]);
       let text = `${importadas} agendados importados`;
-      if (vacias > 0) text += ` (${vacias} filas vacías omitidas)`;
+      const omitidas = [];
+      if (duplicadas > 0) omitidas.push(`${duplicadas} duplicados`);
+      if (vacias > 0) omitidas.push(`${vacias} filas vacías`);
+      if (omitidas.length) text += ` (${omitidas.join(', ')} omitidos)`;
       text += '.';
       setMsg({ tone: 'green', text });
     } catch {
@@ -88,13 +92,19 @@ export default function Agendados() {
     const filtrada = agendados.filter((a) => {
       if (filtroEstado !== 'todos' && a.estado !== filtroEstado) return false;
       if (filtroOperador !== 'todos' && a.operador !== filtroOperador) return false;
+      if (soloHoy && !esDeHoy(a)) return false;
       if (!q) return true;
-      return [a.nombre, a.apellido, a.dni, a.cif, a.telefono].some((c) => String(c || '').toLowerCase().includes(q));
+      return [a.nombre, a.apellido, a.dni, a.cif, a.telefono, a.usuario, a.observaciones].some((c) => String(c || '').toLowerCase().includes(q));
     });
     return ordenarAgendados(filtrada);
-  }, [agendados, filtroEstado, filtroOperador, q]);
+  }, [agendados, filtroEstado, filtroOperador, soloHoy, q]);
 
-  const atrasados = useMemo(() => agendados.filter((a) => estaAtrasado(a)).length, [agendados]);
+  // Resumen rápido para la cabecera (pendientes / hoy / atrasados)
+  const resumen = useMemo(() => ({
+    pendientes: agendados.filter((a) => a.estado === 'pendiente').length,
+    hoy: agendados.filter((a) => esDeHoy(a)).length,
+    atrasados: agendados.filter((a) => estaAtrasado(a)).length,
+  }), [agendados]);
 
   const guardar = (a) => {
     if (!a.nombre.trim() || !a.apellido.trim() || !a.telefono.trim()) {
@@ -146,13 +156,16 @@ export default function Agendados() {
           <button className="btn-ghost" onClick={() => exportarAgendados(agendados)} disabled={!agendados.length}>
             <Download size={16} /> Exportar
           </button>
-          {atrasados > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-vf-red/10 text-vf-redLight border border-vf-red/30">
-              <AlertTriangle size={14} /> {atrasados} atrasado{atrasados === 1 ? '' : 's'}
-            </span>
-          )}
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setSoloHoy((v) => !v)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer
+                        ${soloHoy ? 'bg-vf-red text-white border-vf-red' : 'bg-bg-surface2 text-fg-muted border-bg-border hover:text-fg'}`}
+            aria-pressed={soloHoy}
+          >
+            Solo hoy ({resumen.hoy})
+          </button>
           <select className="input w-auto" value={filtroOperador} onChange={(e) => setFiltroOperador(e.target.value)}>
             <option value="todos">Vodafone + Lowi</option>
             <option value="vodafone">Vodafone</option>
@@ -162,6 +175,22 @@ export default function Agendados() {
             <option value="todos">Todos los estados</option>
             {ORDEN_ESTADOS_AGENDA.map((k) => <option key={k} value={k}>{ESTADOS_AGENDA[k].label}</option>)}
           </select>
+        </div>
+      </div>
+
+      {/* Resumen rápido */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-bg-border bg-bg-surface p-4">
+          <p className="text-xs text-fg-muted">Pendientes</p>
+          <p className="text-2xl font-bold tabnum text-gp-gold mt-0.5">{resumen.pendientes}</p>
+        </div>
+        <div className="rounded-xl border border-bg-border bg-bg-surface p-4">
+          <p className="text-xs text-fg-muted">Para hoy</p>
+          <p className="text-2xl font-bold tabnum text-fg mt-0.5">{resumen.hoy}</p>
+        </div>
+        <div className={`rounded-xl border p-4 ${resumen.atrasados > 0 ? 'border-vf-red/40 bg-vf-red/[0.05]' : 'border-bg-border bg-bg-surface'}`}>
+          <p className="text-xs text-fg-muted flex items-center gap-1">{resumen.atrasados > 0 && <AlertTriangle size={12} className="text-vf-redLight" />} Atrasados</p>
+          <p className={`text-2xl font-bold tabnum mt-0.5 ${resumen.atrasados > 0 ? 'text-vf-redLight' : 'text-fg'}`}>{resumen.atrasados}</p>
         </div>
       </div>
 
