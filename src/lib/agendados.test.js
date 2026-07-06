@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { estaAtrasado, esDeHoy, ordenarAgendados, fechaHoraAgendado } from './agendados.js';
+import { estaAtrasado, esDeHoy, siguienteDiaHabil, ordenarAgendados, fechaHoraAgendado } from './agendados.js';
 
 const ahora = new Date('2026-07-10T12:00:00');
 
@@ -50,6 +50,21 @@ describe('esDeHoy', () => {
   });
   it('no es hoy si no hay fecha', () => {
     expect(esDeHoy({ fechaLlamada: '' }, ahora)).toBe(false);
+  });
+});
+
+describe('siguienteDiaHabil', () => {
+  it('un día entre semana salta al día siguiente', () => {
+    // 2026-07-08 es miércoles → jueves 09
+    expect(siguienteDiaHabil(new Date('2026-07-08T10:00:00'))).toBe('2026-07-09');
+  });
+  it('un viernes salta al lunes', () => {
+    // 2026-07-10 es viernes → lunes 13
+    expect(siguienteDiaHabil(new Date('2026-07-10T10:00:00'))).toBe('2026-07-13');
+  });
+  it('un sábado salta al lunes', () => {
+    // 2026-07-11 es sábado → lunes 13
+    expect(siguienteDiaHabil(new Date('2026-07-11T10:00:00'))).toBe('2026-07-13');
   });
 });
 

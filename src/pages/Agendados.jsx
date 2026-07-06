@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, ordenarAgendados } from '../lib/agendados.js';
+import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ordenarAgendados } from '../lib/agendados.js';
 import { importarAgendados, exportarAgendados, plantillaAgendados } from '../lib/excelAgendados.js';
 import { Card, SectionTitle, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
@@ -126,6 +126,15 @@ export default function Agendados() {
 
   const cambiarEstado = (id, estado) => {
     setAgendados((prev) => prev.map((p) => (p.id === id ? { ...p, estado } : p)));
+  };
+
+  // Reagenda rápido al siguiente día hábil, manteniendo la hora y dejándolo
+  // como pendiente (sigue siendo una llamada por hacer).
+  const reagendar = (a) => {
+    const nueva = siguienteDiaHabil();
+    setAgendados((prev) => prev.map((p) => (p.id === a.id ? { ...p, fechaLlamada: nueva, estado: 'pendiente' } : p)));
+    setMsg({ tone: 'green', text: `Reagendado a ${fmtFecha(nueva)}.` });
+    setTimeout(() => setMsg(null), 3000);
   };
 
   // Abre el alta de Ventas (Vodafone o Lowi, según el agendado) con los datos
@@ -290,6 +299,7 @@ export default function Agendados() {
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
                           <button className="p-2 rounded-lg hover:bg-emerald-500/15 text-fg-muted hover:text-emerald-400 cursor-pointer" onClick={() => convertir(a)} aria-label="Convertir en venta" title="Convertir en venta"><ArrowRightCircle size={15} /></button>
+                          <button className="p-2 rounded-lg hover:bg-sky-500/15 text-fg-muted hover:text-sky-400 cursor-pointer" onClick={() => reagendar(a)} aria-label="Reagendar al siguiente día hábil" title="Reagendar al siguiente día hábil"><CalendarPlus size={15} /></button>
                           <button className="p-2 rounded-lg hover:bg-bg-border text-fg-muted hover:text-fg cursor-pointer" onClick={() => { setEditId(a.id); setForm(true); }} aria-label="Editar"><Pencil size={15} /></button>
                           <button className="p-2 rounded-lg hover:bg-vf-red/20 text-fg-muted hover:text-vf-redLight cursor-pointer" onClick={() => eliminar(a.id)} aria-label="Eliminar"><Trash2 size={15} /></button>
                         </div>

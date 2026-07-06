@@ -2,11 +2,12 @@ import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo } 
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall,
+  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { mesDesdeFecha } from './lib/engine.js';
 import { versiculoDelDia, LEMA } from './data/biblia.js';
+import { estaAtrasado } from './lib/agendados.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useCloudData } from './hooks/useCloudData.js';
 import { cerrarSesion } from './lib/firebase.js';
@@ -87,6 +88,7 @@ export default function App() {
   const [mes, setMes] = useState(() => mesDesdeFecha(new Date()));
   const [open, setOpen] = useState(false);
   const [prefillVenta, setPrefillVenta] = useState(null); // {marca, sap} para "Vender" desde Catálogo
+  const [avisoAgendaCerrado, setAvisoAgendaCerrado] = useState(false); // recordatorio de atrasados descartado esta sesión
   const backupRef = useRef(null);
   // Diálogos de confirmación/aviso con el diseño de la app (sin confirm/alert nativos)
   const { confirmar, avisar, dialogo } = useConfirm();
@@ -187,6 +189,9 @@ export default function App() {
 
   const esLowi = operador === 'lowi';
   const enAgendados = page === 'agendados';
+  // Recordatorio de llamadas agendadas atrasadas (pendientes cuya hora ya pasó)
+  const agendadosAtrasados = agendados.filter((a) => estaAtrasado(a)).length;
+  const avisoAgenda = agendadosAtrasados > 0 && !enAgendados && !avisoAgendaCerrado;
   const nav = esLowi
     ? [...NAV_LOWI, NAV_FE, NAV_AJUSTES]
     : (admin ? [...NAV, NAV_ADMIN, NAV_FE, NAV_AJUSTES] : [...NAV, NAV_FE, NAV_AJUSTES]);
@@ -399,6 +404,23 @@ export default function App() {
           </header>
 
           <main className="flex-1 p-4 lg:p-8 max-w-[1600px] w-full mx-auto">
+            {avisoAgenda && (
+              <div className="mb-4 flex items-center gap-3 text-sm px-4 py-3 rounded-lg bg-vf-red/10 text-vf-redLight border border-vf-red/30">
+                <AlertTriangle size={18} className="shrink-0" />
+                <span className="flex-1">
+                  Tienes <span className="font-semibold">{agendadosAtrasados}</span> llamada{agendadosAtrasados === 1 ? '' : 's'} agendada{agendadosAtrasados === 1 ? '' : 's'} atrasada{agendadosAtrasados === 1 ? '' : 's'}.
+                </span>
+                <button
+                  onClick={() => { setPage('agendados'); setOpen(false); }}
+                  className="px-3 py-1 rounded-md text-xs font-semibold bg-vf-red text-white hover:bg-vf-redDark transition-colors cursor-pointer shrink-0"
+                >
+                  Ver agendados
+                </button>
+                <button onClick={() => setAvisoAgendaCerrado(true)} className="p-1 rounded hover:bg-vf-red/20 cursor-pointer shrink-0 text-base leading-none" aria-label="Descartar aviso" title="Descartar">
+                  ✕
+                </button>
+              </div>
+            )}
             {avisoFinPeriodo && (
               <div className="mb-4 flex items-start gap-2 text-sm px-4 py-3 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/30">
                 <CalendarClock size={18} className="shrink-0 mt-0.5" />

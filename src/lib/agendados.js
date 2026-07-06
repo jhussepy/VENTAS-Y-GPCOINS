@@ -52,6 +52,14 @@ export function esDeHoy(a, ahora = new Date()) {
   return !!a?.fechaLlamada && a.fechaLlamada.slice(0, 10) === isoLocal(ahora);
 }
 
+// Siguiente día hábil (lunes-viernes) a partir de `desde` — para "reagendar
+// rápido": se trabaja de lunes a viernes, así que un viernes salta al lunes.
+export function siguienteDiaHabil(desde = new Date()) {
+  const d = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate());
+  do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6);
+  return isoLocal(d);
+}
+
 // Orden ascendente por fecha+hora; los que no tienen fecha van al final
 export function ordenarAgendados(lista) {
   return [...lista].sort((a, b) => {
