@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { vallaAlcanzada, faltanParaSiguiente, comisionCategoria, comisionTotal, UMBRALES_VALLA } from './comision.js';
+import { vallaAlcanzada, faltanParaSiguiente, comisionCategoria, comisionTotal, contarDesdeVentas, UMBRALES_VALLA } from './comision.js';
 
 describe('vallaAlcanzada', () => {
   it('devuelve -1 si no llega a la 1ª valla', () => {
@@ -56,5 +56,31 @@ describe('comisionTotal', () => {
   it('suma fijo + móvil', () => {
     const r = comisionTotal({ BV: 4, MV: 4, AV: 4 }, { BA: 13, MV: 0, AV: 0 });
     expect(r.importe).toBe(600 + 13 * 16);
+  });
+});
+
+describe('contarDesdeVentas', () => {
+  const activa = (v) => v.estado === 'activa';
+  const ventas = [
+    // fibra 600 (MV fijo) + 2 líneas: básica (BA) e ilimtotal (AV)
+    { mes: 'julio', estado: 'activa', convergencia: '3P', velocidad: 'Fibra 600 MB',
+      lineasMoviles: [{ tipo: 'porta', tarifa: 'basica' }, { tipo: 'nueva', tarifa: 'ilimtotal' }] },
+    // fibra 1GB (AV fijo), pero pendiente → no cuenta
+    { mes: 'julio', estado: 'pendiente', convergencia: '4P', velocidad: 'Fibra 1 GB', lineasMoviles: [] },
+    // fibra 300 (BV) de otro mes → no cuenta
+    { mes: 'junio', estado: 'activa', convergencia: '3P', velocidad: 'Fibra 300 MB', lineasMoviles: [] },
+  ];
+
+  it('cuenta fibra por velocidad y móvil por tarifa, solo activas del mes', () => {
+    const { fijo, movil } = contarDesdeVentas(ventas, 'julio', activa);
+    expect(fijo).toEqual({ BV: 0, MV: 1, AV: 0 });
+    expect(movil).toEqual({ BA: 1, MV: 0, AV: 1 });
+  });
+
+  it('ignora portas canceladas por el cliente (ES M1)', () => {
+    const v = [{ mes: 'julio', estado: 'activa', convergencia: '', velocidad: '',
+      lineasMoviles: [{ tipo: 'porta', tarifa: 'ilim60', incidenciaPorta: 'cancelada_m1' }] }];
+    const { movil } = contarDesdeVentas(v, 'julio', activa);
+    expect(movil).toEqual({ BA: 0, MV: 0, AV: 0 });
   });
 });

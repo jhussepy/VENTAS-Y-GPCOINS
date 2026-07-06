@@ -45,6 +45,44 @@ export const UMBRALES_VALLA = {
 
 export const ETIQUETA_CATEGORIA = { fijo: 'Fijo', movil: 'Móvil' };
 
+// --- Clasificación de una venta Vodafone en subtipos de comisión ------------
+// Fibra por velocidad; línea móvil por tarifa (ver data/movil.js).
+export const FIJO_POR_VELOCIDAD = {
+  'Fibra 300 MB': 'BV',
+  'Fibra 600 MB': 'MV',
+  'Fibra 1 GB': 'AV',
+};
+export const MOVIL_POR_TARIFA = {
+  basica: 'BA',        // Básica 2€
+  ilim60: 'MV',        // Ilimitada 60GB
+  ilim160: 'AV',       // Ilimitada 160GB
+  ilimtotal: 'AV',     // Ilimitada Total (TIL65)
+};
+
+// Cuenta las unidades por subtipo desde las ventas Vodafone ACTIVAS del mes.
+// `estadoActivo(v)` decide si la venta cuenta (se inyecta para no acoplar el
+// módulo a estados.js). Devuelve { fijo: {BV,MV,AV}, movil: {BA,MV,AV} }.
+export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
+  const fijo = { BV: 0, MV: 0, AV: 0 };
+  const movil = { BA: 0, MV: 0, AV: 0 };
+  for (const v of ventas) {
+    if (v.mes !== mes) continue;
+    if (!estadoActivo(v)) continue;
+    // Fibra: una unidad, clasificada por velocidad
+    if (v.convergencia && v.velocidad) {
+      const b = FIJO_POR_VELOCIDAD[v.velocidad];
+      if (b) fijo[b] += 1;
+    }
+    // Móvil: cada línea con tarifa (excluyendo portas canceladas por el cliente)
+    for (const l of v.lineasMoviles || []) {
+      if (l.tipo === 'porta' && l.incidenciaPorta === 'cancelada_m1') continue;
+      const b = MOVIL_POR_TARIFA[l.tarifa];
+      if (b) movil[b] += 1;
+    }
+  }
+  return { fijo, movil };
+}
+
 // Índice de la valla alcanzada con `total` unidades (0..3), o -1 si no llega a
 // la 1ª valla.
 export function vallaAlcanzada(total, umbrales) {

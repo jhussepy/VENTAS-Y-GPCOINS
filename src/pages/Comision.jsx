@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Calculator, Wifi, Smartphone, RotateCcw } from 'lucide-react';
+import { Calculator, Wifi, Smartphone, RotateCcw, DownloadCloud } from 'lucide-react';
+import { useApp } from '../App.jsx';
+import { estadoDe } from '../lib/estados.js';
+import { PERIODO } from '../data/incentivos.js';
 import { Card, SectionTitle, Badge } from '../components/ui.jsx';
 import {
   SUBTIPOS, TARIFA_COMISION, UMBRALES_VALLA, ETIQUETA_CATEGORIA,
-  comisionCategoria, comisionTotal, faltanParaSiguiente, fmtSol,
+  comisionCategoria, comisionTotal, faltanParaSiguiente, contarDesdeVentas, fmtSol,
 } from '../lib/comision.js';
 
 const contadorVacio = (cat) => Object.fromEntries(SUBTIPOS[cat].map((s) => [s.id, 0]));
@@ -56,21 +59,41 @@ function BloqueCategoria({ cat, icon: Icon, counts, setCounts }) {
 }
 
 export default function Comision() {
+  const { ventas, mes } = useApp();
   const [fijo, setFijo] = useState(() => contadorVacio('fijo'));
   const [movil, setMovil] = useState(() => contadorVacio('movil'));
+  const [msg, setMsg] = useState(null);
 
   const total = useMemo(() => comisionTotal(fijo, movil), [fijo, movil]);
 
-  const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); };
+  const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setMsg(null); };
+
+  // Precarga contando las ventas Vodafone ACTIVAS del período activo
+  const precargar = () => {
+    const { fijo: f, movil: m } = contarDesdeVentas(ventas, mes, (v) => estadoDe(v) === 'activa');
+    setFijo(f); setMovil(m);
+    const totalUds = Object.values(f).reduce((a, b) => a + b, 0) + Object.values(m).reduce((a, b) => a + b, 0);
+    setMsg(totalUds > 0
+      ? { tone: 'green', text: `Cargadas ${totalUds} unidades activas de ${PERIODO.etiquetas[mes]}. Puedes ajustar los números a mano.` }
+      : { tone: 'red', text: `No hay ventas Vodafone activas en ${PERIODO.etiquetas[mes]} que clasificar.` });
+    setTimeout(() => setMsg(null), 6000);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-fg-muted flex items-center gap-2">
           <Calculator size={16} className="text-vf-red" /> Calculadora de comisión Vodafone · moneda <span className="text-fg-soft font-medium">Sol (S/)</span>
         </p>
-        <button className="btn-ghost" onClick={limpiar}><RotateCcw size={15} /> Limpiar</button>
+        <div className="flex gap-2">
+          <button className="btn-ghost" onClick={precargar} title={`Contar mis ventas activas de ${PERIODO.etiquetas[mes]}`}>
+            <DownloadCloud size={15} /> Precargar desde mis ventas ({PERIODO.etiquetas[mes]})
+          </button>
+          <button className="btn-ghost" onClick={limpiar}><RotateCcw size={15} /> Limpiar</button>
+        </div>
       </div>
+
+      {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
 
       {/* Total destacado */}
       <div className="relative overflow-hidden rounded-2xl p-6 text-white shadow-md bg-gradient-to-br from-vf-red via-vf-redDark to-rose-900">
