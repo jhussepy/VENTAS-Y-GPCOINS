@@ -151,14 +151,6 @@ export default function App() {
     setVentasLowi([]);
   };
 
-  // Cambia de operador y resetea a su página inicial
-  const cambiarOperador = (op) => {
-    if (op === operador) return;
-    setOperador(op);
-    setPage(OPERADORES[op].paginaInicial);
-    setOpen(false);
-  };
-
   // Monitor de tamaño del documento (Firestore limita 1 MB por documento)
   // IMPORTANTE: este hook debe ir ANTES de cualquier return condicional
   const usoDoc = useMemo(() => {
@@ -184,10 +176,22 @@ export default function App() {
   const avisoFinPeriodo = admin && diasParaFinPeriodo >= 0 && diasParaFinPeriodo <= DIAS_AVISO_FIN_PERIODO;
 
   const esLowi = operador === 'lowi';
+  const enAgendados = page === 'agendados';
   const nav = esLowi
-    ? [...NAV_LOWI, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES]
-    : (admin ? [...NAV, NAV_ADMIN, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES] : [...NAV, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES]);
+    ? [...NAV_LOWI, NAV_FE, NAV_AJUSTES]
+    : (admin ? [...NAV, NAV_ADMIN, NAV_FE, NAV_AJUSTES] : [...NAV, NAV_FE, NAV_AJUSTES]);
+  // Agendados no está en el menú lateral (vive en el conmutador de arriba),
+  // pero debe poder resolverse como página activa y para el título de cabecera.
+  const paginas = [...nav, NAV_AGENDADOS];
   const opCfg = OPERADORES[operador];
+
+  // Ir a un operador: siempre navega a su página inicial (aunque ya sea el
+  // operador activo), para poder volver desde Agendados con un solo clic.
+  const irAOperador = (op) => {
+    setOperador(op);
+    setPage(OPERADORES[op].paginaInicial);
+    setOpen(false);
+  };
 
   // Indicador de sincronización con la nube
   const guardado = {
@@ -196,7 +200,7 @@ export default function App() {
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
   const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, convertirAgendado, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
-  const Active = nav.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
+  const Active = paginas.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   return (
     <AppCtx.Provider value={ctx}>
@@ -217,23 +221,34 @@ export default function App() {
             </div>
           </div>
 
-          {/* Conmutador de operador: Vodafone / Lowi */}
-          <div className="px-3 pt-3">
+          {/* Conmutador de operador: Vodafone / Lowi + acceso a Agendados */}
+          <div className="px-3 pt-3 space-y-1.5">
             <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
               {Object.entries(OPERADORES).map(([id, cfg]) => (
                 <button
                   key={id}
-                  onClick={() => cambiarOperador(id)}
+                  onClick={() => irAOperador(id)}
                   className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer
-                              ${operador === id
+                              ${operador === id && !enAgendados
                                 ? (id === 'lowi' ? 'bg-sky-600 text-white' : 'bg-vf-red text-white')
                                 : 'text-fg-muted hover:text-fg'}`}
-                  aria-pressed={operador === id}
+                  aria-pressed={operador === id && !enAgendados}
                 >
                   {cfg.label}
                 </button>
               ))}
             </div>
+            {/* Agendados: seguimiento de llamadas, común a Vodafone y Lowi */}
+            <button
+              onClick={() => { setPage('agendados'); setOpen(false); }}
+              className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer border
+                          ${enAgendados
+                            ? 'bg-vf-red text-white border-vf-red'
+                            : 'bg-bg-surface2 text-fg-muted border-bg-border hover:text-fg'}`}
+              aria-pressed={enAgendados}
+            >
+              <PhoneCall size={13} /> Agendados
+            </button>
           </div>
 
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -332,7 +347,7 @@ export default function App() {
                 <Menu size={20} />
               </button>
               <h1 className="flex items-center gap-2 text-base font-semibold text-fg capitalize">
-                {(() => { const N = nav.find((n) => n.id === page); if (!N) return null; return (<>
+                {(() => { const N = paginas.find((n) => n.id === page); if (!N) return null; return (<>
                   <span className={`p-1.5 rounded-lg ${esLowi ? 'bg-sky-500/10 text-sky-500' : 'bg-vf-red/10 text-vf-red'}`}><N.icon size={16} /></span>
                   {N.label}
                 </>); })()}
