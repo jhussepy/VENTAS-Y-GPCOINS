@@ -43,6 +43,8 @@ export const UMBRALES_VALLA = {
   movil: [13, 24, 34, 42],
 };
 
+import { mesDesdeFecha } from './engine.js';
+
 export const ETIQUETA_CATEGORIA = { fijo: 'Fijo', movil: 'Móvil' };
 
 // --- Clasificación de una venta Vodafone en subtipos de comisión ------------
@@ -59,25 +61,38 @@ export const MOVIL_POR_TARIFA = {
   ilimtotal: 'AV',     // Ilimitada Total (TIL65)
 };
 
-// Cuenta las unidades por subtipo desde las ventas Vodafone ACTIVAS del mes.
-// `estadoActivo(v)` decide si la venta cuenta (se inyecta para no acoplar el
-// módulo a estados.js). Devuelve { fijo: {BV,MV,AV}, movil: {BA,MV,AV} }.
+// Cuenta las unidades por subtipo desde las ventas Vodafone del mes.
+// `estadoActivo(v)` decide si la venta (fibra) cuenta.
+//
+// IMPORTANTE — meses:
+//  · La FIBRA cuenta en el mes propio de la venta (v.mes).
+//  · La LÍNEA MÓVIL porta cuenta en el mes en que ACTIVA su portabilidad
+//    (mes de la ventana), no en el de la venta: una porta vendida en junio que
+//    activa en julio suma a la comisión de julio. Solo cuentan las portas ya
+//    activadas (l.activa) y se excluyen las canceladas por el cliente (M1).
+//  · La LÍNEA MÓVIL nueva cuenta en el mes de la venta si está activa.
+//
+// Devuelve { fijo: {BV,MV,AV}, movil: {BA,MV,AV} }.
 export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
   const fijo = { BV: 0, MV: 0, AV: 0 };
   const movil = { BA: 0, MV: 0, AV: 0 };
   for (const v of ventas) {
-    if (v.mes !== mes) continue;
-    if (!estadoActivo(v)) continue;
-    // Fibra: una unidad, clasificada por velocidad
-    if (v.convergencia && v.velocidad) {
+    // Fibra: mes propio de la venta y activa
+    if (v.mes === mes && estadoActivo(v) && v.convergencia && v.velocidad) {
       const b = FIJO_POR_VELOCIDAD[v.velocidad];
       if (b) fijo[b] += 1;
     }
-    // Móvil: cada línea con tarifa (excluyendo portas canceladas por el cliente)
+    // Líneas móviles
     for (const l of v.lineasMoviles || []) {
-      if (l.tipo === 'porta' && l.incidenciaPorta === 'cancelada_m1') continue;
       const b = MOVIL_POR_TARIFA[l.tarifa];
-      if (b) movil[b] += 1;
+      if (!b) continue;
+      if (l.tipo === 'porta') {
+        if (l.incidenciaPorta === 'cancelada_m1' || !l.activa) continue;
+        const mLinea = l.ventanaPorta ? mesDesdeFecha(l.ventanaPorta) : v.mes;
+        if (mLinea === mes) movil[b] += 1;
+      } else if (v.mes === mes && estadoActivo(v)) {
+        movil[b] += 1; // línea nueva: activa con la venta, en su mes
+      }
     }
   }
   return { fijo, movil };
