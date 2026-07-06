@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
-import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, ordenarAgendados } from '../lib/agendados.js';
+import { importarAgendados, exportarAgendados, plantillaAgendados } from '../lib/excelAgendados.js';
 import { Card, SectionTitle, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
 
@@ -62,7 +63,25 @@ export default function Agendados() {
   const [filtroOperador, setFiltroOperador] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState(null);
+  const fileRef = useRef(null);
   const { confirmar, dialogo } = useConfirm();
+
+  const onImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { agendados: nuevos, importadas, vacias } = await importarAgendados(file);
+      setAgendados((prev) => [...nuevos, ...prev]);
+      let text = `${importadas} agendados importados`;
+      if (vacias > 0) text += ` (${vacias} filas vacías omitidas)`;
+      text += '.';
+      setMsg({ tone: 'green', text });
+    } catch {
+      setMsg({ tone: 'red', text: 'Error al leer el Excel. Revisa el formato con la plantilla.' });
+    }
+    e.target.value = '';
+    setTimeout(() => setMsg(null), 5000);
+  };
 
   const q = busqueda.trim().toLowerCase();
   const lista = useMemo(() => {
@@ -116,6 +135,16 @@ export default function Agendados() {
             onClick={() => { setEditId(null); setForm(true); }}
           >
             <Plus size={16} /> Agendar llamada
+          </button>
+          <button className="btn-ghost" onClick={() => fileRef.current?.click()}>
+            <Upload size={16} /> Importar Excel
+          </button>
+          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={onImport} />
+          <button className="btn-ghost" onClick={() => plantillaAgendados()}>
+            <FileSpreadsheet size={16} /> Plantilla
+          </button>
+          <button className="btn-ghost" onClick={() => exportarAgendados(agendados)} disabled={!agendados.length}>
+            <Download size={16} /> Exportar
           </button>
           {atrasados > 0 && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-vf-red/10 text-vf-redLight border border-vf-red/30">
