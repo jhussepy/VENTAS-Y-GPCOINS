@@ -127,21 +127,31 @@ export default function Comision() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
-                <th className="px-3 py-2 font-semibold">Valla</th>
-                <th className="px-3 py-2 font-semibold text-center" colSpan={4}>Fijo (uds · BV / MV / AV)</th>
-                <th className="px-3 py-2 font-semibold text-center" colSpan={4}>Móvil (uds · BA / MV / AV)</th>
+              <tr className="text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
+                <th className="px-3 py-2 font-semibold text-left" rowSpan={2}>Valla</th>
+                <th className="px-3 py-2 font-semibold text-center border-l border-bg-border" colSpan={4}>Fijo</th>
+                <th className="px-3 py-2 font-semibold text-center border-l border-bg-border" colSpan={4}>Móvil</th>
+              </tr>
+              <tr className="text-[10px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/40">
+                <th className="px-3 py-1.5 font-medium text-center border-l border-bg-border">Uds</th>
+                <th className="px-3 py-1.5 font-medium text-center">Bajo (BV)</th>
+                <th className="px-3 py-1.5 font-medium text-center">Medio (MV)</th>
+                <th className="px-3 py-1.5 font-medium text-center">Alto (AV)</th>
+                <th className="px-3 py-1.5 font-medium text-center border-l border-bg-border">Uds</th>
+                <th className="px-3 py-1.5 font-medium text-center">Bajo (BA)</th>
+                <th className="px-3 py-1.5 font-medium text-center">Medio (MV)</th>
+                <th className="px-3 py-1.5 font-medium text-center">Alto (AV)</th>
               </tr>
             </thead>
             <tbody>
               {ROMANOS.map((rom, i) => (
                 <tr key={i} className="border-b border-bg-border/60 odd:bg-bg-surface2/25">
                   <td className="px-3 py-2 font-medium text-fg">{rom} valla</td>
-                  <td className="px-3 py-2 text-center text-fg-muted tabnum">≥{UMBRALES_VALLA.fijo[i]}</td>
+                  <td className="px-3 py-2 text-center text-fg-muted tabnum border-l border-bg-border">≥{UMBRALES_VALLA.fijo[i]}</td>
                   <td className="px-3 py-2 text-center tabnum">{fmtSol(TARIFA_COMISION.fijo.BV[i])}</td>
                   <td className="px-3 py-2 text-center tabnum">{fmtSol(TARIFA_COMISION.fijo.MV[i])}</td>
                   <td className="px-3 py-2 text-center tabnum">{fmtSol(TARIFA_COMISION.fijo.AV[i])}</td>
-                  <td className="px-3 py-2 text-center text-fg-muted tabnum">≥{UMBRALES_VALLA.movil[i]}</td>
+                  <td className="px-3 py-2 text-center text-fg-muted tabnum border-l border-bg-border">≥{UMBRALES_VALLA.movil[i]}</td>
                   <td className="px-3 py-2 text-center tabnum">{fmtSol(TARIFA_COMISION.movil.BA[i])}</td>
                   <td className="px-3 py-2 text-center tabnum">{fmtSol(TARIFA_COMISION.movil.MV[i])}</td>
                   <td className="px-3 py-2 text-center tabnum">{fmtSol(TARIFA_COMISION.movil.AV[i])}</td>
