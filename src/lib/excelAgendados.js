@@ -10,7 +10,7 @@ const cargarXLSX = () => import('xlsx');
 // Encabezados de la plantilla (en el orden esperado)
 export const COLUMNAS_AGENDADOS = [
   'NOMBRE', 'APELLIDO', 'DNI', 'CIF o ID', 'NUMERO DE CONTACTO',
-  'FECHA DE LLAMADA', 'HORA', 'ESTADO', 'OBSERVACIONES', 'USUARIO', 'VODAFONE O LOWI',
+  'FECHA DE LLAMADA', 'HORA', 'ESTADO', 'OBSERVACIONES', 'USUARIO', 'VODAFONE O LOWI', 'INTENTOS',
 ];
 
 // Texto de estado del Excel → clave interna
@@ -96,6 +96,7 @@ export async function importarAgendados(file, existentes = []) {
       observaciones: limpiar(f['OBSERVACIONES']),
       usuario: limpiar(f['USUARIO']),
       operador: aOperador(f['VODAFONE O LOWI']),
+      intentos: Math.max(0, Math.trunc(Number(f['INTENTOS']) || 0)),
     };
     const clave = claveAgendado(a);
     if (vistos.has(clave)) { duplicadas += 1; continue; } // ya existe o repetido en el archivo
@@ -122,6 +123,7 @@ export async function exportarAgendados(agendados = []) {
     'NUMERO DE CONTACTO': a.telefono, 'FECHA DE LLAMADA': a.fechaLlamada, HORA: a.hora,
     ESTADO: ESTADOS_AGENDA[a.estado]?.label || a.estado, OBSERVACIONES: a.observaciones,
     USUARIO: a.usuario, 'VODAFONE O LOWI': a.operador === 'lowi' ? 'Lowi' : 'Vodafone',
+    INTENTOS: Number(a.intentos) || 0,
   }));
   const ws = XLSX.utils.json_to_sheet(filas, { header: COLUMNAS_AGENDADOS });
   const wb = XLSX.utils.book_new();

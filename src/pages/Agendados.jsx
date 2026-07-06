@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus } from 'lucide-react';
+import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus, PhoneOutgoing } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ordenarAgendados } from '../lib/agendados.js';
 import { importarAgendados, exportarAgendados, plantillaAgendados } from '../lib/excelAgendados.js';
@@ -40,6 +40,11 @@ function FormAgendado({ inicial, onGuardar, onCancelar }) {
           </select>
         </div>
         <div><label className="label">Usuario <span className="text-fg-muted font-normal">(quién agenda)</span></label><input className="input" value={a.usuario} onChange={(e) => set('usuario', e.target.value)} /></div>
+      </div>
+
+      <div className="max-w-[10rem]">
+        <label className="label">Intentos de llamada</label>
+        <input type="number" min="0" className="input" value={a.intentos} onChange={(e) => set('intentos', Number(e.target.value) || 0)} />
       </div>
 
       <div><label className="label">Observaciones</label><textarea className="input min-h-24 resize-y" value={a.observaciones} onChange={(e) => set('observaciones', e.target.value)} placeholder="Prefiere que le llamen por la tarde, oferta comentada, email del cliente..." /></div>
@@ -126,6 +131,12 @@ export default function Agendados() {
 
   const cambiarEstado = (id, estado) => {
     setAgendados((prev) => prev.map((p) => (p.id === id ? { ...p, estado } : p)));
+  };
+
+  // Registra un intento de llamada (+1). No cambia el estado: tú decides si
+  // pasa a "Sin respuesta", "Reagendado", etc. desde el desplegable.
+  const registrarIntento = (a) => {
+    setAgendados((prev) => prev.map((p) => (p.id === a.id ? { ...p, intentos: (Number(p.intentos) || 0) + 1 } : p)));
   };
 
   // Reagenda rápido al siguiente día hábil, manteniendo la hora y dejándolo
@@ -245,6 +256,7 @@ export default function Agendados() {
                   <th className="px-4 py-3 font-semibold">Contacto</th>
                   <th className="px-4 py-3 font-semibold">Fecha de llamada</th>
                   <th className="px-4 py-3 font-semibold">Operador</th>
+                  <th className="px-4 py-3 font-semibold text-center">Intentos</th>
                   <th className="px-4 py-3 font-semibold">Usuario</th>
                   <th className="px-4 py-3 font-semibold">Observaciones</th>
                   <th className="px-4 py-3 font-semibold text-center">Estado</th>
@@ -280,6 +292,19 @@ export default function Agendados() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge tone={a.operador === 'lowi' ? 'neutral' : 'red'}>{a.operador === 'lowi' ? 'Lowi' : 'Vodafone'}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className={`tabnum font-semibold ${Number(a.intentos) >= 3 ? 'text-vf-redLight' : 'text-fg-soft'}`}>{Number(a.intentos) || 0}</span>
+                          <button
+                            onClick={() => registrarIntento(a)}
+                            className="p-1 rounded-md hover:bg-sky-500/15 text-fg-muted hover:text-sky-400 cursor-pointer"
+                            aria-label="Registrar intento de llamada"
+                            title="Registrar intento de llamada (+1)"
+                          >
+                            <PhoneOutgoing size={14} />
+                          </button>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-fg-muted">{a.usuario || '—'}</td>
                       <td className="px-4 py-3 text-fg-soft max-w-xs truncate" title={a.observaciones}>{a.observaciones || '—'}</td>

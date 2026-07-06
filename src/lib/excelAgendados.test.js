@@ -51,6 +51,16 @@ describe('importarAgendados', () => {
     expect(agendados[0].estado).toBe('sin_respuesta');
   });
 
+  it('lee el contador de intentos (y 0 si falta o es inválido)', async () => {
+    const file = aExcel([
+      { NOMBRE: 'A', 'NUMERO DE CONTACTO': 1, INTENTOS: 3 },
+      { NOMBRE: 'B', 'NUMERO DE CONTACTO': 2 },
+    ]);
+    const { agendados } = await importarAgendados(file);
+    expect(agendados[0].intentos).toBe(3);
+    expect(agendados[1].intentos).toBe(0);
+  });
+
   it('asigna un id único a cada agendado importado', async () => {
     const file = aExcel([
       { NOMBRE: 'A', 'NUMERO DE CONTACTO': 1 },

@@ -28,6 +28,7 @@ export const agendadoVacio = () => ({
   observaciones: '',
   usuario: '',        // quién agendó la llamada (nombre/email del agente)
   operador: 'vodafone', // 'vodafone' | 'lowi'
+  intentos: 0,        // nº de veces que se ha intentado llamar
 });
 
 // Combina fechaLlamada + hora en un Date (o null si no hay fecha válida)
