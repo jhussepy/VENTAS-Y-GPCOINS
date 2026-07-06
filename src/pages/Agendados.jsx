@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus, PhoneOutgoing } from 'lucide-react';
+import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus, PhoneOutgoing, Minus } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ahoraLocalISO, fechaHoraAgendado } from '../lib/agendados.js';
 import { importarAgendados, exportarAgendados, plantillaAgendados } from '../lib/excelAgendados.js';
@@ -172,6 +172,16 @@ export default function Agendados() {
     setAgendados((prev) => prev.map((p) => (p.id === a.id ? { ...p, intentos: (Number(p.intentos) || 0) + 1, ultimoIntento: ahoraLocalISO() } : p)));
   };
 
+  // Corrige un intento marcado por error (−1). Al llegar a 0 borra la fecha
+  // del último intento (ya no hay ninguno).
+  const quitarIntento = (a) => {
+    setAgendados((prev) => prev.map((p) => {
+      if (p.id !== a.id) return p;
+      const n = Math.max(0, (Number(p.intentos) || 0) - 1);
+      return { ...p, intentos: n, ultimoIntento: n === 0 ? '' : p.ultimoIntento };
+    }));
+  };
+
   // Reagenda rápido al siguiente día hábil, manteniendo la hora y dejándolo
   // como pendiente (sigue siendo una llamada por hacer).
   const reagendar = (a) => {
@@ -337,7 +347,17 @@ export default function Agendados() {
                         <Badge tone={a.operador === 'lowi' ? 'neutral' : 'red'}>{a.operador === 'lowi' ? 'Lowi' : 'Vodafone'}</Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex items-center justify-center gap-1">
+                          {Number(a.intentos) > 0 && (
+                            <button
+                              onClick={() => quitarIntento(a)}
+                              className="p-1 rounded-md hover:bg-vf-red/15 text-fg-muted hover:text-vf-redLight cursor-pointer"
+                              aria-label="Quitar un intento"
+                              title="Quitar un intento (−1)"
+                            >
+                              <Minus size={13} />
+                            </button>
+                          )}
                           <span className={`tabnum font-semibold ${Number(a.intentos) >= 3 ? 'text-vf-redLight' : 'text-fg-soft'}`}>{Number(a.intentos) || 0}</span>
                           <button
                             onClick={() => registrarIntento(a)}
