@@ -61,6 +61,16 @@ describe('importarAgendados', () => {
     expect(agendados[1].intentos).toBe(0);
   });
 
+  it('lee la fecha/hora del último intento en formato ISO', async () => {
+    const file = aExcel([
+      { NOMBRE: 'A', 'NUMERO DE CONTACTO': 1, 'ULTIMO INTENTO': '2026-07-10T16:45' },
+      { NOMBRE: 'B', 'NUMERO DE CONTACTO': 2, 'ULTIMO INTENTO': 'basura' },
+    ]);
+    const { agendados } = await importarAgendados(file);
+    expect(agendados[0].ultimoIntento).toBe('2026-07-10T16:45');
+    expect(agendados[1].ultimoIntento).toBe('');
+  });
+
   it('asigna un id único a cada agendado importado', async () => {
     const file = aExcel([
       { NOMBRE: 'A', 'NUMERO DE CONTACTO': 1 },

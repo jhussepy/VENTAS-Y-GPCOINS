@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState } from 'react';
 import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus, PhoneOutgoing } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ordenarAgendados } from '../lib/agendados.js';
+import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ahoraLocalISO, ordenarAgendados } from '../lib/agendados.js';
 import { importarAgendados, exportarAgendados, plantillaAgendados } from '../lib/excelAgendados.js';
 import { Card, SectionTitle, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
+import { fmtVentana } from '../lib/portabilidad.js';
 
 function FormAgendado({ inicial, onGuardar, onCancelar }) {
   const [a, setA] = useState(inicial);
@@ -136,7 +137,7 @@ export default function Agendados() {
   // Registra un intento de llamada (+1). No cambia el estado: tú decides si
   // pasa a "Sin respuesta", "Reagendado", etc. desde el desplegable.
   const registrarIntento = (a) => {
-    setAgendados((prev) => prev.map((p) => (p.id === a.id ? { ...p, intentos: (Number(p.intentos) || 0) + 1 } : p)));
+    setAgendados((prev) => prev.map((p) => (p.id === a.id ? { ...p, intentos: (Number(p.intentos) || 0) + 1, ultimoIntento: ahoraLocalISO() } : p)));
   };
 
   // Reagenda rápido al siguiente día hábil, manteniendo la hora y dejándolo
@@ -305,6 +306,11 @@ export default function Agendados() {
                             <PhoneOutgoing size={14} />
                           </button>
                         </div>
+                        {a.ultimoIntento && (
+                          <div className="text-[10px] text-fg-muted text-center mt-0.5 tabnum" title={`Último intento: ${fmtVentana(a.ultimoIntento)}`}>
+                            {fmtVentana(a.ultimoIntento)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-fg-muted">{a.usuario || '—'}</td>
                       <td className="px-4 py-3 text-fg-soft max-w-xs truncate" title={a.observaciones}>{a.observaciones || '—'}</td>

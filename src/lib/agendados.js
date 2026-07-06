@@ -29,7 +29,14 @@ export const agendadoVacio = () => ({
   usuario: '',        // quién agendó la llamada (nombre/email del agente)
   operador: 'vodafone', // 'vodafone' | 'lowi'
   intentos: 0,        // nº de veces que se ha intentado llamar
+  ultimoIntento: '',  // fecha/hora del último intento (YYYY-MM-DDTHH:mm)
 });
+
+// Fecha/hora local actual como "YYYY-MM-DDTHH:mm" (para registrar un intento)
+export function ahoraLocalISO(d = new Date()) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 // Combina fechaLlamada + hora en un Date (o null si no hay fecha válida)
 export function fechaHoraAgendado(a) {

@@ -10,7 +10,7 @@ const cargarXLSX = () => import('xlsx');
 // Encabezados de la plantilla (en el orden esperado)
 export const COLUMNAS_AGENDADOS = [
   'NOMBRE', 'APELLIDO', 'DNI', 'CIF o ID', 'NUMERO DE CONTACTO',
-  'FECHA DE LLAMADA', 'HORA', 'ESTADO', 'OBSERVACIONES', 'USUARIO', 'VODAFONE O LOWI', 'INTENTOS',
+  'FECHA DE LLAMADA', 'HORA', 'ESTADO', 'OBSERVACIONES', 'USUARIO', 'VODAFONE O LOWI', 'INTENTOS', 'ULTIMO INTENTO',
 ];
 
 // Texto de estado del Excel → clave interna
@@ -97,6 +97,17 @@ export async function importarAgendados(file, existentes = []) {
       usuario: limpiar(f['USUARIO']),
       operador: aOperador(f['VODAFONE O LOWI']),
       intentos: Math.max(0, Math.trunc(Number(f['INTENTOS']) || 0)),
+      ultimoIntento: (() => {
+        const raw = f['ULTIMO INTENTO'];
+        // Nuestro export ya escribe "YYYY-MM-DDTHH:mm"; si viene como serial de
+        // Excel, lo reconstruimos con fecha + hora.
+        if (typeof raw === 'number') {
+          const fe = aFecha(XLSX, raw); const ho = aHora(XLSX, raw);
+          return fe ? `${fe}T${ho || '00:00'}` : '';
+        }
+        const s = limpiar(raw);
+        return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s) ? s.slice(0, 16) : '';
+      })(),
     };
     const clave = claveAgendado(a);
     if (vistos.has(clave)) { duplicadas += 1; continue; } // ya existe o repetido en el archivo
@@ -123,7 +134,7 @@ export async function exportarAgendados(agendados = []) {
     'NUMERO DE CONTACTO': a.telefono, 'FECHA DE LLAMADA': a.fechaLlamada, HORA: a.hora,
     ESTADO: ESTADOS_AGENDA[a.estado]?.label || a.estado, OBSERVACIONES: a.observaciones,
     USUARIO: a.usuario, 'VODAFONE O LOWI': a.operador === 'lowi' ? 'Lowi' : 'Vodafone',
-    INTENTOS: Number(a.intentos) || 0,
+    INTENTOS: Number(a.intentos) || 0, 'ULTIMO INTENTO': a.ultimoIntento || '',
   }));
   const ws = XLSX.utils.json_to_sheet(filas, { header: COLUMNAS_AGENDADOS });
   const wb = XLSX.utils.book_new();
