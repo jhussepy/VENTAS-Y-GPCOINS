@@ -162,6 +162,17 @@ export default function Agendados() {
     if (ok) setAgendados((prev) => prev.filter((p) => p.id !== id));
   };
 
+  // Agendados ya cerrados (convertidos + descartados): candidatos a limpiar
+  const cerrados = useMemo(() => agendados.filter((a) => a.estado === 'convertido' || a.estado === 'descartado').length, [agendados]);
+  const limpiarCerrados = async () => {
+    if (cerrados === 0) return;
+    const ok = await confirmar(
+      `Se eliminarán ${cerrados} agendado(s) ya cerrados (convertidos o descartados) para liberar espacio. Esta acción no se puede deshacer.`,
+      { titulo: 'Limpiar cerrados', accion: 'Limpiar', peligro: true }
+    );
+    if (ok) setAgendados((prev) => prev.filter((p) => p.estado !== 'convertido' && p.estado !== 'descartado'));
+  };
+
   const cambiarEstado = (id, estado) => {
     setAgendados((prev) => prev.map((p) => (p.id === id ? { ...p, estado } : p)));
   };
@@ -219,6 +230,11 @@ export default function Agendados() {
           <button className="btn-ghost" onClick={() => exportarAgendados(agendados)} disabled={!agendados.length}>
             <Download size={16} /> Exportar
           </button>
+          {cerrados > 0 && (
+            <button className="btn-ghost" onClick={limpiarCerrados} title="Eliminar agendados convertidos o descartados">
+              <Trash2 size={16} /> Limpiar cerrados ({cerrados})
+            </button>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button

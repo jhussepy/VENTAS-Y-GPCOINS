@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock, BookOpen, Loader2, Check, Trophy, RotateCcw } from 'lucide-react';
+import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock, BookOpen, Loader2, Check, Trophy, RotateCcw, PhoneCall } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { Card, SectionTitle, Badge, useConfirm } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
@@ -154,7 +154,7 @@ function VersionBiblica() {
 }
 
 export default function Ajustes() {
-  const { ventas, setVentas, ventasLowi, tarifas, precios } = useApp();
+  const { ventas, setVentas, ventasLowi, tarifas, precios, agendados } = useApp();
   const [msg, setMsg] = useState(null);
   const { confirmar, dialogo } = useConfirm();
 
@@ -188,10 +188,11 @@ export default function Ajustes() {
     const bLowi = tam(ventasLowi);
     const bTarifas = tam(tarifas);
     const bPrecios = tam(precios);
-    const total = bVentas + bLowi + bTarifas + bPrecios;
+    const bAgendados = tam(agendados);
+    const total = bVentas + bLowi + bTarifas + bPrecios + bAgendados;
     const pct = Math.min(100, (total / LIMITE) * 100);
-    return { bVentas, bLowi, bTarifas, bPrecios, total, pct };
-  }, [ventas, ventasLowi, tarifas, precios]);
+    return { bVentas, bLowi, bTarifas, bPrecios, bAgendados, total, pct };
+  }, [ventas, ventasLowi, tarifas, precios, agendados]);
 
   const color = d.pct >= 90 ? '#E60000' : d.pct >= 75 ? '#FFB81C' : '#10B981';
   const estado = d.pct >= 90 ? 'Crítico' : d.pct >= 75 ? 'Atención' : 'Saludable';
@@ -201,6 +202,7 @@ export default function Ajustes() {
     { id: 'l', icon: Wifi, label: 'Ventas Lowi', bytes: d.bLowi, n: ventasLowi.length, color: '#0284C7' },
     { id: 't', icon: Tag, label: 'Tarifas', bytes: d.bTarifas, n: tarifas.length, color: '#FFB81C' },
     { id: 'p', icon: Smartphone, label: 'Precios de terminales', bytes: d.bPrecios, n: Object.keys(precios || {}).length, color: '#10B981' },
+    { id: 'a', icon: PhoneCall, label: 'Agendados', bytes: d.bAgendados, n: (agendados || []).length, color: '#7C3AED' },
   ];
 
   return (
