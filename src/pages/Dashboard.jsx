@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList,
-  PieChart, Pie,
+  PieChart, Pie, AreaChart, Area,
 } from 'recharts';
 import { useApp } from '../App.jsx';
 import { resumenGlobal, portasCruzadas } from '../lib/engine.js';
@@ -123,6 +123,23 @@ export default function Dashboard() {
     }
     const items = TARIFAS_MOVIL.map((t) => ({ label: t.label, n: cuenta[t.id] || 0 }));
     return { items, total };
+  }, [ventas, mes]);
+
+  // Evolución de ventas por día del mes activo (por fecha de venta)
+  const ventasPorDia = useMemo(() => {
+    const anio = Number(PERIODO.inicio.slice(0, 4));
+    const idx = mes === 'julio' ? 6 : 5;
+    const nDias = new Date(anio, idx + 1, 0).getDate();
+    const arr = Array.from({ length: nDias }, (_, i) => ({ dia: i + 1, ventas: 0 }));
+    for (const v of ventas) {
+      if (v.mes !== mes) continue;
+      const f = v.fechaVenta || v.fechaInstalacion;
+      if (!f) continue;
+      const d = Number(String(f).slice(8, 10));
+      if (d >= 1 && d <= nDias) arr[d - 1].ventas += 1;
+    }
+    const total = arr.reduce((a, b) => a + b.ventas, 0);
+    return { arr, total };
   }, [ventas, mes]);
 
   // --- Proyección / ritmo del mes activo --------------------------------------
@@ -296,6 +313,38 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Evolución de ventas por día del mes */}
+      <Card>
+        <SectionTitle right={<Badge tone="neutral">{fmtNum(ventasPorDia.total)} ventas · {PERIODO.etiquetas[mes]}</Badge>}>
+          <span className="flex items-center gap-2"><CalendarClock size={18} className="text-vf-red" /> Ventas por día</span>
+        </SectionTitle>
+        {ventasPorDia.total === 0 ? (
+          <p className="py-10 text-center text-fg-muted text-sm">Aún no hay ventas registradas este mes.</p>
+        ) : (
+          <div style={{ width: '100%', height: 220 }}>
+            <ResponsiveContainer>
+              <AreaChart data={ventasPorDia.arr} margin={{ top: 10, right: 12, left: -18, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradVentasDia" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#E60000" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="#E60000" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" vertical={false} />
+                <XAxis dataKey="dia" stroke="var(--fg-muted)" fontSize={11} tickLine={false} axisLine={false} interval={2} />
+                <YAxis stroke="var(--fg-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
+                  labelFormatter={(d) => `Día ${d}`}
+                  formatter={(v) => [fmtNum(v), 'Ventas']}
+                />
+                <Area type="monotone" dataKey="ventas" stroke="#E60000" strokeWidth={2} fill="url(#gradVentasDia)" animationDuration={700} dot={false} activeDot={{ r: 4, fill: '#E60000' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
 
       {/* Tarjeta de proyección / ritmo del mes activo */}
       <Card>
