@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Calculator, Wifi, Smartphone, RotateCcw, DownloadCloud } from 'lucide-react';
+import { Calculator, Wifi, Smartphone, RotateCcw, DownloadCloud, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { estadoDe } from '../lib/estados.js';
 import { PERIODO } from '../data/incentivos.js';
@@ -85,6 +85,32 @@ export default function Comision() {
 
   const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setDiasTrab(diasMes); setMsg(null); };
 
+  // Exporta el desglose de la comisión a Excel
+  const exportar = async () => {
+    const XLSX = await import('xlsx');
+    const filas = [];
+    for (const cat of ['fijo', 'movil']) {
+      const counts = cat === 'fijo' ? fijo : movil;
+      const r = comisionCategoria(cat, counts, umbrales[cat]);
+      for (const s of SUBTIPOS[cat]) {
+        const det = r.detalle[s.id];
+        filas.push({
+          Categoría: cat === 'fijo' ? 'Fijo' : 'Móvil',
+          Subtipo: `${s.label} (${s.id})`,
+          Unidades: det.n,
+          Valla: r.valla >= 0 ? `${r.valla + 1}ª` : 'Sin valla',
+          'Precio/ud (S/)': det.precio,
+          'Importe (S/)': det.importe,
+        });
+      }
+    }
+    filas.push({ Categoría: 'TOTAL', Subtipo: '', Unidades: '', Valla: '', 'Precio/ud (S/)': '', 'Importe (S/)': total.importe });
+    const ws = XLSX.utils.json_to_sheet(filas);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Comisión');
+    XLSX.writeFile(wb, `comision_${PERIODO.etiquetas[mes].toLowerCase()}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   // Precarga contando las ventas Vodafone ACTIVAS del período activo
   const precargar = () => {
     const { fijo: f, movil: m, sinClasificar } = contarDesdeVentas(ventas, mes, (v) => estadoDe(v) === 'activa');
@@ -111,6 +137,9 @@ export default function Comision() {
         <div className="flex gap-2">
           <button className="btn-ghost" onClick={precargar} title={`Contar mis ventas activas de ${PERIODO.etiquetas[mes]}`}>
             <DownloadCloud size={15} /> Precargar desde mis ventas ({PERIODO.etiquetas[mes]})
+          </button>
+          <button className="btn-ghost" onClick={exportar} disabled={total.importe === 0} title="Exportar el desglose a Excel">
+            <FileSpreadsheet size={15} /> Exportar
           </button>
           <button className="btn-ghost" onClick={limpiar}><RotateCcw size={15} /> Limpiar</button>
         </div>
