@@ -26,14 +26,14 @@ export const SUBTIPOS = {
 // Precio por unidad (S/) según la valla alcanzada (índice 0=1ª … 3=4ª) y subtipo
 export const TARIFA_COMISION = {
   fijo: {
-    BV: [25, 31, 36, 43],
-    MV: [35, 50, 63, 72],
-    AV: [43, 69, 89, 102],
+    BV: [30, 34, 38, 43],
+    MV: [41, 55, 66, 72],
+    AV: [51, 77, 94, 102],
   },
   movil: {
-    BA: [16, 24, 34, 44],
-    MV: [21, 31, 48, 68],
-    AV: [26, 38, 57, 85],
+    BA: [19, 27, 36, 44],
+    MV: [25, 34, 51, 68],
+    AV: [31, 43, 60, 85],
   },
 };
 

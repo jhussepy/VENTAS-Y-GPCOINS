@@ -35,20 +35,20 @@ describe('comisionCategoria', () => {
   });
 
   it('aplica el precio de la valla alcanzada a todas las unidades (retroactivo)', () => {
-    // total 12 fijo → 2ª valla (idx 1): BV=31, MV=50, AV=69
+    // total 12 fijo → 2ª valla (idx 1): BV=34, MV=55, AV=77
     const r = comisionCategoria('fijo', { BV: 4, MV: 4, AV: 4 });
     expect(r.valla).toBe(1);
-    expect(r.detalle.BV).toEqual({ n: 4, precio: 31, importe: 124 });
-    expect(r.detalle.MV).toEqual({ n: 4, precio: 50, importe: 200 });
-    expect(r.detalle.AV).toEqual({ n: 4, precio: 69, importe: 276 });
-    expect(r.importe).toBe(600);
+    expect(r.detalle.BV).toEqual({ n: 4, precio: 34, importe: 136 });
+    expect(r.detalle.MV).toEqual({ n: 4, precio: 55, importe: 220 });
+    expect(r.detalle.AV).toEqual({ n: 4, precio: 77, importe: 308 });
+    expect(r.importe).toBe(664);
   });
 
   it('móvil usa sus propios umbrales y precios', () => {
-    // total 13 móvil → 1ª valla (idx 0): BA=16, MV=21, AV=26
+    // total 13 móvil → 1ª valla (idx 0): BA=19, MV=25, AV=31
     const r = comisionCategoria('movil', { BA: 13, MV: 0, AV: 0 });
     expect(r.valla).toBe(0);
-    expect(r.importe).toBe(13 * 16);
+    expect(r.importe).toBe(13 * 19);
   });
 });
 
@@ -64,14 +64,14 @@ describe('prorratearUmbrales (días trabajados)', () => {
     const umbrales = prorratearUmbrales(UMBRALES_VALLA.fijo, 0.5); // 1ª valla = 3
     const r = comisionCategoria('fijo', { BV: 3, MV: 0, AV: 0 }, umbrales);
     expect(r.valla).toBe(0); // con 3 fijos ya clasifica (cuota media)
-    expect(r.importe).toBe(3 * 25);
+    expect(r.importe).toBe(3 * 30);
   });
 });
 
 describe('comisionTotal', () => {
   it('suma fijo + móvil', () => {
     const r = comisionTotal({ BV: 4, MV: 4, AV: 4 }, { BA: 13, MV: 0, AV: 0 });
-    expect(r.importe).toBe(600 + 13 * 16);
+    expect(r.importe).toBe(664 + 13 * 19);
   });
 });
 
