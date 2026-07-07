@@ -45,6 +45,12 @@ const ETIQUETA_LLAVE = {
 export default function Dashboard() {
   const { ventas, mes, user, objetivosLogros } = useApp();
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
+  // Comparativa entre los meses del período (Junio vs Julio)
+  const comparativa = useMemo(() => PERIODO.meses.map((m) => {
+    const rm = resumenGlobal(ventas, m);
+    return { mes: PERIODO.etiquetas[m], Ventas: rm.totalVentas, Activas: rm.instalacionesActivas, 'GP Coins': rm.gpDirectosTotal };
+  }), [ventas]);
+  const hayComparativa = comparativa.some((c) => c.Ventas > 0);
   // Portas cuya venta se cerró en otro mes pero cuya ventana de portabilidad cae en el mes activo
   const cruzadas = useMemo(() => portasCruzadas(ventas, mes), [ventas, mes]);
   // Gamificación: racha de ventas (global, no por mes), insignias y foco del día
@@ -313,6 +319,37 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Comparativa entre meses del período */}
+      {hayComparativa && (
+        <Card>
+          <SectionTitle right={<Badge tone="neutral">{PERIODO.meses.map((m) => PERIODO.etiquetas[m]).join(' vs ')}</Badge>}>
+            <span className="flex items-center gap-2"><Trophy size={18} className="text-vf-red" /> Comparativa de meses</span>
+          </SectionTitle>
+          <div style={{ width: '100%', height: 260 }}>
+            <ResponsiveContainer>
+              <BarChart data={comparativa} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" vertical={false} />
+                <XAxis dataKey="mes" stroke="var(--fg-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--fg-muted)" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
+                <Tooltip
+                  cursor={{ fill: 'var(--bg-surface2)', radius: 6 }}
+                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
+                  formatter={(v, n) => [fmtNum(v), n]}
+                />
+                <Bar dataKey="Ventas" fill="#E60000" radius={[6, 6, 0, 0]} maxBarSize={44} animationDuration={700} />
+                <Bar dataKey="Activas" fill="#10B981" radius={[6, 6, 0, 0]} maxBarSize={44} animationDuration={700} />
+                <Bar dataKey="GP Coins" fill="#FFB81C" radius={[6, 6, 0, 0]} maxBarSize={44} animationDuration={700} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center justify-center gap-6 mt-2 text-xs text-fg-soft">
+            <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#E60000' }} /> Ventas</span>
+            <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#10B981' }} /> Activas</span>
+            <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#FFB81C' }} /> GP Coins</span>
+          </div>
+        </Card>
+      )}
 
       {/* Evolución de ventas por día del mes */}
       <Card>
