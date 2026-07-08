@@ -26,6 +26,11 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
     if (k === 'fechaVenta') next.mes = mesDesdeFecha(next.fechaInstalacion || val);
     if (k === 'fechaInstalacion') next.mes = mesDesdeFecha(val || next.fechaVenta);
     if (k === 'marca') { next.sap = ''; if (!val) next.dispositivoEntregado = false; }
+    // Al marcar "entregado" sin fecha, proponemos hoy (sus puntos cuentan en ese mes)
+    if (k === 'dispositivoEntregado') {
+      if (val && !next.fechaEntrega) next.fechaEntrega = new Date().toISOString().slice(0, 10);
+      if (!val) next.fechaEntrega = '';
+    }
     // El estado manda: "instalación activa" solo es cierto cuando el estado es 'activa'
     if (k === 'estado') next.instalacionActiva = val === 'activa';
     // El contenido de TV solo aplica en 4P; si deja de ser 4P, se limpia
@@ -292,6 +297,17 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           </label>
         )}
       </div>
+
+      {v.marca && v.dispositivoEntregado && (
+        <div className="max-w-xs">
+          <label className="label">Fecha de entrega del dispositivo</label>
+          <input type="date" className="input" value={v.fechaEntrega || ''} onChange={(e) => set('fechaEntrega', e.target.value)} />
+          <p className="text-[11px] text-fg-muted mt-1">
+            Los puntos/GP Coins del dispositivo cuentan en el <span className="text-fg-soft">mes de esta fecha</span>
+            {v.fechaEntrega ? <> (<span className="capitalize">{mesDesdeFecha(v.fechaEntrega)}</span>)</> : null}, no en el de la venta.
+          </p>
+        </div>
+      )}
 
       {v.marca && !v.dispositivoEntregado && (() => {
         const estadoEntrega = estadoEntregaTerminal(v);

@@ -22,7 +22,7 @@ const cargarXLSX = () => import('xlsx');
 export const COLUMNAS_VENTAS = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'convergencia',
-  'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'dispositivoEntregado', 'cantidad',
+  'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'dispositivoEntregado', 'fechaEntrega', 'cantidad',
   'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
 ];
 
@@ -103,6 +103,7 @@ export async function importarVentas(file, existentes = []) {
     v.marca = String(r.marca ?? '').trim().toLowerCase();
     v.sap = String(r.sap ?? r.SAP ?? '').trim();
     v.dispositivoEntregado = aBool(r.dispositivoEntregado ?? r['dispositivo entregado'] ?? r.entregado);
+    v.fechaEntrega = aFecha(XLSX, r.fechaEntrega ?? r['fecha entrega']);
     v.cantidad = aNum(r.cantidad) || 1;
     v.portasVoz = aNum(r.portasVoz ?? r['portas voz']);
     v.portasActivas = Math.min(aNum(r.portasActivas ?? r['portas activas']), v.portasVoz);

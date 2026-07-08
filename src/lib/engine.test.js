@@ -256,6 +256,22 @@ describe('valorLlave solo cuenta ventas activas', () => {
     const ventas = [{ ...ventaVacia(), mes: 'junio', marca: 'xiaomi', sap: 'NO-EXISTE', cantidad: 3, estado: 'activa' }];
     expect(valorLlave(ventas, 'xiaomi', 'disp', 'junio')).toBe(0);
   });
+  it('el dispositivo cuenta en el mes de su fecha de ENTREGA, no en el de la venta', () => {
+    // Venta de junio, pero el dispositivo se entrega en julio
+    const ventas = [{
+      ...ventaVacia(), mes: 'junio', estado: 'activa', marca: 'xiaomi', sap: '316512',
+      dispositivoEntregado: true, cantidad: 1, fechaEntrega: '2026-07-03',
+    }];
+    expect(valorLlave(ventas, 'xiaomi', 'disp', 'junio')).toBe(0); // no en junio
+    expect(valorLlave(ventas, 'xiaomi', 'disp', 'julio')).toBe(1); // sí en julio
+  });
+  it('sin fecha de entrega, el dispositivo cuenta en el mes de la venta (compatibilidad)', () => {
+    const ventas = [{
+      ...ventaVacia(), mes: 'junio', estado: 'activa', marca: 'xiaomi', sap: '316512',
+      dispositivoEntregado: true, cantidad: 1, fechaEntrega: '',
+    }];
+    expect(valorLlave(ventas, 'xiaomi', 'disp', 'junio')).toBe(1);
+  });
   it('TIL65 solo cuenta en cliente nuevo 3P/4P', () => {
     const ventas = [
       { ...ventaVacia(), mes: 'junio', estado: 'activa', clienteNuevo: true, convergencia: '4P', til65: 2 },

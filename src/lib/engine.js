@@ -32,6 +32,7 @@ export const ventaVacia = () => ({
   marca: '',               // '' | 'xiaomi' | 'samsung' | 'honor' | 'motorola' | 'jbl'
   sap: '',                 // código SAP del dispositivo
   dispositivoEntregado: false, // ¿el cliente ya recibió el dispositivo? (gating de puntos/GP)
+  fechaEntrega: '',        // fecha de entrega del dispositivo: sus puntos/GP cuentan en ESE mes
   incidenciaEntrega: '',   // '' | 'cliente_ausente' | 'rechaza_terminal' | 'otro' (si la entrega no se completó)
   cantidad: 1,             // unidades del dispositivo
   // Líneas móviles detalladas (tarifa, número, nueva/porta, operador, activa)
@@ -64,6 +65,11 @@ export const mesDesdeFecha = (fecha) => {
 // instalación, esa manda sobre el mes; si aún no la hay (venta pendiente de
 // instalar), usamos la fecha de venta como respaldo.
 export const mesEfectivo = (v) => mesDesdeFecha(v?.fechaInstalacion || v?.fechaVenta);
+
+// Mes en que cuentan los puntos/GP del DISPOSITIVO: el de su fecha de entrega
+// (los dispositivos puntúan en el mes que se entregan, no en el de la venta).
+// Si aún no hay fecha de entrega, cae al mes propio de la venta (compatibilidad).
+export const mesEntrega = (v) => (v?.fechaEntrega ? mesDesdeFecha(v.fechaEntrega) : v?.mes);
 
 // --- ¿La fecha cae dentro del período válido del incentivo? -------------------
 export const dentroDePeriodo = (fecha) => {
@@ -100,7 +106,8 @@ export function puntosClienteNuevo(ventas, mes) {
 export function puntosDispositivos(ventas, marca, mes) {
   let total = 0;
   for (const v of ventas) {
-    if (v.mes !== mes || v.marca !== marca) continue;
+    // El dispositivo puntúa en el mes de su ENTREGA (no en el de la venta)
+    if (v.marca !== marca || mesEntrega(v) !== mes) continue;
     if (estadoDe(v) !== 'activa') continue; // solo ventas activadas puntúan
     if (!v.dispositivoEntregado) continue;  // solo si el cliente recibió el dispositivo
     const prod = buscarProducto(marca, v.sap);
@@ -116,10 +123,10 @@ export function gpDirectos(ventas, marca, mes) {
   const cat = CATALOGO[marca];
   if (!cat) return 0;
 
-  // Unidades activadas por SAP en el mes
+  // Unidades entregadas por SAP en el mes (cuentan en el mes de la ENTREGA)
   const unidadesPorSap = {};
   for (const v of ventas) {
-    if (v.mes !== mes || v.marca !== marca) continue;
+    if (v.marca !== marca || mesEntrega(v) !== mes) continue;
     if (estadoDe(v) !== 'activa') continue;
     if (!v.dispositivoEntregado) continue; // GP solo si el cliente recibió el dispositivo
     if (!v.sap) continue;
@@ -209,9 +216,11 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
     case 'disp': {
       const inc = INCENTIVOS[incentivoId];
       const marca = inc.catalogo;
-      // Solo dispositivos válidos del catálogo y ya ENTREGADOS al cliente
-      return activas
-        .filter((v) => v.marca === marca && v.dispositivoEntregado && buscarProducto(marca, v.sap))
+      // El dispositivo cuenta en el MES DE SU ENTREGA (no en el de la venta),
+      // así que se recorre todo el conjunto, no solo las ventas del mes.
+      return ventas
+        .filter((v) => estadoDe(v) === 'activa' && mesEntrega(v) === mes
+          && v.marca === marca && v.dispositivoEntregado && buscarProducto(marca, v.sap))
         .reduce((a, v) => a + (v.cantidad || 1), 0);
     }
     default:
