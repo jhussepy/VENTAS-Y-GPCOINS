@@ -7,6 +7,7 @@ import {
 } from '../lib/fe.js';
 import { Card, SectionTitle, Badge } from '../components/ui.jsx';
 import { useVersiculo } from '../lib/bibliaApi.js';
+import { useHoy, fechaDeHoy } from '../hooks/useHoy.js';
 
 // Tarjeta grande del versículo del día con botón de favorito
 function VersiculoDelDia({ versiculo, favorito, onFav }) {
@@ -88,7 +89,8 @@ export default function Fe() {
   const [planAbierto, setPlanAbierto] = useState(null);
   const [webAbierta, setWebAbierta] = useState(false);
 
-  const vd = versiculoDelDia();
+  const hoy = useHoy();
+  const vd = versiculoDelDia(fechaDeHoy(hoy));
   const toggleDia = (planId, i) => setProgreso(alternarDia(planId, i));
   const toggleFav = (v) => setFavs(alternarFavorito(v));
 

@@ -11,6 +11,7 @@ import { resumenGlobal, portasCruzadas } from '../lib/engine.js';
 import { rachaVentas, calcularLogros } from '../lib/logros.js';
 import { versiculoDelDia, bendicionDelDia } from '../data/biblia.js';
 import { useVersiculo } from '../lib/bibliaApi.js';
+import { useHoy, fechaDeHoy } from '../hooks/useHoy.js';
 import { fmtVentana } from '../lib/portabilidad.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
 import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
@@ -44,6 +45,7 @@ const ETIQUETA_LLAVE = {
 
 export default function Dashboard() {
   const { ventas, mes, user, objetivosLogros } = useApp();
+  const hoy = useHoy(); // se actualiza al cambiar de día aunque la app siga abierta
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
   // Comparativa entre los meses del período (Junio vs Julio)
   const comparativa = useMemo(() => PERIODO.meses.map((m) => {
@@ -192,7 +194,7 @@ export default function Dashboard() {
       <HeroBanner
         saludo={saludo}
         titulo={`Tu progreso de ${PERIODO.etiquetas[mes]}`}
-        subtitulo={`✝ ${bendicionDelDia()}`}
+        subtitulo={`✝ ${bendicionDelDia(fechaDeHoy(hoy))}`}
         chip={`Período ${PERIODO.inicio} → ${PERIODO.fin}`}
         accent="vf"
         highlights={[
@@ -650,7 +652,8 @@ export default function Dashboard() {
 // Tarjeta editorial del versículo del día: discreta y consistente con el
 // resto del panel (no un banner llamativo), con acento dorado de marca.
 function VersiculoDelDiaCard() {
-  const vd = versiculoDelDia();
+  const hoy = useHoy();
+  const vd = versiculoDelDia(fechaDeHoy(hoy));
   const { texto, version } = useVersiculo(vd.cita, vd.texto, vd.pid);
   return (
     <div className="relative overflow-hidden rounded-2xl border border-bg-border bg-bg-surface shadow-sm">
