@@ -164,7 +164,46 @@ export function HeroBanner({ saludo, titulo, subtitulo, chip, highlights = [], a
   );
 }
 
-export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red' }) {
+// Sparkline SVG sin dependencias: dibuja una tendencia compacta con relleno
+// degradado y punto final. `data` es un array de números.
+export function Sparkline({ data = [], stroke = '#E60000', height = 34, className = '' }) {
+  if (!data || data.length < 2) return null;
+  const w = 100, h = height;
+  const max = Math.max(...data), min = Math.min(...data);
+  const span = max - min || 1;
+  const step = w / (data.length - 1);
+  const pts = data.map((v, i) => [i * step, h - 3 - ((v - min) / span) * (h - 6)]);
+  const linea = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const area = `${linea} L${w},${h} L0,${h} Z`;
+  const [lx, ly] = pts[pts.length - 1];
+  const gid = `spk${Math.round(pts[0][1] * 1000 + data.length)}`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height={h}
+         className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gid})`} />
+      <path d={linea} fill="none" stroke={stroke} strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <circle cx={lx} cy={ly} r="2.4" fill={stroke} />
+    </svg>
+  );
+}
+
+const ACCENT_HEX = {
+  'text-vf-red': '#E60000',
+  'text-vf-redLight': '#FF4D4D',
+  'text-gp-gold': '#FFB81C',
+  'text-emerald-400': '#10B981',
+  'text-sky-400': '#0EA5E9',
+  'text-fg': '#8B95A7',
+};
+
+export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red', spark, delta }) {
   // Derivamos un fondo translúcido del color de acento para el halo del icono
   const halo = {
     'text-vf-red': 'bg-vf-red/10 ring-vf-red/15',
@@ -174,15 +213,26 @@ export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red'
     'text-sky-400': 'bg-sky-500/10 ring-sky-500/20',
     'text-fg': 'bg-bg-surface2 ring-bg-border',
   }[accent] || 'bg-bg-surface2 ring-bg-border';
+  const hex = ACCENT_HEX[accent] || '#E60000';
   return (
     <div className="card p-5 flex items-start gap-4 group">
       <div className={`p-3 rounded-xl ring-1 ${halo} ${accent} transition-transform duration-200 group-hover:scale-105`}>
         <Icon size={22} aria-hidden="true" />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-fg-muted truncate uppercase tracking-wide">{label}</p>
-        <p className="text-2xl font-bold tabnum text-fg mt-0.5 leading-tight">{value}</p>
+        <div className="flex items-baseline gap-2 mt-0.5">
+          <p className="text-2xl font-bold tabnum text-fg leading-tight">{value}</p>
+          {delta != null && delta !== 0 && (
+            <span className={`text-[11px] font-semibold tabnum ${delta > 0 ? 'text-emerald-400' : 'text-vf-redLight'}`}>
+              {delta > 0 ? '▲' : '▼'} {Math.abs(delta)}
+            </span>
+          )}
+        </div>
         {sub && <p className="text-xs text-fg-muted mt-1">{sub}</p>}
+        {spark && spark.length > 1 && (
+          <div className="mt-2 -mb-0.5"><Sparkline data={spark} stroke={hex} height={30} /></div>
+        )}
       </div>
     </div>
   );
