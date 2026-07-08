@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search, Tv, CalendarClock,
 } from 'lucide-react';
@@ -537,17 +538,30 @@ export default function Ventas() {
 
       {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
 
-      {form && (
-        <Card>
-          <SectionTitle>{editId ? 'Editar venta' : 'Registrar nueva venta'}</SectionTitle>
-          <FormVenta
-            inicial={editId
-              ? (() => { const f = ventas.find((v) => v.id === editId); return { ...ventaVacia(), ...f, estado: estadoDe(f) }; })()
-              : { ...ventaVacia(), mes, ...(prefab || {}) }}
-            onGuardar={guardar}
-            onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
-          />
-        </Card>
+      {form && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 p-4 overflow-y-auto fade-in"
+          onClick={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
+        >
+          <div
+            className="card w-full max-w-5xl p-5 my-4 max-h-[92vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog" aria-modal="true"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-fg tracking-tight">{editId ? 'Editar venta' : 'Registrar nueva venta'}</h2>
+              <button onClick={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }} className="p-1.5 rounded-lg hover:bg-bg-surface2 text-fg-muted hover:text-fg cursor-pointer" aria-label="Cerrar"><X size={18} /></button>
+            </div>
+            <FormVenta
+              inicial={editId
+                ? (() => { const f = ventas.find((v) => v.id === editId); return { ...ventaVacia(), ...f, estado: estadoDe(f) }; })()
+                : { ...ventaVacia(), mes, ...(prefab || {}) }}
+              onGuardar={guardar}
+              onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
+            />
+          </div>
+        </div>,
+        document.body,
       )}
 
       <Card className="!p-0 overflow-hidden">
