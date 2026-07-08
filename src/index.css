@@ -17,7 +17,9 @@
   --shadow-lg: 0 18px 40px -16px rgba(0, 0, 0, 0.6);
   /* Halo de marca para acentos sutiles */
   --ring-soft: rgba(255, 255, 255, 0.06);
-  --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0));
+  --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+  /* Filo superior luminoso que da sensación de material/vidrio */
+  --edge-hi: rgba(255, 255, 255, 0.08);
 }
 
 .light {
@@ -35,7 +37,8 @@
   --shadow-md: 0 8px 22px -8px rgba(16, 24, 40, 0.16);
   --shadow-lg: 0 22px 48px -18px rgba(16, 24, 40, 0.22);
   --ring-soft: rgba(16, 24, 40, 0.05);
-  --grad-surface: linear-gradient(180deg, rgba(16, 24, 40, 0.018), rgba(16, 24, 40, 0));
+  --grad-surface: linear-gradient(180deg, rgba(16, 24, 40, 0.02), rgba(16, 24, 40, 0));
+  --edge-hi: rgba(255, 255, 255, 0.9);
 }
 
 html, body, #root {
@@ -77,14 +80,28 @@ body {
 
 @layer components {
   .card {
-    @apply relative bg-bg-surface border border-bg-border rounded-2xl
-           transition-all duration-200;
+    @apply relative bg-bg-surface border border-bg-border rounded-2xl;
     box-shadow: var(--shadow-sm);
     background-image: var(--grad-surface);
+    transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s ease,
+                transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* Filo superior luminoso: sensación de material pulido */
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    border-radius: 16px 16px 0 0;
+    background: linear-gradient(90deg, transparent, var(--edge-hi), transparent);
+    opacity: 0.7;
+    pointer-events: none;
   }
   .card:hover {
     box-shadow: var(--shadow-lg);
-    border-color: color-mix(in srgb, var(--bg-border) 60%, var(--fg-muted));
+    border-color: color-mix(in srgb, var(--bg-border) 55%, var(--fg-muted));
+    transform: translateY(-2px);
   }
   /* Tarjeta con barra de acento superior */
   .card-accent::before {
@@ -106,7 +123,12 @@ body {
            disabled:cursor-not-allowed active:scale-[0.97];
     box-shadow: var(--shadow-sm);
   }
-  .btn-primary { @apply btn bg-vf-red hover:bg-vf-redDark text-white hover:shadow-md; }
+  .btn-primary {
+    @apply btn text-white hover:shadow-md;
+    background-color: #E60000;
+    background-image: linear-gradient(180deg, #F51616, #E60000);
+  }
+  .btn-primary:hover { background-image: linear-gradient(180deg, #E60000, #B30000); }
   .btn-ghost   { @apply btn bg-bg-surface2 hover:bg-bg-border text-fg-soft border border-bg-border shadow-none; }
   .btn-gold    { @apply btn bg-gp-gold hover:bg-gp-goldDark text-black hover:shadow-md; }
   .btn-lowi    { @apply btn bg-sky-600 hover:bg-sky-700 text-white hover:shadow-md; }

@@ -246,7 +246,12 @@ export function EstrellaTag({ tipo = 'ESTRELLA' }) {
 export function SectionTitle({ children, right }) {
   return (
     <div className="flex items-center justify-between gap-3 mb-4">
-      <h2 className="text-base font-semibold text-fg tracking-tight">{children}</h2>
+      <h2 className="relative text-base font-semibold text-fg tracking-tight pl-3
+                     before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2
+                     before:h-4 before:w-1 before:rounded-full
+                     before:bg-gradient-to-b before:from-vf-red before:to-vf-redLight">
+        {children}
+      </h2>
       {right}
     </div>
   );
