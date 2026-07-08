@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus, PhoneOutgoing, Minus } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ahoraLocalISO, fechaHoraAgendado } from '../lib/agendados.js';
@@ -285,7 +286,7 @@ export default function Agendados() {
 
       {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
 
-      {form && (
+      {form && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 p-4 overflow-y-auto fade-in"
           onClick={() => { setForm(false); setEditId(null); }}
@@ -307,7 +308,8 @@ export default function Agendados() {
               onCancelar={() => { setForm(false); setEditId(null); }}
             />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <Card className="!p-0 overflow-hidden">
