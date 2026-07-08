@@ -8,7 +8,7 @@ import {
 import { Repeat, Smartphone, Tv } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { resumenLowi, ESTADOS_LOWI, ORDEN_ESTADOS, VELOCIDADES_LOWI, TARIFAS_MOVIL_LOWI } from '../lib/lowi.js';
-import { StatCard, Card, SectionTitle, Badge, EmptyState, HeroBanner } from '../components/ui.jsx';
+import { StatCard, Card, SectionTitle, Badge, EmptyState, HeroBanner, TOOLTIP_STYLE } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
 const COLORES_ESTADO = {
@@ -117,7 +117,7 @@ export default function LowiDashboard() {
                 <YAxis stroke="var(--fg-muted)" fontSize={12} allowDecimals={false} tickLine={false} axisLine={false} />
                 <Tooltip
                   cursor={{ fill: 'var(--bg-surface2)', radius: 6 }}
-                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
+                  contentStyle={TOOLTIP_STYLE}
                   formatter={(v) => [fmtNum(v), 'Ventas']}
                 />
                 <Bar dataKey="valor" radius={[8, 8, 0, 0]} maxBarSize={84} animationDuration={700}>

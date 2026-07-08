@@ -18,7 +18,7 @@ import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { TARIFAS_MOVIL } from '../data/movil.js';
 
 const VELOCIDADES_FIBRA = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
-import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner, Insignia } from '../components/ui.jsx';
+import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner, Insignia, ChartLegend, TOOLTIP_STYLE } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
 // Degradado de color por incentivo para las tarjetas de ranking (estilo
@@ -259,7 +259,7 @@ export default function Dashboard() {
                   <YAxis stroke="var(--fg-muted)" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
                     cursor={{ fill: 'var(--bg-surface2)', radius: 6 }}
-                    contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
+                    contentStyle={TOOLTIP_STYLE}
                     formatter={(v, _n, p) => [fmtNum(v), p.payload.esGp ? 'GP Coins' : 'Puntos']}
                   />
                   <Bar dataKey="valor" radius={[8, 8, 0, 0]} maxBarSize={84} animationDuration={700}>
@@ -270,17 +270,11 @@ export default function Dashboard() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              {/* Leyenda manual: explica el significado de cada color del gráfico */}
-              <div className="flex items-center justify-center gap-6 mt-3 text-xs text-fg-soft">
-                <span className="flex items-center gap-2">
-                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#E60000' }} />
-                  Puntos de ranking
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#FFB81C' }} />
-                  GP Coins
-                </span>
-              </div>
+              {/* Leyenda: explica el significado de cada color del gráfico */}
+              <ChartLegend className="mt-3" items={[
+                { label: 'Puntos de ranking', color: '#E60000' },
+                { label: 'GP Coins', color: '#FFB81C' },
+              ]} />
             </div>
           )}
         </Card>
@@ -342,7 +336,7 @@ export default function Dashboard() {
                 <YAxis stroke="var(--fg-muted)" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
                 <Tooltip
                   cursor={{ fill: 'var(--bg-surface2)', radius: 6 }}
-                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
+                  contentStyle={TOOLTIP_STYLE}
                   formatter={(v, n) => [fmtNum(v), n]}
                 />
                 <Bar dataKey="Ventas" fill="#E60000" radius={[6, 6, 0, 0]} maxBarSize={44} animationDuration={700} />
@@ -351,11 +345,11 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex items-center justify-center gap-6 mt-2 text-xs text-fg-soft">
-            <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#E60000' }} /> Ventas</span>
-            <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#10B981' }} /> Activas</span>
-            <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm" style={{ background: '#FFB81C' }} /> GP Coins</span>
-          </div>
+          <ChartLegend className="mt-2" items={[
+            { label: 'Ventas', color: '#E60000' },
+            { label: 'Activas', color: '#10B981' },
+            { label: 'GP Coins', color: '#FFB81C' },
+          ]} />
         </Card>
       )}
 
@@ -380,7 +374,7 @@ export default function Dashboard() {
                 <XAxis dataKey="dia" stroke="var(--fg-muted)" fontSize={11} tickLine={false} axisLine={false} interval={2} />
                 <YAxis stroke="var(--fg-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
                 <Tooltip
-                  contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
+                  contentStyle={TOOLTIP_STYLE}
                   labelFormatter={(d) => `Día ${d}`}
                   formatter={(v) => [fmtNum(v), 'Ventas']}
                 />
@@ -449,7 +443,7 @@ export default function Dashboard() {
                     {distribucion.items.filter((it) => it.n > 0).map((it) => <Cell key={it.id} fill={it.color} />)}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 12, color: 'var(--fg)', boxShadow: 'var(--shadow-lg)' }}
+                    contentStyle={TOOLTIP_STYLE}
                     formatter={(val, name) => [fmtNum(val), name]}
                   />
                 </PieChart>

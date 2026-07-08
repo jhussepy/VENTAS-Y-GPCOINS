@@ -238,6 +238,30 @@ export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red'
   );
 }
 
+// Estilo de tooltip unificado para todos los gráficos Recharts
+export const TOOLTIP_STYLE = {
+  background: 'var(--bg-surface)',
+  border: '1px solid var(--bg-border)',
+  borderRadius: 12,
+  color: 'var(--fg)',
+  boxShadow: 'var(--shadow-lg)',
+  fontSize: 12,
+};
+
+// Leyenda de gráfico coherente: puntos de color + etiqueta, centrada
+export function ChartLegend({ items = [], className = '' }) {
+  return (
+    <div className={`flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-xs text-fg-soft ${className}`}>
+      {items.map((it) => (
+        <span key={it.label} className="flex items-center gap-2">
+          <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: it.color }} />
+          {it.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function Progress({ value, cumple }) {
   // Protegemos contra NaN / negativos / >100 (p. ej. divisiones por cero)
   const v = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
