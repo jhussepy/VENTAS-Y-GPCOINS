@@ -286,16 +286,28 @@ export default function Agendados() {
       {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
 
       {form && (
-        <Card>
-          <SectionTitle>{editId ? 'Editar agendado' : 'Agendar nueva llamada'}</SectionTitle>
-          <FormAgendado
-            inicial={editId
-              ? agendados.find((a) => a.id === editId) ?? agendadoVacio()
-              : { ...agendadoVacio(), usuario: nombreCompleto(user) }}
-            onGuardar={guardar}
-            onCancelar={() => { setForm(false); setEditId(null); }}
-          />
-        </Card>
+        <div
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 p-4 overflow-y-auto fade-in"
+          onClick={() => { setForm(false); setEditId(null); }}
+        >
+          <div
+            className="card w-full max-w-3xl p-5 my-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog" aria-modal="true"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-fg tracking-tight">{editId ? 'Editar agendado' : 'Agendar nueva llamada'}</h2>
+              <button onClick={() => { setForm(false); setEditId(null); }} className="p-1.5 rounded-lg hover:bg-bg-surface2 text-fg-muted hover:text-fg cursor-pointer" aria-label="Cerrar"><X size={18} /></button>
+            </div>
+            <FormAgendado
+              inicial={editId
+                ? agendados.find((a) => a.id === editId) ?? agendadoVacio()
+                : { ...agendadoVacio(), usuario: nombreCompleto(user) }}
+              onGuardar={guardar}
+              onCancelar={() => { setForm(false); setEditId(null); }}
+            />
+          </div>
+        </div>
       )}
 
       <Card className="!p-0 overflow-hidden">
