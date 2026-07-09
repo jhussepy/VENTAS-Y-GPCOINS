@@ -84,6 +84,14 @@ body {
 @keyframes shimmer {
   100% { transform: translateX(100%); }
 }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(24px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes toastBar {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
 
 @layer components {
   .card {
@@ -161,6 +169,8 @@ body {
   .skeleton {
     @apply relative overflow-hidden bg-bg-surface2 rounded-lg;
   }
+  .toast-in { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .toast-bar { animation-name: toastBar; animation-timing-function: linear; animation-fill-mode: forwards; }
   /* Fondo ambiental de la app: brillos radiales de marca fijos tras el contenido */
   .app-ambient {
     position: relative;

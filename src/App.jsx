@@ -31,7 +31,7 @@ const Fe = lazy(() => import('./pages/Fe.jsx'));
 const Agendados = lazy(() => import('./pages/Agendados.jsx'));
 const Comision = lazy(() => import('./pages/Comision.jsx'));
 import Login from './pages/Login.jsx';
-import { PageSkeleton, useConfirm } from './components/ui.jsx';
+import { PageSkeleton, useConfirm, useToasts } from './components/ui.jsx';
 import MusicPlayer from './components/MusicPlayer.jsx';
 import CommandPalette from './components/CommandPalette.jsx';
 
@@ -95,6 +95,8 @@ export default function App() {
   const backupRef = useRef(null);
   // Diálogos de confirmación/aviso con el diseño de la app (sin confirm/alert nativos)
   const { confirmar, avisar, dialogo } = useConfirm();
+  // Notificaciones flotantes (toasts) para feedback de acciones
+  const { toast, toasts } = useToasts();
   // Barra de comandos (Cmd+K / Ctrl+K)
   const [paletaAbierta, setPaletaAbierta] = useState(false);
   useEffect(() => {
@@ -229,7 +231,7 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, convertirAgendado, marcarAgendadoConvertido, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, convertirAgendado, marcarAgendadoConvertido, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta, toast };
   const Active = paginas.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   // Navegación desde la barra de comandos: ajusta el operador si hace falta
@@ -483,6 +485,7 @@ export default function App() {
         </div>
       </div>
       {dialogo}
+      {toasts}
       <CommandPalette
         abierto={paletaAbierta}
         cerrar={() => setPaletaAbierta(false)}

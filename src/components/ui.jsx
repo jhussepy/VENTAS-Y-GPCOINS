@@ -1,8 +1,10 @@
 import {
   Star, AlertTriangle, Info, Flame, Target,
   Sparkles, ShoppingCart, Repeat, UserPlus, Coins, Trophy, Wifi,
+  CheckCircle2, XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 // Iconos disponibles para las insignias (por nombre, desde logros.js)
 const ICONOS_LOGRO = { Sparkles, ShoppingCart, Repeat, UserPlus, Coins, Trophy, Wifi, Flame };
@@ -33,20 +35,53 @@ export function FocoDelDia({ foco, racha = 0 }) {
   );
 }
 
-// Insignia individual: medalla circular con progreso (estilo perfil de la app)
+// Anillo de progreso circular (estilo Apple Watch) con degradado
+export function ProgressRing({ pct = 0, size = 64, stroke = 4, colorA = '#E60000', colorB = '#FF4D4D', track = 'var(--bg-surface2)', children }) {
+  const p = Math.max(0, Math.min(100, Number.isFinite(pct) ? pct : 0));
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const gid = `ring-${colorA.replace('#', '')}-${colorB.replace('#', '')}`;
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={colorA} />
+            <stop offset="100%" stopColor={colorB} />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke={`url(#${gid})`} strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={circ * (1 - p / 100)}
+          style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">{children}</div>
+    </div>
+  );
+}
+
+// Insignia individual: medalla circular con anillo de progreso alrededor
 export function Insignia({ logro }) {
   const Icon = ICONOS_LOGRO[logro.icono] || Star;
   const c = logro.cumplido;
   return (
-    <div className="flex flex-col items-center text-center gap-1.5" title={logro.desc}>
-      <div className={`relative w-14 h-14 rounded-full flex items-center justify-center ring-2 transition-transform hover:scale-105 ${c ? 'bg-gp-gold/15 ring-gp-gold text-gp-gold' : 'bg-bg-surface2 ring-bg-border text-fg-muted'}`}>
-        <Icon size={22} />
-        {c && <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] ring-2 ring-bg-surface">✓</span>}
-      </div>
+    <div className="flex flex-col items-center text-center gap-1.5 group" title={logro.desc}>
+      <ProgressRing
+        pct={c ? 100 : logro.pct}
+        size={62} stroke={4}
+        colorA={c ? '#D99700' : '#B30000'}
+        colorB={c ? '#FFB81C' : '#FF4D4D'}
+      >
+        <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-110 ${c ? 'bg-gp-gold/15 text-gp-gold' : 'bg-bg-surface2 text-fg-muted'}`}>
+          <Icon size={20} />
+        </div>
+        {c && <span className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] ring-2 ring-bg-surface">✓</span>}
+      </ProgressRing>
       <span className={`text-[11px] font-medium leading-tight ${c ? 'text-fg' : 'text-fg-muted'}`}>{logro.label}</span>
-      <div className="w-full h-1 bg-bg-surface2 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${c ? 'bg-gp-gold' : 'bg-vf-red'}`} style={{ width: `${logro.pct}%` }} />
-      </div>
       <span className="text-[10px] text-fg-muted leading-tight">
         {c ? 'Conseguida' : `Faltan ${Math.max(0, logro.objetivo - logro.valor)} de ${logro.objetivo}`}
       </span>
@@ -95,6 +130,51 @@ export function useConfirm() {
   ) : null;
 
   return { confirmar, avisar, dialogo };
+}
+
+// ---------------------------------------------------------------------------
+//  Toasts: notificaciones flotantes con auto-cierre y barra de progreso.
+//  Uso:  const { toast, toasts } = useToasts();  →  toast('Venta guardada')
+//        toast('Error al importar', 'error')     →  renderiza {toasts} una vez.
+// ---------------------------------------------------------------------------
+const TOAST_ICONS = { ok: CheckCircle2, error: XCircle, info: Info };
+const TOAST_COLORS = {
+  ok: 'border-emerald-500/40 text-emerald-400',
+  error: 'border-vf-red/40 text-vf-redLight',
+  info: 'border-sky-500/40 text-sky-400',
+};
+export function useToasts() {
+  const [lista, setLista] = useState([]);
+  const quitar = useCallback((id) => setLista((p) => p.filter((t) => t.id !== id)), []);
+  const toast = useCallback((mensaje, tipo = 'ok', ms = 3500) => {
+    const id = Date.now() + Math.random();
+    setLista((p) => [...p.slice(-3), { id, mensaje, tipo, ms }]);
+    setTimeout(() => quitar(id), ms);
+  }, [quitar]);
+
+  const toasts = lista.length ? createPortal(
+    <div className="fixed bottom-4 right-4 z-[80] flex flex-col gap-2 items-end pointer-events-none" aria-live="polite">
+      {lista.map((t) => {
+        const Icon = TOAST_ICONS[t.tipo] || Info;
+        return (
+          <div
+            key={t.id}
+            className={`toast-in pointer-events-auto relative overflow-hidden flex items-center gap-2.5 pl-3.5 pr-3 py-2.5
+                        rounded-xl border bg-bg-surface shadow-lg text-sm text-fg-soft max-w-xs ${TOAST_COLORS[t.tipo] || TOAST_COLORS.info}`}
+            role="status"
+          >
+            <Icon size={17} className="shrink-0" />
+            <span className="flex-1 min-w-0">{t.mensaje}</span>
+            <button onClick={() => quitar(t.id)} className="text-fg-muted hover:text-fg cursor-pointer text-base leading-none shrink-0" aria-label="Cerrar aviso">✕</button>
+            <span className="toast-bar absolute bottom-0 left-0 h-0.5 bg-current opacity-40" style={{ animationDuration: `${t.ms}ms` }} />
+          </div>
+        );
+      })}
+    </div>,
+    document.body,
+  ) : null;
+
+  return { toast, toasts };
 }
 
 export function Card({ children, className = '', accent = false }) {

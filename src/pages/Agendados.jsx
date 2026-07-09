@@ -83,7 +83,7 @@ function FormAgendado({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function Agendados() {
-  const { agendados, setAgendados, user, convertirAgendado } = useApp();
+  const { agendados, setAgendados, user, convertirAgendado, toast } = useApp();
   // Nota: la conversión a venta NO marca aquí el agendado como "Convertido";
   // eso ocurre solo cuando la venta se guarda de verdad (App.finalizarConversion),
   // para no dar un falso positivo si se cancela el alta.
@@ -151,16 +151,18 @@ export default function Agendados() {
       setTimeout(() => setMsg(null), 4000);
       return;
     }
+    let existia = false;
     setAgendados((prev) => {
-      const existe = prev.some((p) => p.id === a.id);
-      return existe ? prev.map((p) => (p.id === a.id ? a : p)) : [a, ...prev];
+      existia = prev.some((p) => p.id === a.id);
+      return existia ? prev.map((p) => (p.id === a.id ? a : p)) : [a, ...prev];
     });
     setForm(false); setEditId(null);
+    toast?.(existia ? 'Agendado actualizado' : 'Agendado guardado');
   };
 
   const eliminar = async (id) => {
     const ok = await confirmar('¿Eliminar este agendado? Esta acción no se puede deshacer.', { titulo: 'Eliminar agendado', accion: 'Eliminar', peligro: true });
-    if (ok) setAgendados((prev) => prev.filter((p) => p.id !== id));
+    if (ok) { setAgendados((prev) => prev.filter((p) => p.id !== id)); toast?.('Agendado eliminado', 'info'); }
   };
 
   // Agendados ya cerrados (convertidos + descartados): candidatos a limpiar

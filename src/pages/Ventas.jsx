@@ -373,7 +373,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function Ventas() {
-  const { ventas, setVentas, mes, prefillVenta, setPrefillVenta, marcarAgendadoConvertido } = useApp();
+  const { ventas, setVentas, mes, prefillVenta, setPrefillVenta, marcarAgendadoConvertido, toast } = useApp();
   const [form, setForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [prefab, setPrefab] = useState(null); // marca/sap o datos de cliente precargados
@@ -451,9 +451,10 @@ export default function Ventas() {
       }
     }
 
+    let existia = false;
     setVentas((prev) => {
-      const existe = prev.some((p) => p.id === venta.id);
-      return existe ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
+      existia = prev.some((p) => p.id === venta.id);
+      return existia ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
     });
     setForm(false); setEditId(null); setPrefab(null);
     // Si esta alta venía de un agendado, márcalo "Convertido" (solo ahora, al guardar)
@@ -462,12 +463,14 @@ export default function Ventas() {
     if (avisos.length) {
       setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
       setTimeout(() => setMsg(null), 7000);
+    } else {
+      toast?.(existia ? 'Venta actualizada' : 'Venta guardada');
     }
   };
 
   const eliminar = async (id) => {
     const ok = await confirmar('¿Eliminar esta venta? Esta acción no se puede deshacer.', { titulo: 'Eliminar venta', accion: 'Eliminar', peligro: true });
-    if (ok) setVentas((prev) => prev.filter((p) => p.id !== id));
+    if (ok) { setVentas((prev) => prev.filter((p) => p.id !== id)); toast?.('Venta eliminada', 'info'); }
   };
 
   // Cambio rápido de estado desde la tabla (mantiene instalacionActiva en sync)
