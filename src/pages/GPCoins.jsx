@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Coins, Wallet, Trophy, TrendingUp, Wifi } from 'lucide-react';
+import { Coins, Wallet, Trophy, TrendingUp, Wifi, Smartphone } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { resumenGlobal, puntosClienteNuevo, portasDetalle } from '../lib/engine.js';
+import { resumenGlobal, puntosClienteNuevo, portasDetalle, desgloseDispositivos } from '../lib/engine.js';
 import { estadoDe } from '../lib/estados.js';
-import { INCENTIVOS, PUNTOS_CONVERGENCIA, PERIODO, convPts } from '../data/incentivos.js';
+import { INCENTIVOS, ORDEN_INCENTIVOS, PUNTOS_CONVERGENCIA, PERIODO, convPts } from '../data/incentivos.js';
 import { StatCard, Card, SectionTitle, Badge } from '../components/ui.jsx';
-import { fmtNum } from '../lib/format.js';
+import { fmtNum, fmtFecha } from '../lib/format.js';
 
 export default function GPCoins() {
   const { ventas, mes } = useApp();
@@ -24,6 +24,14 @@ export default function GPCoins() {
   }, [ventas, mes]);
 
   const ptsFibra = puntosClienteNuevo(ventas, mes);
+
+  // Desglose de puntos de ranking por dispositivo entregado (Xiaomi, Motorola):
+  // permite auditar de qué ventas sale el total, incluidas las de otro mes
+  // cuya entrega cayó en el mes activo.
+  const desgloseDisp = useMemo(() => {
+    const marcas = ORDEN_INCENTIVOS.filter((id) => INCENTIVOS[id].catalogo && INCENTIVOS[id].mecanica !== 'directo');
+    return marcas.flatMap((id) => desgloseDispositivos(ventas, id, mes).map((f) => ({ ...f, marca: INCENTIVOS[id].nombre })));
+  }, [ventas, mes]);
 
   // Detalle de la llave de portas (común a todos los incentivos): % y X/Y portas
   const portas = useMemo(() => portasDetalle(ventas, mes), [ventas, mes]);
@@ -138,6 +146,47 @@ export default function GPCoins() {
             </button>
           )}
         </div>
+      </Card>
+
+      {/* Desglose de puntos por dispositivo: de qué ventas sale el total de
+          Xiaomi/Motorola, incluidas entregas de otro mes de venta */}
+      <Card>
+        <SectionTitle right={<Smartphone size={18} className="text-vf-red" />}>
+          Desglose de puntos por dispositivo entregado
+        </SectionTitle>
+        {desgloseDisp.length === 0 ? (
+          <p className="text-sm text-fg-muted py-8 text-center">Sin dispositivos entregados este mes (Xiaomi, Motorola).</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-fg-muted border-b border-bg-border">
+                <th className="py-2 font-medium">Cliente</th>
+                <th className="py-2 font-medium">Marca / modelo</th>
+                <th className="py-2 font-medium text-center">Uds</th>
+                <th className="py-2 font-medium text-center">Entregado</th>
+                <th className="py-2 font-medium text-right">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {desgloseDisp.map((f) => (
+                <tr key={f.id} className="border-b border-bg-border/60">
+                  <td className="py-2 text-fg-soft">
+                    {f.cliente}
+                    {f.mesVenta !== mes && <span className="ml-1.5 text-[10px] text-sky-400">· vendida en {f.mesVenta}</span>}
+                  </td>
+                  <td className="py-2 text-fg-muted">{f.marca} · {f.modelo}</td>
+                  <td className="py-2 text-center tabnum">{f.cantidad}</td>
+                  <td className="py-2 text-center tabnum text-fg-muted">{fmtFecha(f.fechaEntrega)}</td>
+                  <td className="py-2 text-right tabnum text-fg font-medium">{fmtNum(f.pts)}</td>
+                </tr>
+              ))}
+              <tr className="font-semibold text-vf-redLight">
+                <td className="py-2" colSpan={4}>Total puntos por dispositivo</td>
+                <td className="py-2 text-right tabnum">{fmtNum(desgloseDisp.reduce((a, f) => a + f.pts, 0))}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

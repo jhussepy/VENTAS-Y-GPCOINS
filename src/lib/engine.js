@@ -116,6 +116,32 @@ export function puntosDispositivos(ventas, marca, mes) {
   return total;
 }
 
+// --- Desglose de puntos de ranking por dispositivo entregado (Xiaomi, Motorola) ---
+// Lista cada venta que aporta puntos ese mes, con su cliente y fecha de
+// entrega, para poder auditar de dónde sale el total (evita que un total
+// correcto "parezca" incompleto por falta de detalle).
+export function desgloseDispositivos(ventas, marca, mes) {
+  const filas = [];
+  for (const v of ventas) {
+    if (v.marca !== marca || mesEntrega(v) !== mes) continue;
+    if (estadoDe(v) !== 'activa' || !v.dispositivoEntregado) continue;
+    const prod = buscarProducto(marca, v.sap);
+    if (!prod) continue;
+    const pts = ptsDe(prod, mes) * (v.cantidad || 1);
+    if (!pts) continue;
+    filas.push({
+      id: v.id,
+      cliente: [v.nombre, v.apellido].filter(Boolean).join(' ') || 'Cliente sin nombre',
+      modelo: prod.modelo,
+      cantidad: v.cantidad || 1,
+      fechaEntrega: v.fechaEntrega,
+      mesVenta: v.mes,
+      pts,
+    });
+  }
+  return filas.sort((a, b) => b.pts - a.pts);
+}
+
 // --- GP Coins directos al monedero (Samsung, Honor, JBL, Motorola directos) --
 // Solo cuentan ventas ACTIVADAS y se respeta el tope de stock (uds) por
 // familia o por modelo según `stockPor` del catálogo.
