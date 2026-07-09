@@ -93,14 +93,14 @@ export default function LowiDashboard() {
           { label: '€/mes', value: r.facturacionActiva, format: (n) => `${Math.round(n)}€` },
         ]}
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="stagger grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard icon={ShoppingCart} label="Ventas totales" value={fmtNum(r.total)} accent="text-fg" />
         <StatCard icon={Wifi} label="Activas" value={fmtNum(r.porEstado.activa)} accent="text-emerald-400" />
         <StatCard icon={Clock} label="Pendientes de instalar" value={fmtNum(r.porEstado.pendiente)} accent="text-gp-gold" />
         <StatCard icon={XCircle} label="Bajas" value={fmtNum(r.porEstado.baja)} sub={`${fmtNum(r.porEstado.cancelada)} canceladas antes de instalar`} accent="text-vf-redLight" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="stagger grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard icon={Repeat} label="Portas pendientes de activar" value={fmtNum(r.portasPendientes)} sub={`de ${fmtNum(r.portasTotales)} solicitadas`} accent="text-gp-gold" />
         <StatCard icon={TrendingUp} label="Tasa de activación" value={`${r.tasaActivacion.toFixed(0)}%`} sub="Activas sobre las instaladas" accent="text-sky-400" />
         <StatCard icon={TrendingDown} label="Tasa de baja" value={`${r.tasaBaja.toFixed(0)}%`} sub="Bajas sobre las instaladas" accent="text-vf-redLight" />

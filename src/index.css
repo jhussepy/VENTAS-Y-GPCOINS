@@ -117,6 +117,17 @@ body {
     background: linear-gradient(90deg, #059669, #10B981);
   }
   .fade-in { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  /* Entrada escalonada: cada hijo aparece con 40ms de retardo respecto al anterior.
+     fill-mode backwards (no both): al terminar, la animación se suelta y no pisa
+     el transform del hover de .card. */
+  .stagger > * { animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  .stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger > *:nth-child(2) { animation-delay: 40ms; }
+  .stagger > *:nth-child(3) { animation-delay: 80ms; }
+  .stagger > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger > *:nth-child(6) { animation-delay: 200ms; }
+  .stagger > *:nth-child(n+7) { animation-delay: 240ms; }
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
            transition-all duration-200 cursor-pointer disabled:opacity-50

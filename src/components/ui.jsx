@@ -139,9 +139,12 @@ export function HeroBanner({ saludo, titulo, subtitulo, chip, highlights = [], a
     ? 'from-sky-600 via-sky-500 to-emerald-500'
     : 'from-vf-redDark via-vf-red to-vf-redLight';
   return (
-    <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${grad} text-white p-6 shadow-lg`}>
+    <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${grad} text-white p-6 shadow-lg ring-1 ring-white/15`}>
       <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
       <div className="absolute -bottom-20 right-24 w-40 h-40 rounded-full bg-white/5 blur-2xl" aria-hidden="true" />
+      <div className="absolute -bottom-14 -left-10 w-44 h-44 rounded-full bg-black/15 blur-3xl" aria-hidden="true" />
+      {/* Filo superior luminoso, como en las tarjetas */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" aria-hidden="true" />
       <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div className="min-w-0">
           {saludo && <p className="text-xs font-medium uppercase tracking-wider text-white/70">{saludo}</p>}
