@@ -21,6 +21,40 @@ const diasDelMes = (mes) => {
   return new Date(anio, idx + 1, 0).getDate();
 };
 
+// Barra de progreso de vallas: 4 segmentos (una por valla), no un % continuo,
+// porque lo que importa es el escalón alcanzado, no la magnitud exacta.
+// - Verde sólido: vallas ya PAGADAS (hasta vallaPago).
+// - Dorado con anillo: vallas alcanzadas por esta categoría pero que no se
+//   pagan porque otra categoría va por detrás (el "freno" del rappel).
+// - Gris: vallas aún no alcanzadas.
+function BarraVallas({ propia, vallaPago, umbrales }) {
+  return (
+    <div className="mt-3">
+      <div className="flex items-center gap-1.5" role="img" aria-label={propia >= 0 ? `${ROMANOS[propia]} valla alcanzada` : 'Ninguna valla alcanzada'}>
+        {ROMANOS.map((_, i) => {
+          const pagada = vallaPago >= 0 && i <= vallaPago;
+          const alcanzadaSinPagar = !pagada && propia >= 0 && i <= propia;
+          return (
+            <div
+              key={i}
+              className={`h-2 flex-1 rounded-full transition-all duration-500 ${
+                pagada ? 'bg-gradient-to-r from-emerald-600 to-emerald-400'
+                : alcanzadaSinPagar ? 'bg-gp-gold/40 ring-1 ring-inset ring-gp-gold/70'
+                : 'bg-bg-surface2'
+              }`}
+            />
+          );
+        })}
+      </div>
+      <div className="grid mt-1" style={{ gridTemplateColumns: `repeat(${ROMANOS.length}, 1fr)` }}>
+        {umbrales.map((u, i) => (
+          <span key={i} className="text-[10px] text-fg-muted text-center tabnum">{ROMANOS[i]} · ≥{u}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Bloque de una categoría (Fijo o Móvil): inputs por subtipo + su comisión.
 // La valla que se PAGA (vallaPago) puede ir por detrás de la valla propia de
 // esta categoría si otra categoría (u otra valla) va más atrasada: el rappel
@@ -57,6 +91,8 @@ function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, vallaPa
         ))}
       </div>
 
+      <BarraVallas propia={propia} vallaPago={vallaPago} umbrales={umbrales} />
+
       {frenada && (
         <p className={`mt-3 text-[11px] flex items-center gap-1.5 rounded-lg px-3 py-2 border ${vallaPago < 0 ? 'text-vf-redLight bg-vf-red/10 border-vf-red/25' : 'text-gp-gold bg-gp-gold/10 border-gp-gold/25'}`}>
           <AlertTriangle size={12} className="shrink-0" />
@@ -82,7 +118,8 @@ function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, vallaPa
   );
 }
 
-// Bloque de Clientes: no paga comisión propia, solo actúa como rappel/gate
+// Bloque de Clientes: no paga comisión propia, solo actúa como rappel/gate.
+// Layout en 2 columnas (input compacto + barra/estado) para no dejar hueco.
 function BloqueClientes({ clientes, setClientes, umbrales, vallaPago, reducida }) {
   const propia = vallaAlcanzada(clientes, umbrales);
   const falta = faltanParaSiguiente(clientes, umbrales);
@@ -97,22 +134,27 @@ function BloqueClientes({ clientes, setClientes, umbrales, vallaPago, reducida }
       >
         <span className="flex items-center gap-2"><UserPlus size={18} className="text-vf-red" /> Clientes <span className="text-xs text-fg-muted font-normal">(rappel, no paga por sí sola)</span></span>
       </SectionTitle>
-      <div className="max-w-xs">
-        <label className="label">Clientes únicos (nuevos)</label>
-        <input
-          type="number" min="0" className="input"
-          value={clientes}
-          onChange={(e) => setClientes(Math.max(0, Number(e.target.value) || 0))}
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4 sm:items-center">
+        <div>
+          <label className="label">Clientes únicos (nuevos)</label>
+          <input
+            type="number" min="0" className="input"
+            value={clientes}
+            onChange={(e) => setClientes(Math.max(0, Number(e.target.value) || 0))}
+          />
+          <div className="mt-1.5 text-xs text-fg-soft">
+            {falta
+              ? <span className="text-fg-muted">faltan <span className="text-vf-redLight font-semibold tabnum">{falta.faltan}</span> para {ROMANOS[falta.valla]}{reducida ? ' (reducida)' : ''}</span>
+              : propia >= 0 && <span className="text-emerald-400">¡valla máxima!</span>}
+          </div>
+        </div>
+        <div>
+          <BarraVallas propia={propia} vallaPago={propia} umbrales={umbrales} />
+          <p className="text-[11px] text-fg-muted mt-2">
+            Determina, junto con Fijo y Móvil, la valla que finalmente se paga: se cobra siempre a la valla más baja de las tres.
+          </p>
+        </div>
       </div>
-      <div className="mt-3 text-sm text-fg-soft">
-        {falta
-          ? <span className="text-fg-muted">faltan <span className="text-vf-redLight font-semibold tabnum">{falta.faltan}</span> para la {ROMANOS[falta.valla]} valla{reducida ? ' (cuota reducida)' : ''}</span>
-          : propia >= 0 && <span className="text-emerald-400">¡valla máxima!</span>}
-      </div>
-      <p className="text-[11px] text-fg-muted mt-2">
-        Determina, junto con Fijo y Móvil, la valla que finalmente se paga: se cobra siempre a la valla más baja de las tres.
-      </p>
     </Card>
   );
 }
