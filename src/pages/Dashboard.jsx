@@ -141,15 +141,16 @@ export default function Dashboard() {
     const idx = mes === 'julio' ? 6 : 5;
     const nDias = new Date(anio, idx + 1, 0).getDate();
     const arr = Array.from({ length: nDias }, (_, i) => ({ dia: i + 1, ventas: 0 }));
+    let sinFecha = 0;
     for (const v of ventas) {
       if (v.mes !== mes) continue;
       const f = v.fechaVenta || v.fechaInstalacion;
-      if (!f) continue;
+      if (!f) { sinFecha += 1; continue; }
       const d = Number(String(f).slice(8, 10));
       if (d >= 1 && d <= nDias) arr[d - 1].ventas += 1;
     }
     const total = arr.reduce((a, b) => a + b.ventas, 0);
-    return { arr, total };
+    return { arr, total, sinFecha };
   }, [ventas, mes]);
 
   // Serie acumulada de ventas por día para la sparkline de la tarjeta KPI
@@ -374,6 +375,12 @@ export default function Dashboard() {
         <SectionTitle right={<Badge tone="neutral">{fmtNum(ventasPorDia.total)} ventas · {PERIODO.etiquetas[mes]}</Badge>}>
           <span className="flex items-center gap-2"><CalendarClock size={18} className="text-vf-red" /> Ventas por día</span>
         </SectionTitle>
+        {ventasPorDia.sinFecha > 0 && (
+          <p className="mb-3 text-xs px-3 py-2 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30">
+            {ventasPorDia.sinFecha} venta{ventasPorDia.sinFecha === 1 ? '' : 's'} de este mes sin fecha de venta ni instalación:
+            no aparece{ventasPorDia.sinFecha === 1 ? '' : 'n'} en el gráfico. Edítala{ventasPorDia.sinFecha === 1 ? '' : 's'} en Ventas y añade la fecha.
+          </p>
+        )}
         {ventasPorDia.total === 0 ? (
           <p className="py-10 text-center text-fg-muted text-sm">Aún no hay ventas registradas este mes.</p>
         ) : (

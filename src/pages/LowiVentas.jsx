@@ -355,7 +355,12 @@ export default function LowiVentas() {
             <FormLowi
               inicial={editId
                 ? { ...ventaLowiVacia(), ...ventasLowi.find((v) => v.id === editId) }
-                : { ...ventaLowiVacia(), ...(prefab || {}) }}
+                : (() => {
+                    // Alta nueva: fecha de venta de HOY prellenada (editable)
+                    const hoy = new Date();
+                    const f = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+                    return { ...ventaLowiVacia(), fechaVenta: f, ...(prefab || {}) };
+                  })()}
               onGuardar={guardar}
               onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
             />

@@ -558,7 +558,13 @@ export default function Ventas() {
             <FormVenta
               inicial={editId
                 ? (() => { const f = ventas.find((v) => v.id === editId); return { ...ventaVacia(), ...f, estado: estadoDe(f) }; })()
-                : { ...ventaVacia(), mes, ...(prefab || {}) }}
+                : (() => {
+                    // Alta nueva: fecha de venta de HOY prellenada (editable), para
+                    // que la venta cuente en "Ventas por día" desde el primer momento.
+                    const hoy = new Date();
+                    const f = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+                    return { ...ventaVacia(), fechaVenta: f, mes: mesDesdeFecha(f) || mes, ...(prefab || {}) };
+                  })()}
               onGuardar={guardar}
               onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
             />
