@@ -226,12 +226,12 @@ export default function Dashboard() {
       <VersiculoDelDiaCard />
 
       <div className="stagger grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard icon={ShoppingCart} label={`Ventas en ${PERIODO.etiquetas[mes]}`} value={fmtNum(r.totalVentas)} accent="text-vf-red" spark={sparkVentas} />
-        <StatCard icon={Coins} label="GP Coins directos (monedero)" value={fmtNum(r.gpDirectosTotal)} sub={`hasta ${fmtNum(r.gpPotencialMax)} por ranking si clasificas 1º`} accent="text-gp-gold" />
-        <StatCard icon={Wifi} label="Instalaciones activas" value={fmtNum(r.instalacionesActivas)} accent="text-emerald-400" spark={sparkActivas} />
-        <StatCard icon={UserPlus} label="Clientes nuevos" value={fmtNum(r.clientesNuevos)} accent="text-sky-400" />
-        <StatCard icon={Repeat} label="Portas activas" value={fmtNum(r.portasActivas)} sub={`de ${fmtNum(r.portasTotales)} solicitadas`} accent="text-emerald-400" />
-        <StatCard icon={Repeat} label="Portas pendientes" value={fmtNum(r.portasPendientes)} sub="por activar" accent="text-gp-gold" />
+        <StatCard icon={ShoppingCart} label={`Ventas en ${PERIODO.etiquetas[mes]}`} value={r.totalVentas ?? 0} accent="text-vf-red" spark={sparkVentas} />
+        <StatCard icon={Coins} label="GP Coins directos (monedero)" value={r.gpDirectosTotal ?? 0} sub={`hasta ${fmtNum(r.gpPotencialMax)} por ranking si clasificas 1º`} accent="text-gp-gold" />
+        <StatCard icon={Wifi} label="Instalaciones activas" value={r.instalacionesActivas ?? 0} accent="text-emerald-400" spark={sparkActivas} />
+        <StatCard icon={UserPlus} label="Clientes nuevos" value={r.clientesNuevos ?? 0} accent="text-sky-400" />
+        <StatCard icon={Repeat} label="Portas activas" value={r.portasActivas ?? 0} sub={`de ${fmtNum(r.portasTotales)} solicitadas`} accent="text-emerald-400" />
+        <StatCard icon={Repeat} label="Portas pendientes" value={r.portasPendientes ?? 0} sub="por activar" accent="text-gp-gold" />
       </div>
 
       {/* Insignias / logros del mes (estilo perfil de la Biblia App) */}

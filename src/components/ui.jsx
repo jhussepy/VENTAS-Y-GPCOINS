@@ -225,7 +225,9 @@ export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red'
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-fg-muted truncate uppercase tracking-wide">{label}</p>
         <div className="flex items-baseline gap-2 mt-0.5">
-          <p className="text-2xl font-bold tabnum text-fg leading-tight">{value}</p>
+          <p className="text-2xl font-bold tabnum text-fg leading-tight">
+            {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
+          </p>
           {delta != null && delta !== 0 && (
             <span className={`text-[11px] font-semibold tabnum ${delta > 0 ? 'text-emerald-400' : 'text-vf-redLight'}`}>
               {delta > 0 ? '▲' : '▼'} {Math.abs(delta)}
