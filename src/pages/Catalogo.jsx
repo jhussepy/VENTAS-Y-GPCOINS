@@ -1,11 +1,45 @@
 import { useState, useMemo } from 'react';
-import { Smartphone, Search, Star, ShoppingCart, ArrowDownUp, X, CreditCard, LayoutGrid, List, Package } from 'lucide-react';
+import {
+  Smartphone, Search, Star, ShoppingCart, ArrowDownUp, X, CreditCard, LayoutGrid, List, Package,
+  Tv, Watch, Headphones, Volume2, Bike, Fan, Flame, Layers,
+} from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { CATALOGO, ptsDe, gpDe, udsDe, estDe, PERIODO } from '../data/incentivos.js';
 import { SEGUROS, PLAZOS, CATALOGOS_FIN, OFERTAS_FIN, calcFinanciacion } from '../data/financiacion.js';
 import { unidadesVendidas } from '../lib/engine.js';
 import { Card, Badge, EstrellaTag, EmptyState } from '../components/ui.jsx';
 import { fmtNum, fmtEur } from '../lib/format.js';
+
+// Sin fuente fiable de fotos reales por modelo exacto: usamos un azulejo de
+// categoría (icono + degradado) detectado por palabras clave en el nombre.
+// Si en el futuro se añaden fotos reales (campo `imagen` en el producto), la
+// tarjeta las usaría en su lugar (ver <FotoProducto>).
+function categoriaProducto(modelo = '') {
+  const m = modelo.toLowerCase();
+  if (m.includes(' tv') || m.includes('smart tv')) return { Icon: Tv, grad: 'from-indigo-600 to-violet-700' };
+  if (m.includes('watch')) return { Icon: Watch, grad: 'from-slate-600 to-slate-800' };
+  if (m.includes('buds') || m.includes('headphone')) return { Icon: Headphones, grad: 'from-sky-600 to-blue-700' };
+  if (m.includes('soundbar') || m.includes('speaker') || m.includes('sound flow')) return { Icon: Volume2, grad: 'from-orange-600 to-amber-700' };
+  if (m.includes('scooter')) return { Icon: Bike, grad: 'from-emerald-600 to-teal-700' };
+  if (m.includes('vacuum')) return { Icon: Fan, grad: 'from-cyan-600 to-teal-700' };
+  if (m.includes('fryer')) return { Icon: Flame, grad: 'from-rose-600 to-red-700' };
+  return { Icon: Smartphone, grad: 'from-vf-red to-vf-redDark' };
+}
+
+// Azulejo visual del producto: foto real si existe `producto.imagen`, si no,
+// icono de categoría con degradado y marca de agua a mayor tamaño.
+function FotoProducto({ producto, className = 'w-full h-24', iconSize = 38 }) {
+  if (producto.imagen) {
+    return <img src={producto.imagen} alt={producto.modelo} className={`${className} object-cover rounded-lg`} />;
+  }
+  const { Icon, grad } = categoriaProducto(producto.modelo);
+  return (
+    <div className={`relative ${className} rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center overflow-hidden`}>
+      <Icon size={iconSize} className="text-white/95 drop-shadow-sm" aria-hidden="true" />
+      <Icon size={iconSize * 2.3} className="absolute -right-4 -bottom-5 text-white/10 rotate-6" aria-hidden="true" />
+    </div>
+  );
+}
 
 // --- Ficha/configurador de financiación de un terminal ----------------------
 function DetalleTerminal({ producto, marca, mes, precioGuardado, onGuardarPrecio, onVender, onClose }) {
@@ -192,22 +226,22 @@ export default function Catalogo() {
       </div>
 
       {/* Resumen de la marca */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="card p-4">
-          <p className="text-xs text-fg-muted">Modelos</p>
-          <p className="text-xl font-semibold text-fg tabnum">{fmtNum(resumen.total)}</p>
+      <div className="stagger grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="tile">
+          <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em] flex items-center gap-1.5"><Layers size={12} /> Modelos</p>
+          <p className="text-3xl font-extrabold text-fg tabnum mt-1.5 leading-none tracking-tight">{fmtNum(resumen.total)}</p>
         </div>
-        <div className="card p-4">
-          <p className="text-xs text-fg-muted">Máximo ({PERIODO.etiquetas[mes]})</p>
-          <p className={`text-xl font-semibold tabnum ${tieneRanking ? 'text-vf-redLight' : 'text-gp-gold'}`}>{fmtNum(resumen.maxVal)} {unidad}</p>
+        <div className="tile">
+          <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em]">Máximo ({PERIODO.etiquetas[mes]})</p>
+          <p className={`text-3xl font-extrabold tabnum mt-1.5 leading-none tracking-tight ${tieneRanking ? 'text-vf-redLight' : 'text-gp-gold'}`}>{fmtNum(resumen.maxVal)} <span className="text-sm font-semibold">{unidad}</span></p>
         </div>
-        <div className="card p-4">
-          <p className="text-xs text-fg-muted flex items-center gap-1"><Star size={12} className="text-gp-gold" /> Destacados</p>
-          <p className="text-xl font-semibold text-fg tabnum">{fmtNum(resumen.estrellas)}</p>
+        <div className="tile">
+          <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em] flex items-center gap-1.5"><Star size={12} className="text-gp-gold" /> Destacados</p>
+          <p className="text-3xl font-extrabold text-fg tabnum mt-1.5 leading-none tracking-tight">{fmtNum(resumen.estrellas)}</p>
         </div>
-        <div className="card p-4">
-          <p className="text-xs text-fg-muted">Stock</p>
-          <p className="text-sm font-medium text-fg-soft mt-1">{cat.stockPor === 'sin-limite' ? 'Sin límite' : `Por ${cat.stockPor}`}</p>
+        <div className="tile">
+          <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em]">Stock</p>
+          <p className="text-lg font-bold text-fg-soft mt-1.5 leading-tight">{cat.stockPor === 'sin-limite' ? 'Sin límite' : `Por ${cat.stockPor}`}</p>
         </div>
       </div>
 
@@ -277,14 +311,12 @@ export default function Catalogo() {
               const precio = precios?.[p.sap]?.[mes] ?? p.precio;
               const destacado = estDe(p, mes);
               return (
-                <div key={p.sap} className={`relative rounded-xl border p-4 flex flex-col transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${destacado ? 'border-gp-gold/40 bg-gp-gold/[0.03]' : 'border-bg-border bg-bg-surface2/40'}`}>
+                <div key={p.sap} className={`relative rounded-xl border p-4 flex flex-col transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${destacado ? 'border-gp-gold/50 bg-gp-gold/[0.03] shadow-md shadow-gp-gold/10' : 'border-bg-border bg-bg-surface2/40'}`}>
+                  <FotoProducto producto={p} className="w-full h-24 mb-3" />
                   {destacado && <span className="absolute top-3 right-3"><EstrellaTag tipo={cat.mecanica === 'mixta' ? 'DESTACADO' : 'ESTRELLA'} /></span>}
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="p-2.5 rounded-lg bg-bg-surface text-vf-red ring-1 ring-bg-border shrink-0"><Smartphone size={18} /></div>
-                    <div className="min-w-0 pr-24">
-                      <p className="font-semibold text-fg leading-tight">{p.modelo}</p>
-                      <p className="text-[11px] text-fg-muted mt-0.5 tabnum">SAP {p.sap}{cat.stockPor === 'familia' && p.familia ? ` · ${p.familia}` : ''}</p>
-                    </div>
+                  <div className="mb-3">
+                    <p className="font-semibold text-fg leading-tight">{p.modelo}</p>
+                    <p className="text-[11px] text-fg-muted mt-0.5 tabnum">SAP {p.sap}{cat.stockPor === 'familia' && p.familia ? ` · ${p.familia}` : ''}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {tieneRanking && <Badge tone="red">{pts ? `${fmtNum(pts)} pts` : '— pts'}</Badge>}
@@ -347,8 +379,13 @@ export default function Catalogo() {
                     <tr key={p.sap} className="border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors">
                       <td className="px-4 py-3 tabnum text-fg-muted">{p.sap}</td>
                       <td className="px-4 py-3 text-fg">
-                        {p.modelo}
-                        {cat.stockPor === 'familia' && <span className="block text-[11px] text-fg-muted">Familia: {p.familia}</span>}
+                        <div className="flex items-center gap-3">
+                          <FotoProducto producto={p} className="h-10 w-10 shrink-0" iconSize={16} />
+                          <div className="min-w-0">
+                            {p.modelo}
+                            {cat.stockPor === 'familia' && <span className="block text-[11px] text-fg-muted">Familia: {p.familia}</span>}
+                          </div>
+                        </div>
                       </td>
                       {tieneRanking && (
                         <td className="px-4 py-3 text-right tabnum">
