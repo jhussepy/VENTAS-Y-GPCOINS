@@ -92,6 +92,10 @@ body {
   from { width: 100%; }
   to   { width: 0%; }
 }
+@keyframes confeti {
+  0%   { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.6); }
+}
 
 @layer components {
   .card {
@@ -168,6 +172,11 @@ body {
   /* Skeleton con shimmer */
   .skeleton {
     @apply relative overflow-hidden bg-bg-surface2 rounded-lg;
+  }
+  /* Modo enfoque en tablas: al pasar por una fila, las demás se atenúan */
+  @media (hover: hover) {
+    tbody:has(tr:hover) tr:not(:hover) { opacity: 0.55; }
+    tbody tr { transition: opacity 0.2s ease; }
   }
   .toast-in { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .toast-bar { animation-name: toastBar; animation-timing-function: linear; animation-fill-mode: forwards; }

@@ -18,7 +18,7 @@ import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { TARIFAS_MOVIL } from '../data/movil.js';
 
 const VELOCIDADES_FIBRA = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
-import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner, Insignia, ChartLegend, TOOLTIP_STYLE } from '../components/ui.jsx';
+import { StatCard, Card, SectionTitle, Badge, Progress, HeroBanner, Insignia, ChartLegend, TOOLTIP_STYLE, Confeti, useCelebracion } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
 
 // Degradado de color por incentivo para las tarjetas de ranking (estilo
@@ -59,6 +59,8 @@ export default function Dashboard() {
   const racha = useMemo(() => rachaVentas(ventas), [ventas]);
   const logros = useMemo(() => calcularLogros(r, racha, objetivosLogros), [r, racha, objetivosLogros]);
   const logrosCumplidos = logros.filter((l) => l.cumplido).length;
+  // Celebración: confeti cuando se consigue una insignia nueva en vivo
+  const celebrar = useCelebracion(logrosCumplidos);
 
   // Saludo según la hora del día
   const saludo = useMemo(() => {
@@ -235,7 +237,8 @@ export default function Dashboard() {
       </div>
 
       {/* Insignias / logros del mes (estilo perfil de la Biblia App) */}
-      <Card>
+      <Card className={celebrar ? 'ring-2 ring-gp-gold/60 transition-shadow' : ''}>
+        {celebrar && <Confeti />}
         <SectionTitle right={<Badge tone="gold">{logrosCumplidos}/{logros.length} conseguidas</Badge>}>
           <span className="flex items-center gap-2"><Trophy size={18} className="text-gp-gold" /> Insignias del mes</span>
         </SectionTitle>

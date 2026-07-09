@@ -177,6 +177,49 @@ export function useToasts() {
   return { toast, toasts };
 }
 
+// Ráfaga de confeti CSS (ligera, sin dependencias). Se monta y desaparece sola.
+const CONFETI_COLORES = ['#E60000', '#FFB81C', '#10B981', '#0EA5E9', '#FF4D4D', '#A855F7'];
+export function Confeti({ n = 18 }) {
+  const piezas = Array.from({ length: n }, (_, i) => {
+    const ang = (i / n) * Math.PI * 2;
+    const dist = 60 + (i % 5) * 22;
+    return {
+      '--dx': `${Math.cos(ang) * dist}px`,
+      '--dy': `${Math.sin(ang) * dist - 40}px`,
+      '--rot': `${(i % 2 ? 1 : -1) * (180 + i * 20)}deg`,
+      background: CONFETI_COLORES[i % CONFETI_COLORES.length],
+      animationDelay: `${(i % 6) * 30}ms`,
+    };
+  });
+  return (
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible" aria-hidden="true">
+      {piezas.map((s, i) => (
+        <span
+          key={i}
+          className="absolute w-2 h-2 rounded-[2px]"
+          style={{ ...s, animation: 'confeti 0.9s ease-out both' }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Hook: devuelve true durante `ms` cuando `contador` AUMENTA (no en el primer render)
+export function useCelebracion(contador, ms = 1200) {
+  const [activa, setActiva] = useState(false);
+  const prev = useRef(null);
+  useEffect(() => {
+    if (prev.current !== null && contador > prev.current) {
+      setActiva(true);
+      const t = setTimeout(() => setActiva(false), ms);
+      return () => clearTimeout(t);
+    }
+    prev.current = contador;
+  }, [contador, ms]);
+  useEffect(() => { prev.current = contador; }, [contador]);
+  return activa;
+}
+
 export function Card({ children, className = '', accent = false }) {
   // accent: true|'red' = barra roja de marca · 'green' = éxito
   const acc = accent === 'green' ? 'card-accent card-accent-green' : (accent ? 'card-accent' : '');
@@ -227,8 +270,8 @@ export function HeroBanner({ saludo, titulo, subtitulo, chip, highlights = [], a
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" aria-hidden="true" />
       <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div className="min-w-0">
-          {saludo && <p className="text-xs font-medium uppercase tracking-wider text-white/70">{saludo}</p>}
-          <h2 className="text-2xl font-bold tracking-tight mt-0.5">{titulo}</h2>
+          {saludo && <p className="text-xs font-semibold uppercase tracking-[0.14em] text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60">{saludo}</p>}
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-0.5 drop-shadow-sm">{titulo}</h2>
           {subtitulo && <p className="text-sm text-white/80 mt-1 max-w-xl">{subtitulo}</p>}
           {chip && <span className="inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur text-xs font-semibold">{chip}</span>}
         </div>

@@ -393,7 +393,7 @@ export default function App() {
               </button>
               <h1 className="flex items-center gap-2 text-base font-semibold text-fg capitalize">
                 {(() => { const N = paginas.find((n) => n.id === page); if (!N) return null; return (<>
-                  <span className={`p-1.5 rounded-lg ${esLowi ? 'bg-sky-500/10 text-sky-500' : 'bg-vf-red/10 text-vf-red'}`}><N.icon size={16} /></span>
+                  <span key={page} className={`p-1.5 rounded-lg fade-in ${esLowi ? 'bg-sky-500/10 text-sky-500' : 'bg-vf-red/10 text-vf-red'}`}><N.icon size={16} /></span>
                   {N.label}
                 </>); })()}
               </h1>
