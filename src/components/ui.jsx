@@ -329,38 +329,44 @@ const ACCENT_HEX = {
   'text-fg': '#8B95A7',
 };
 
+// Azulejo de icono en degradado por acento (icono blanco, con sombra del color)
+const ACCENT_TILE = {
+  'text-vf-red': 'from-vf-red to-vf-redDark shadow-vf-red/30',
+  'text-vf-redLight': 'from-vf-redLight to-vf-red shadow-vf-red/30',
+  'text-gp-gold': 'from-gp-gold to-gp-goldDark shadow-gp-gold/30',
+  'text-emerald-400': 'from-emerald-500 to-emerald-600 shadow-emerald-500/30',
+  'text-sky-400': 'from-sky-500 to-sky-600 shadow-sky-500/30',
+  'text-fg': 'from-slate-500 to-slate-600 shadow-slate-500/30',
+};
+
 export function StatCard({ icon: Icon, label, value, sub, accent = 'text-vf-red', spark, delta }) {
-  // Derivamos un fondo translúcido del color de acento para el halo del icono
-  const halo = {
-    'text-vf-red': 'bg-vf-red/10 ring-vf-red/15',
-    'text-vf-redLight': 'bg-vf-red/10 ring-vf-red/15',
-    'text-gp-gold': 'bg-gp-gold/10 ring-gp-gold/20',
-    'text-emerald-400': 'bg-emerald-500/10 ring-emerald-500/20',
-    'text-sky-400': 'bg-sky-500/10 ring-sky-500/20',
-    'text-fg': 'bg-bg-surface2 ring-bg-border',
-  }[accent] || 'bg-bg-surface2 ring-bg-border';
   const hex = ACCENT_HEX[accent] || '#E60000';
+  const tile = ACCENT_TILE[accent] || ACCENT_TILE['text-vf-red'];
   return (
-    <div className="card p-5 flex items-start gap-4 group">
-      <div className={`p-3 rounded-xl ring-1 ${halo} ${accent} transition-transform duration-200 group-hover:scale-105`}>
-        <Icon size={22} aria-hidden="true" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-fg-muted truncate uppercase tracking-wide">{label}</p>
-        <div className="flex items-baseline gap-2 mt-0.5">
-          <p className="text-2xl font-bold tabnum text-fg leading-tight">
-            {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
-          </p>
-          {delta != null && delta !== 0 && (
-            <span className={`text-[11px] font-semibold tabnum ${delta > 0 ? 'text-emerald-400' : 'text-vf-redLight'}`}>
-              {delta > 0 ? '▲' : '▼'} {Math.abs(delta)}
-            </span>
+    <div className="card p-5 group relative overflow-hidden">
+      {/* Marca de agua: el icono grande y translúcido de fondo */}
+      <Icon size={104} aria-hidden="true" className={`absolute -right-5 -bottom-6 opacity-[0.05] ${accent} pointer-events-none transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6`} />
+      <div className="relative flex items-start gap-4">
+        <div className={`p-3 rounded-xl bg-gradient-to-br ${tile} text-white shadow-lg transition-transform duration-200 group-hover:scale-105`}>
+          <Icon size={22} aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold text-fg-muted truncate uppercase tracking-[0.08em]">{label}</p>
+          <div className="flex items-baseline gap-2 mt-1">
+            <p className="text-3xl font-extrabold tabnum text-fg leading-none tracking-tight">
+              {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
+            </p>
+            {delta != null && delta !== 0 && (
+              <span className={`text-[11px] font-semibold tabnum ${delta > 0 ? 'text-emerald-400' : 'text-vf-redLight'}`}>
+                {delta > 0 ? '▲' : '▼'} {Math.abs(delta)}
+              </span>
+            )}
+          </div>
+          {sub && <p className="text-xs text-fg-muted mt-1.5">{sub}</p>}
+          {spark && spark.length > 1 && (
+            <div className="mt-2.5 -mb-0.5"><Sparkline data={spark} stroke={hex} height={30} /></div>
           )}
         </div>
-        {sub && <p className="text-xs text-fg-muted mt-1">{sub}</p>}
-        {spark && spark.length > 1 && (
-          <div className="mt-2 -mb-0.5"><Sparkline data={spark} stroke={hex} height={30} /></div>
-        )}
       </div>
     </div>
   );
@@ -448,7 +454,7 @@ export function EstrellaTag({ tipo = 'ESTRELLA' }) {
 export function SectionTitle({ children, right }) {
   return (
     <div className="flex items-center justify-between gap-3 mb-4">
-      <h2 className="relative text-base font-semibold text-fg tracking-tight pl-3
+      <h2 className="relative text-[15px] font-bold text-fg tracking-tight pl-3
                      before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2
                      before:h-4 before:w-1 before:rounded-full
                      before:bg-gradient-to-b before:from-vf-red before:to-vf-redLight">

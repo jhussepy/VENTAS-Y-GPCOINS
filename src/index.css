@@ -30,10 +30,10 @@
   color-scheme: light;
   /* Fondo un punto más profundo para que las tarjetas blancas destaquen,
      bordes más definidos y texto secundario con mejor contraste (AA). */
-  --bg-base: #EDF0F5;
+  --bg-base: #E9EDF4;
   --bg-surface: #FFFFFF;
-  --bg-surface2: #F3F5F9;
-  --bg-border: #DDE2EA;
+  --bg-surface2: #F2F5FA;
+  --bg-border: #D8DEE9;
   --fg: #0A0A0F;
   --fg-soft: #1F2937;
   --fg-muted: #57677D;
@@ -43,9 +43,9 @@
   --ring-soft: rgba(16, 24, 40, 0.05);
   --grad-surface: linear-gradient(180deg, rgba(16, 24, 40, 0.02), rgba(16, 24, 40, 0));
   --edge-hi: rgba(255, 255, 255, 0.9);
-  --ambient-a: rgba(230, 0, 0, 0.04);
-  --ambient-b: rgba(255, 184, 28, 0.05);
-  --ambient-c: rgba(56, 130, 246, 0.04);
+  --ambient-a: rgba(230, 0, 0, 0.08);
+  --ambient-b: rgba(255, 184, 28, 0.1);
+  --ambient-c: rgba(56, 130, 246, 0.09);
 }
 
 html, body, #root {
