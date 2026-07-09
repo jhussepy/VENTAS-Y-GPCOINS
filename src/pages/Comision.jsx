@@ -1,16 +1,18 @@
 import { useMemo, useState } from 'react';
-import { Calculator, Wifi, Smartphone, RotateCcw, DownloadCloud, FileSpreadsheet } from 'lucide-react';
+import { Calculator, Wifi, Smartphone, UserPlus, RotateCcw, DownloadCloud, FileSpreadsheet, AlertTriangle } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { estadoDe } from '../lib/estados.js';
 import { PERIODO } from '../data/incentivos.js';
 import { Card, SectionTitle, Badge } from '../components/ui.jsx';
 import {
   SUBTIPOS, TARIFA_COMISION, UMBRALES_VALLA, UMBRALES_CLIENTES, ETIQUETA_CATEGORIA,
-  comisionCategoria, comisionTotal, faltanParaSiguiente, contarDesdeVentas, prorratearUmbrales, fmtSol,
+  comisionCategoria, comisionTotal, vallaAlcanzada, totalCategoria, faltanParaSiguiente,
+  contarDesdeVentas, prorratearUmbrales, fmtSol,
 } from '../lib/comision.js';
 
 const contadorVacio = (cat) => Object.fromEntries(SUBTIPOS[cat].map((s) => [s.id, 0]));
 const ROMANOS = ['1ª', '2ª', '3ª', '4ª'];
+const ETIQUETA_GATE = { fijo: 'Fijo', movil: 'Móvil', clientes: 'Clientes' };
 
 // Días naturales del mes activo (para prorratear por vacaciones/ausencias)
 const diasDelMes = (mes) => {
@@ -19,17 +21,23 @@ const diasDelMes = (mes) => {
   return new Date(anio, idx + 1, 0).getDate();
 };
 
-// Bloque de una categoría (Fijo o Móvil): inputs por subtipo + su comisión
-function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, reducida }) {
-  const r = comisionCategoria(cat, counts, umbrales);
-  const falta = faltanParaSiguiente(r.total, umbrales);
+// Bloque de una categoría (Fijo o Móvil): inputs por subtipo + su comisión.
+// La valla que se PAGA (vallaPago) puede ir por detrás de la valla propia de
+// esta categoría si otra categoría (u otra valla) va más atrasada: el rappel
+// de clientes actúa como freno común a las tres.
+function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, vallaPago, reducida }) {
+  const total = totalCategoria(cat, counts);
+  const propia = vallaAlcanzada(total, umbrales);
+  const r = comisionCategoria(cat, counts, vallaPago);
+  const falta = faltanParaSiguiente(total, umbrales);
+  const frenada = propia >= 0 && vallaPago < propia;
   const set = (id, v) => setCounts((p) => ({ ...p, [id]: Math.max(0, Number(v) || 0) }));
 
   return (
     <Card>
       <SectionTitle
-        right={r.valla >= 0
-          ? <Badge tone="green">{ROMANOS[r.valla]} valla</Badge>
+        right={propia >= 0
+          ? <Badge tone={frenada ? 'gold' : 'green'}>{ROMANOS[propia]} valla propia</Badge>
           : <Badge tone="neutral">Sin valla</Badge>}
       >
         <span className="flex items-center gap-2"><Icon size={18} className="text-vf-red" /> {ETIQUETA_CATEGORIA[cat]}</span>
@@ -49,12 +57,21 @@ function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, reducid
         ))}
       </div>
 
+      {frenada && (
+        <p className={`mt-3 text-[11px] flex items-center gap-1.5 rounded-lg px-3 py-2 border ${vallaPago < 0 ? 'text-vf-redLight bg-vf-red/10 border-vf-red/25' : 'text-gp-gold bg-gp-gold/10 border-gp-gold/25'}`}>
+          <AlertTriangle size={12} className="shrink-0" />
+          {vallaPago < 0
+            ? <>No se paga comisión: alguna categoría (Fijo, Móvil o Clientes) aún no llega a la 1ª valla.</>
+            : <>Se paga a la {ROMANOS[vallaPago]} (más baja que tu propia {ROMANOS[propia]} valla) porque otra categoría va por detrás.</>}
+        </p>
+      )}
+
       <div className="mt-4 flex items-center justify-between gap-3 pt-3 border-t border-bg-border">
         <div className="text-sm text-fg-soft">
-          <span className="tabnum font-semibold">{r.total}</span> unidades
+          <span className="tabnum font-semibold">{total}</span> unidades
           {falta
             ? <span className="text-fg-muted"> · faltan <span className="text-vf-redLight font-semibold tabnum">{falta.faltan}</span> para la {ROMANOS[falta.valla]} valla{reducida ? ' (cuota reducida)' : ''}</span>
-            : r.valla >= 0 && <span className="text-emerald-400"> · ¡valla máxima!</span>}
+            : propia >= 0 && <span className="text-emerald-400"> · ¡valla máxima!</span>}
         </div>
         <div className="text-right">
           <p className="text-[11px] text-fg-muted uppercase tracking-wide">Comisión {ETIQUETA_CATEGORIA[cat]}</p>
@@ -65,10 +82,46 @@ function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, reducid
   );
 }
 
+// Bloque de Clientes: no paga comisión propia, solo actúa como rappel/gate
+function BloqueClientes({ clientes, setClientes, umbrales, vallaPago, reducida }) {
+  const propia = vallaAlcanzada(clientes, umbrales);
+  const falta = faltanParaSiguiente(clientes, umbrales);
+  const frenada = propia >= 0 && vallaPago < propia;
+
+  return (
+    <Card>
+      <SectionTitle
+        right={propia >= 0
+          ? <Badge tone={frenada ? 'gold' : 'green'}>{ROMANOS[propia]} valla propia</Badge>
+          : <Badge tone="neutral">Sin valla</Badge>}
+      >
+        <span className="flex items-center gap-2"><UserPlus size={18} className="text-vf-red" /> Clientes <span className="text-xs text-fg-muted font-normal">(rappel, no paga por sí sola)</span></span>
+      </SectionTitle>
+      <div className="max-w-xs">
+        <label className="label">Clientes únicos (nuevos)</label>
+        <input
+          type="number" min="0" className="input"
+          value={clientes}
+          onChange={(e) => setClientes(Math.max(0, Number(e.target.value) || 0))}
+        />
+      </div>
+      <div className="mt-3 text-sm text-fg-soft">
+        {falta
+          ? <span className="text-fg-muted">faltan <span className="text-vf-redLight font-semibold tabnum">{falta.faltan}</span> para la {ROMANOS[falta.valla]} valla{reducida ? ' (cuota reducida)' : ''}</span>
+          : propia >= 0 && <span className="text-emerald-400">¡valla máxima!</span>}
+      </div>
+      <p className="text-[11px] text-fg-muted mt-2">
+        Determina, junto con Fijo y Móvil, la valla que finalmente se paga: se cobra siempre a la valla más baja de las tres.
+      </p>
+    </Card>
+  );
+}
+
 export default function Comision() {
   const { ventas, mes } = useApp();
   const [fijo, setFijo] = useState(() => contadorVacio('fijo'));
   const [movil, setMovil] = useState(() => contadorVacio('movil'));
+  const [clientes, setClientes] = useState(0);
   const [msg, setMsg] = useState(null);
   // Días trabajados del mes (para prorratear las vallas por vacaciones/ausencias)
   const diasMes = diasDelMes(mes);
@@ -79,11 +132,18 @@ export default function Comision() {
   const umbrales = useMemo(() => ({
     fijo: reducida ? prorratearUmbrales(UMBRALES_VALLA.fijo, factor) : UMBRALES_VALLA.fijo,
     movil: reducida ? prorratearUmbrales(UMBRALES_VALLA.movil, factor) : UMBRALES_VALLA.movil,
+    clientes: reducida ? prorratearUmbrales(UMBRALES_CLIENTES, factor) : UMBRALES_CLIENTES,
   }), [factor, reducida]);
 
-  const total = useMemo(() => comisionTotal(fijo, movil, umbrales), [fijo, movil, umbrales]);
+  const total = useMemo(() => comisionTotal(fijo, movil, clientes, umbrales), [fijo, movil, clientes, umbrales]);
+  // Cuál de las tres es el "cuello de botella" que fija la valla de pago (solo informativo)
+  const cuelloBotella = useMemo(() => {
+    if (total.vallaPago < 0) return null;
+    const candidatos = ['fijo', 'movil', 'clientes'].filter((k) => (k === 'clientes' ? total.clientes.valla : total[k].propia) === total.vallaPago);
+    return candidatos.length === 3 ? null : candidatos.map((k) => ETIQUETA_GATE[k]).join(' y ');
+  }, [total]);
 
-  const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setDiasTrab(diasMes); setMsg(null); };
+  const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setClientes(0); setDiasTrab(diasMes); setMsg(null); };
 
   // Exporta el desglose de la comisión a Excel
   const exportar = async () => {
@@ -91,20 +151,22 @@ export default function Comision() {
     const filas = [];
     for (const cat of ['fijo', 'movil']) {
       const counts = cat === 'fijo' ? fijo : movil;
-      const r = comisionCategoria(cat, counts, umbrales[cat]);
+      const r = cat === 'fijo' ? total.fijo : total.movil;
       for (const s of SUBTIPOS[cat]) {
         const det = r.detalle[s.id];
         filas.push({
           Categoría: cat === 'fijo' ? 'Fijo' : 'Móvil',
           Subtipo: `${s.label} (${s.id})`,
           Unidades: det.n,
-          Valla: r.valla >= 0 ? `${r.valla + 1}ª` : 'Sin valla',
+          'Valla propia': r.propia >= 0 ? `${r.propia + 1}ª` : 'Sin valla',
+          'Valla pagada': total.vallaPago >= 0 ? `${total.vallaPago + 1}ª` : 'Sin valla',
           'Precio/ud (S/)': det.precio,
           'Importe (S/)': det.importe,
         });
       }
     }
-    filas.push({ Categoría: 'TOTAL', Subtipo: '', Unidades: '', Valla: '', 'Precio/ud (S/)': '', 'Importe (S/)': total.importe });
+    filas.push({ Categoría: 'Clientes (rappel)', Subtipo: 'Clientes únicos', Unidades: clientes, 'Valla propia': total.clientes.valla >= 0 ? `${total.clientes.valla + 1}ª` : 'Sin valla', 'Valla pagada': '', 'Precio/ud (S/)': '', 'Importe (S/)': '' });
+    filas.push({ Categoría: 'TOTAL', Subtipo: '', Unidades: '', 'Valla propia': '', 'Valla pagada': '', 'Precio/ud (S/)': '', 'Importe (S/)': total.importe });
     const ws = XLSX.utils.json_to_sheet(filas);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Comisión');
@@ -113,8 +175,8 @@ export default function Comision() {
 
   // Precarga contando las ventas Vodafone ACTIVAS del período activo
   const precargar = () => {
-    const { fijo: f, movil: m, sinClasificar } = contarDesdeVentas(ventas, mes, (v) => estadoDe(v) === 'activa');
-    setFijo(f); setMovil(m);
+    const { fijo: f, movil: m, clientes: c, sinClasificar } = contarDesdeVentas(ventas, mes, (v) => estadoDe(v) === 'activa');
+    setFijo(f); setMovil(m); setClientes(c);
     const totalUds = Object.values(f).reduce((a, b) => a + b, 0) + Object.values(m).reduce((a, b) => a + b, 0);
     if (totalUds === 0 && sinClasificar === 0) {
       setMsg({ tone: 'red', text: `No hay ventas Vodafone activas en ${PERIODO.etiquetas[mes]} que clasificar.` });
@@ -167,7 +229,7 @@ export default function Comision() {
         </div>
         {reducida && (
           <p className="text-[11px] text-fg-soft mt-3">
-            Cuota reducida — vallas: Fijo ≥{umbrales.fijo.join(' / ')} · Móvil ≥{umbrales.movil.join(' / ')} unidades.
+            Cuota reducida — vallas: Fijo ≥{umbrales.fijo.join(' / ')} · Móvil ≥{umbrales.movil.join(' / ')} · Clientes ≥{umbrales.clientes.join(' / ')} unidades.
           </p>
         )}
       </Card>
@@ -179,6 +241,11 @@ export default function Comision() {
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Comisión total estimada</p>
             <p className="text-4xl font-bold tabnum mt-1">{fmtSol(total.importe)}</p>
+            <p className="text-xs text-white/75 mt-1.5">
+              {total.vallaPago >= 0
+                ? <>Se paga a la <span className="font-semibold">{ROMANOS[total.vallaPago]} valla</span>{cuelloBotella && <> · frenada por <span className="font-semibold">{cuelloBotella}</span></>}</>
+                : 'Aún no se alcanza la 1ª valla en las tres categorías (Fijo, Móvil y Clientes)'}
+            </p>
           </div>
           <div className="flex gap-6 text-sm">
             <div>
@@ -193,9 +260,11 @@ export default function Comision() {
         </div>
       </div>
 
+      <BloqueClientes clientes={clientes} setClientes={setClientes} umbrales={umbrales.clientes} vallaPago={total.vallaPago} reducida={reducida} />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BloqueCategoria cat="fijo" icon={Wifi} counts={fijo} setCounts={setFijo} umbrales={umbrales.fijo} reducida={reducida} />
-        <BloqueCategoria cat="movil" icon={Smartphone} counts={movil} setCounts={setMovil} umbrales={umbrales.movil} reducida={reducida} />
+        <BloqueCategoria cat="fijo" icon={Wifi} counts={fijo} setCounts={setFijo} umbrales={umbrales.fijo} vallaPago={total.vallaPago} reducida={reducida} />
+        <BloqueCategoria cat="movil" icon={Smartphone} counts={movil} setCounts={setMovil} umbrales={umbrales.movil} vallaPago={total.vallaPago} reducida={reducida} />
       </div>
 
       {/* Tabla de referencia de vallas */}
@@ -242,8 +311,10 @@ export default function Comision() {
           </table>
         </div>
         <p className="text-[11px] text-fg-muted mt-3">
-          Al alcanzar una valla, <span className="text-fg-soft font-medium">todas</span> las unidades de esa categoría se
-          pagan a ese precio (retroactivo). Si no llegas a la 1ª valla, esa categoría no paga comisión.
+          <span className="text-fg-soft font-medium">Clientes es un rappel:</span> no paga comisión por sí solo, pero hay
+          que alcanzar su valla, la de Fijo y la de Móvil a la vez — se paga siempre a la <span className="text-fg-soft font-medium">valla más baja</span> de
+          las tres. Al alcanzar una valla, <span className="text-fg-soft font-medium">todas</span> las unidades se
+          pagan a ese precio (retroactivo). Si alguna de las tres no llega ni a la 1ª valla, no se paga comisión.
         </p>
       </Card>
     </div>

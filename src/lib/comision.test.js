@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { vallaAlcanzada, faltanParaSiguiente, comisionCategoria, comisionTotal, contarDesdeVentas, prorratearUmbrales, UMBRALES_VALLA } from './comision.js';
+import {
+  vallaAlcanzada, faltanParaSiguiente, comisionCategoria, comisionTotal, totalCategoria,
+  contarDesdeVentas, prorratearUmbrales, UMBRALES_VALLA, UMBRALES_CLIENTES,
+} from './comision.js';
 
 describe('vallaAlcanzada', () => {
   it('devuelve -1 si no llega a la 1ª valla', () => {
@@ -27,27 +30,25 @@ describe('faltanParaSiguiente', () => {
   });
 });
 
-describe('comisionCategoria', () => {
-  it('paga 0 si no se alcanza la 1ª valla', () => {
-    const r = comisionCategoria('fijo', { BV: 3, MV: 1, AV: 0 }); // total 4 < 6
+describe('comisionCategoria (paga a la valla indicada, ya decidida externamente)', () => {
+  it('paga 0 si la valla de pago es -1', () => {
+    const r = comisionCategoria('fijo', { BV: 3, MV: 1, AV: 0 }, -1);
     expect(r.valla).toBe(-1);
     expect(r.importe).toBe(0);
   });
 
-  it('aplica el precio de la valla alcanzada a todas las unidades (retroactivo)', () => {
-    // total 12 fijo → 2ª valla (idx 1): BV=34, MV=55, AV=77
-    const r = comisionCategoria('fijo', { BV: 4, MV: 4, AV: 4 });
-    expect(r.valla).toBe(1);
+  it('aplica el precio de la valla de pago a todas las unidades (retroactivo)', () => {
+    // 2ª valla (idx 1): BV=34, MV=55, AV=77
+    const r = comisionCategoria('fijo', { BV: 4, MV: 4, AV: 4 }, 1);
     expect(r.detalle.BV).toEqual({ n: 4, precio: 34, importe: 136 });
     expect(r.detalle.MV).toEqual({ n: 4, precio: 55, importe: 220 });
     expect(r.detalle.AV).toEqual({ n: 4, precio: 77, importe: 308 });
     expect(r.importe).toBe(664);
   });
 
-  it('móvil usa sus propios umbrales y precios', () => {
-    // total 13 móvil → 1ª valla (idx 0): BA=19, MV=25, AV=31
-    const r = comisionCategoria('movil', { BA: 13, MV: 0, AV: 0 });
-    expect(r.valla).toBe(0);
+  it('móvil usa sus propios precios por subtipo', () => {
+    // 1ª valla (idx 0): BA=19, MV=25, AV=31
+    const r = comisionCategoria('movil', { BA: 13, MV: 0, AV: 0 }, 0);
     expect(r.importe).toBe(13 * 19);
   });
 });
@@ -62,16 +63,55 @@ describe('prorratearUmbrales (días trabajados)', () => {
   });
   it('con la cuota reducida se alcanza valla con menos unidades', () => {
     const umbrales = prorratearUmbrales(UMBRALES_VALLA.fijo, 0.5); // 1ª valla = 3
-    const r = comisionCategoria('fijo', { BV: 3, MV: 0, AV: 0 }, umbrales);
-    expect(r.valla).toBe(0); // con 3 fijos ya clasifica (cuota media)
+    const valla = vallaAlcanzada(3, umbrales);
+    expect(valla).toBe(0); // con 3 fijos ya clasifica (cuota media)
+    const r = comisionCategoria('fijo', { BV: 3, MV: 0, AV: 0 }, valla);
     expect(r.importe).toBe(3 * 30);
   });
 });
 
-describe('comisionTotal', () => {
-  it('suma fijo + móvil', () => {
-    const r = comisionTotal({ BV: 4, MV: 4, AV: 4 }, { BA: 13, MV: 0, AV: 0 });
-    expect(r.importe).toBe(664 + 13 * 19);
+describe('comisionTotal (rappel de clientes: se paga a la valla más baja de las tres)', () => {
+  it('si las tres llegan a la misma valla, se paga a esa valla', () => {
+    // fijo 12 → valla 1 · móvil 24 → valla 1 · clientes 11 → valla 1
+    const r = comisionTotal({ BV: 4, MV: 4, AV: 4 }, { BA: 24, MV: 0, AV: 0 }, 11);
+    expect(r.vallaPago).toBe(1);
+    expect(r.fijo.propia).toBe(1);
+    expect(r.movil.propia).toBe(1);
+    expect(r.clientes.valla).toBe(1);
+    expect(r.importe).toBe(4 * 34 + 4 * 55 + 4 * 77 + 24 * 27);
+  });
+
+  it('móvil por detrás arrastra la valla de pago de fijo hacia abajo', () => {
+    // fijo 12 → valla propia 1 · móvil 13 → valla propia 0 · clientes 11 → valla 1
+    const r = comisionTotal({ BV: 4, MV: 4, AV: 4 }, { BA: 13, MV: 0, AV: 0 }, 11);
+    expect(r.fijo.propia).toBe(1);
+    expect(r.movil.propia).toBe(0);
+    expect(r.vallaPago).toBe(0); // se paga como si fuera la 1ª valla, no la 2ª
+    expect(r.fijo.valla).toBe(0);
+    expect(r.importe).toBe(4 * 30 + 4 * 41 + 4 * 51 + 13 * 19);
+  });
+
+  it('clientes por detrás de fijo y móvil también arrastra la valla de pago', () => {
+    // fijo 23 → valla propia 3 · móvil 42 → valla propia 3 · clientes 7 → valla propia 0
+    const r = comisionTotal({ BV: 23, MV: 0, AV: 0 }, { BA: 42, MV: 0, AV: 0 }, 7);
+    expect(r.fijo.propia).toBe(3);
+    expect(r.movil.propia).toBe(3);
+    expect(r.clientes.valla).toBe(0);
+    expect(r.vallaPago).toBe(0);
+  });
+
+  it('si clientes no alcanza ni la 1ª valla, no se paga comisión aunque fijo/móvil sí lleguen', () => {
+    const r = comisionTotal({ BV: 23, MV: 0, AV: 0 }, { BA: 42, MV: 0, AV: 0 }, 3); // clientes < 7
+    expect(r.clientes.valla).toBe(-1);
+    expect(r.vallaPago).toBe(-1);
+    expect(r.importe).toBe(0);
+  });
+});
+
+describe('totalCategoria', () => {
+  it('suma las unidades de todos los subtipos', () => {
+    expect(totalCategoria('fijo', { BV: 4, MV: 4, AV: 4 })).toBe(12);
+    expect(totalCategoria('movil', { BA: 13, MV: 0, AV: 0 })).toBe(13);
   });
 });
 
@@ -91,6 +131,17 @@ describe('contarDesdeVentas', () => {
     const { fijo, movil } = contarDesdeVentas(ventas, 'julio', activa);
     expect(fijo).toEqual({ BV: 0, MV: 1, AV: 0 });
     expect(movil).toEqual({ BA: 1, MV: 0, AV: 1 });
+  });
+
+  it('cuenta clientes nuevos activos del mes (rappel)', () => {
+    const v = [
+      { mes: 'julio', estado: 'activa', clienteNuevo: true, lineasMoviles: [] },
+      { mes: 'julio', estado: 'activa', clienteNuevo: false, lineasMoviles: [] },
+      { mes: 'julio', estado: 'pendiente', clienteNuevo: true, lineasMoviles: [] }, // no activa → no cuenta
+      { mes: 'junio', estado: 'activa', clienteNuevo: true, lineasMoviles: [] }, // otro mes → no cuenta
+    ];
+    const { clientes } = contarDesdeVentas(v, 'julio', activa);
+    expect(clientes).toBe(1);
   });
 
   it('la línea móvil cuenta en el mes de su porta; la fibra en el de la venta', () => {
