@@ -189,6 +189,13 @@ export default function App() {
   const pctUso = Math.round((usoDoc / LIMITE_DOC) * 100);
   const cercaLimite = pctUso >= 75;
 
+  // Secciones visibles en la paleta de comandos.
+  // IMPORTANTE: este hook debe ir ANTES de cualquier return condicional.
+  const seccionesPaleta = useMemo(() => {
+    const todas = [...NAV, ...NAV_LOWI, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES, ...(esAdmin(user) ? [NAV_ADMIN] : [])];
+    return todas.map((n) => ({ id: n.id, label: n.id === 'lowi-dashboard' ? 'Dashboard Lowi' : n.label, icon: n.icon }));
+  }, [user]);
+
   // Auth loading
   if (user === undefined) return <Spinner />;
   // Not logged in
@@ -241,11 +248,6 @@ export default function App() {
     setPage(id);
     setOpen(false);
   };
-  // Secciones visibles en la paleta: todas las del menú actual + Agendados
-  const seccionesPaleta = useMemo(() => {
-    const todas = [...NAV, ...NAV_LOWI, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES, ...(admin ? [NAV_ADMIN] : [])];
-    return todas.map((n) => ({ id: n.id, label: n.id === 'lowi-dashboard' ? 'Dashboard Lowi' : n.label, icon: n.icon }));
-  }, [admin]);
 
   return (
     <AppCtx.Provider value={ctx}>
