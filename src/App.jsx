@@ -221,10 +221,10 @@ export default function App() {
 
   return (
     <AppCtx.Provider value={ctx}>
-      <div className="min-h-dvh flex">
+      <div className="app-ambient min-h-dvh flex">
         {/* Sidebar */}
         <aside
-          className={`fixed lg:static z-40 inset-y-0 left-0 w-64 bg-bg-surface border-r border-bg-border
+          className={`fixed lg:static z-40 inset-y-0 left-0 w-64 bg-bg-surface/90 backdrop-blur-xl border-r border-bg-border
                       flex flex-col transition-transform duration-300
                       ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         >
@@ -276,7 +276,7 @@ export default function App() {
                 className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                             transition-all duration-200 cursor-pointer
                             ${page === n.id
-                              ? (esLowi ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white shadow-md' : 'bg-gradient-to-r from-vf-red to-vf-redDark text-white shadow-md')
+                              ? (esLowi ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white shadow-lg shadow-sky-600/25' : 'bg-gradient-to-r from-vf-red to-vf-redDark text-white shadow-lg shadow-vf-red/25')
                               : 'text-fg-muted hover:text-fg hover:bg-bg-surface2 hover:translate-x-0.5'}`}
                 aria-current={page === n.id ? 'page' : undefined}
               >
@@ -358,7 +358,7 @@ export default function App() {
 
         {/* Main */}
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-16 flex items-center justify-between gap-4 px-4 lg:px-8 border-b border-bg-border bg-bg-base/80 backdrop-blur sticky top-0 z-20">
+          <header className="glass-header h-16 flex items-center justify-between gap-4 px-4 lg:px-8 sticky top-0 z-20">
             <div className="flex items-center gap-3">
               <button className="lg:hidden btn-ghost p-2" onClick={() => setOpen(true)} aria-label="Abrir menú">
                 <Menu size={20} />
