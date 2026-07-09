@@ -1,8 +1,8 @@
-import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo } from 'react';
+import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo, useEffect } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator,
+  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator, Search,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { mesDesdeFecha } from './lib/engine.js';
@@ -33,6 +33,7 @@ const Comision = lazy(() => import('./pages/Comision.jsx'));
 import Login from './pages/Login.jsx';
 import { PageSkeleton, useConfirm } from './components/ui.jsx';
 import MusicPlayer from './components/MusicPlayer.jsx';
+import CommandPalette from './components/CommandPalette.jsx';
 
 export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -94,6 +95,18 @@ export default function App() {
   const backupRef = useRef(null);
   // Diálogos de confirmación/aviso con el diseño de la app (sin confirm/alert nativos)
   const { confirmar, avisar, dialogo } = useConfirm();
+  // Barra de comandos (Cmd+K / Ctrl+K)
+  const [paletaAbierta, setPaletaAbierta] = useState(false);
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletaAbierta((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Abre el alta de venta de Vodafone con una marca/modelo ya seleccionados
   const venderModelo = (marca, sap) => {
@@ -218,6 +231,19 @@ export default function App() {
   }[estadoGuardado];
   const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, convertirAgendado, marcarAgendadoConvertido, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta };
   const Active = paginas.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
+
+  // Navegación desde la barra de comandos: ajusta el operador si hace falta
+  const irADesdePaleta = (id) => {
+    if (id.startsWith('lowi-')) setOperador('lowi');
+    else if (id !== 'agendados' && id !== 'fe' && id !== 'ajustes') setOperador('vodafone');
+    setPage(id);
+    setOpen(false);
+  };
+  // Secciones visibles en la paleta: todas las del menú actual + Agendados
+  const seccionesPaleta = useMemo(() => {
+    const todas = [...NAV, ...NAV_LOWI, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES, ...(admin ? [NAV_ADMIN] : [])];
+    return todas.map((n) => ({ id: n.id, label: n.id === 'lowi-dashboard' ? 'Dashboard Lowi' : n.label, icon: n.icon }));
+  }, [admin]);
 
   return (
     <AppCtx.Provider value={ctx}>
@@ -395,6 +421,15 @@ export default function App() {
                 </>
               )}
               <button
+                onClick={() => setPaletaAbierta(true)}
+                className="btn-ghost p-2 sm:px-3 sm:gap-2"
+                aria-label="Buscador rápido (Ctrl+K)"
+                title="Buscador rápido (Ctrl+K)"
+              >
+                <Search size={16} />
+                <kbd className="hidden sm:inline text-[10px] font-semibold text-fg-muted border border-bg-border rounded px-1.5 py-0.5">⌘K</kbd>
+              </button>
+              <button
                 onClick={() => setTema(tema === 'dark' ? 'light' : 'dark')}
                 className="btn-ghost p-2"
                 aria-label={tema === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
@@ -448,6 +483,15 @@ export default function App() {
         </div>
       </div>
       {dialogo}
+      <CommandPalette
+        abierto={paletaAbierta}
+        cerrar={() => setPaletaAbierta(false)}
+        secciones={seccionesPaleta}
+        irA={irADesdePaleta}
+        ventas={ventas}
+        ventasLowi={ventasLowi}
+        agendados={agendados}
+      />
       <MusicPlayer />
     </AppCtx.Provider>
   );
