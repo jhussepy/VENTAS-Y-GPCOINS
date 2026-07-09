@@ -272,17 +272,17 @@ export default function Agendados() {
 
       {/* Resumen rápido */}
       <div className="stagger grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-bg-border bg-bg-surface p-4">
-          <p className="text-xs text-fg-muted">Pendientes</p>
-          <p className="text-2xl font-bold tabnum text-gp-gold mt-0.5">{resumen.pendientes}</p>
+        <div className="tile">
+          <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em]">Pendientes</p>
+          <p className="text-3xl font-extrabold tabnum text-gp-gold mt-1.5 leading-none tracking-tight">{resumen.pendientes}</p>
         </div>
-        <div className="rounded-xl border border-bg-border bg-bg-surface p-4">
-          <p className="text-xs text-fg-muted">Para hoy</p>
-          <p className="text-2xl font-bold tabnum text-fg mt-0.5">{resumen.hoy}</p>
+        <div className="tile">
+          <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em]">Para hoy</p>
+          <p className="text-3xl font-extrabold tabnum text-fg mt-1.5 leading-none tracking-tight">{resumen.hoy}</p>
         </div>
-        <div className={`rounded-xl border p-4 ${resumen.atrasados > 0 ? 'border-vf-red/40 bg-vf-red/[0.05]' : 'border-bg-border bg-bg-surface'}`}>
-          <p className="text-xs text-fg-muted flex items-center gap-1">{resumen.atrasados > 0 && <AlertTriangle size={12} className="text-vf-redLight" />} Atrasados</p>
-          <p className={`text-2xl font-bold tabnum mt-0.5 ${resumen.atrasados > 0 ? 'text-vf-redLight' : 'text-fg'}`}>{resumen.atrasados}</p>
+        <div className={resumen.atrasados > 0 ? 'rounded-xl border p-4 border-vf-red/40 bg-vf-red/[0.05]' : 'tile'}>
+          <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em] flex items-center gap-1">{resumen.atrasados > 0 && <AlertTriangle size={12} className="text-vf-redLight" />} Atrasados</p>
+          <p className={`text-3xl font-extrabold tabnum mt-1.5 leading-none tracking-tight ${resumen.atrasados > 0 ? 'text-vf-redLight' : 'text-fg'}`}>{resumen.atrasados}</p>
         </div>
       </div>
 

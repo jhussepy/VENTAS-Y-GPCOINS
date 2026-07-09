@@ -181,7 +181,7 @@ export default function GPCoins() {
             {r.estados.filter((e) => INCENTIVOS[e.incentivoId].premios.length).map((e) => {
               const inc = INCENTIVOS[e.incentivoId];
               return (
-                <div key={e.incentivoId} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
+                <div key={e.incentivoId} className="tile">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-fg">{e.nombre}</span>
                     <span className="text-xs text-fg-muted">Top {inc.premiados}</span>

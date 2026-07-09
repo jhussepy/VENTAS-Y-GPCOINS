@@ -168,6 +168,14 @@ body {
            focus:border-vf-red focus:ring-2 focus:ring-vf-red/20 focus:outline-none transition-all;
   }
   .label { @apply block text-xs font-medium text-fg-muted mb-1.5; }
+  /* Recuadro interior premium (mini-tarjeta dentro de una Card) */
+  .tile {
+    @apply rounded-xl border border-bg-border p-4;
+    background: linear-gradient(180deg, var(--bg-surface2), color-mix(in srgb, var(--bg-surface2) 55%, var(--bg-surface)));
+  }
+  /* Barra de progreso gruesa con degradado (para desgloses) */
+  .barra { @apply w-full h-2.5 bg-bg-surface2 rounded-full overflow-hidden; }
+  .barra > div { @apply h-full rounded-full transition-all duration-500; }
   .tabnum { font-variant-numeric: tabular-nums; }
   /* Skeleton con shimmer */
   .skeleton {

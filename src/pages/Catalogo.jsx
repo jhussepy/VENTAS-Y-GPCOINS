@@ -92,7 +92,7 @@ function DetalleTerminal({ producto, marca, mes, precioGuardado, onGuardarPrecio
         </div>
 
         {/* Resultado del cálculo */}
-        <div className="grid grid-cols-3 gap-2 bg-bg-surface2 rounded-lg p-4 border border-bg-border text-center">
+        <div className="grid grid-cols-3 gap-2 tile text-center">
           <div>
             <p className="text-lg font-bold text-fg tabnum">{fmtEur(r.pagoInicial)}</p>
             <p className="text-[10px] text-fg-muted">Pago inicial</p>

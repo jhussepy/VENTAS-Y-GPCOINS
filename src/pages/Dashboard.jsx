@@ -420,26 +420,26 @@ export default function Dashboard() {
           <span className="flex items-center gap-2"><CalendarClock size={18} className="text-vf-red" /> Ritmo y proyección del mes</span>
         </SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
-            <p className="text-xs text-fg-muted">Días laborables restantes</p>
-            <p className="text-2xl font-semibold text-fg tabnum mt-1">{fmtNum(proyeccion.diasRestantes)}</p>
+          <div className="tile">
+            <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em]">Días laborables restantes</p>
+            <p className="text-3xl font-extrabold text-fg tabnum mt-1.5 leading-none tracking-tight">{fmtNum(proyeccion.diasRestantes)}</p>
             {proyeccion.dentro && proyeccion.diasRestantes <= 3 ? (
-              <p className="text-xs text-vf-redLight font-medium mt-1">
+              <p className="text-xs text-vf-redLight font-medium mt-1.5">
                 {proyeccion.diasRestantes === 0 ? '¡Último día laborable del mes!' : '¡Recta final del mes!'}
               </p>
             ) : (
-              <p className="text-xs text-fg-muted mt-1">de {proyeccion.diasTotales} laborables (lun-vie)</p>
+              <p className="text-xs text-fg-muted mt-1.5">de {proyeccion.diasTotales} laborables (lun-vie)</p>
             )}
           </div>
-          <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
-            <p className="text-xs text-fg-muted">Ventas actuales del mes</p>
-            <p className="text-2xl font-semibold text-fg tabnum mt-1">{fmtNum(proyeccion.ventasActuales)}</p>
-            <p className="text-xs text-fg-muted mt-1">registradas en {PERIODO.etiquetas[mes]}</p>
+          <div className="tile">
+            <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em]">Ventas actuales del mes</p>
+            <p className="text-3xl font-extrabold text-fg tabnum mt-1.5 leading-none tracking-tight">{fmtNum(proyeccion.ventasActuales)}</p>
+            <p className="text-xs text-fg-muted mt-1.5">registradas en {PERIODO.etiquetas[mes]}</p>
           </div>
-          <div className="bg-bg-surface2 rounded-lg p-4 border border-bg-border">
-            <p className="text-xs text-fg-muted">Proyección fin de mes</p>
-            <p className="text-2xl font-semibold text-gp-gold tabnum mt-1">{fmtNum(proyeccion.proyectada)}</p>
-            <p className="text-xs text-fg-muted mt-1">al ritmo actual</p>
+          <div className="tile">
+            <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-[0.08em]">Proyección fin de mes</p>
+            <p className="text-3xl font-extrabold text-gp-gold tabnum mt-1.5 leading-none tracking-tight">{fmtNum(proyeccion.proyectada)}</p>
+            <p className="text-xs text-fg-muted mt-1.5">al ritmo actual</p>
           </div>
         </div>
       </Card>
@@ -461,7 +461,7 @@ export default function Dashboard() {
                     data={distribucion.items.filter((it) => it.n > 0)}
                     dataKey="n" nameKey="label"
                     cx="50%" cy="50%" innerRadius={58} outerRadius={84}
-                    paddingAngle={2} stroke="none" animationDuration={700}
+                    paddingAngle={3} cornerRadius={6} stroke="none" animationDuration={700}
                   >
                     {distribucion.items.filter((it) => it.n > 0).map((it) => <Cell key={it.id} fill={it.color} />)}
                   </Pie>
@@ -503,7 +503,7 @@ export default function Dashboard() {
           </SectionTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {motivosBaja.map(([motivo, n]) => (
-              <div key={motivo} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
+              <div key={motivo} className="tile flex items-center justify-between">
                 <span className="text-sm text-fg-soft">{motivo}</span>
                 <span className="text-lg font-semibold text-fg tabnum">{n}</span>
               </div>
@@ -520,7 +520,7 @@ export default function Dashboard() {
           </SectionTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {contenidosTV.map(([nombre, n]) => (
-              <div key={nombre} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
+              <div key={nombre} className="tile flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm text-fg-soft"><Tv size={15} className="text-vf-red shrink-0" /> {nombre}</span>
                 <span className="text-lg font-semibold text-fg tabnum">{n}</span>
               </div>
@@ -547,8 +547,8 @@ export default function Dashboard() {
                       <span className="text-fg-soft">{it.label}</span>
                       <span className="text-fg-muted tabnum">{it.n}</span>
                     </div>
-                    <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                    <div className="barra">
+                      <div className="bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -573,8 +573,8 @@ export default function Dashboard() {
                       <span className="text-fg-soft">{it.label}</span>
                       <span className="text-fg-muted tabnum">{it.n}</span>
                     </div>
-                    <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-sky-500" style={{ width: `${pct}%` }} />
+                    <div className="barra">
+                      <div className="bg-gradient-to-r from-sky-600 to-sky-400" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -598,9 +598,9 @@ export default function Dashboard() {
               <span className="text-gp-gold font-semibold tabnum">{fmtNum(r.portasPendientes)}</span> pendientes ·{' '}
               <span className="font-semibold tabnum">{Math.round((r.portasActivas / r.portasTotales) * 100)}%</span> activadas
             </p>
-            <div className="flex w-full h-3 rounded-full overflow-hidden bg-bg-surface2">
-              <div className="h-full bg-emerald-500" style={{ width: `${(r.portasActivas / r.portasTotales) * 100}%` }} />
-              <div className="h-full bg-gp-gold" style={{ width: `${(r.portasPendientes / r.portasTotales) * 100}%` }} />
+            <div className="flex w-full h-3.5 rounded-full overflow-hidden bg-bg-surface2 ring-1 ring-inset ring-bg-border">
+              <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${(r.portasActivas / r.portasTotales) * 100}%` }} />
+              <div className="h-full bg-gradient-to-r from-gp-goldDark to-gp-gold" style={{ width: `${(r.portasPendientes / r.portasTotales) * 100}%` }} />
             </div>
             <div className="flex items-center gap-6 mt-3 text-xs text-fg-soft">
               <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500" /> Activas</span>

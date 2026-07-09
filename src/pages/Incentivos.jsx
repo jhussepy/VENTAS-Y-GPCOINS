@@ -57,14 +57,14 @@ export default function Incentivos() {
               <p className="text-xs text-fg-muted mb-4">{inc.descripcion}</p>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-bg-surface2 rounded-lg p-3 border border-bg-border">
+                <div className="tile p-3">
                   <p className="text-xs text-fg-muted">{e.mecanica === 'directo' ? 'GP Coins directos' : 'Puntos acumulados'}</p>
                   <p className="text-xl font-semibold tabnum text-fg">
                     {e.mecanica === 'directo' ? fmtNum(e.gp) : fmtNum(e.puntos)}
                     {e.mecanica === 'mixta' && <span className="text-sm text-gp-gold"> · {fmtNum(e.gp)} GP</span>}
                   </p>
                 </div>
-                <div className="bg-bg-surface2 rounded-lg p-3 border border-bg-border">
+                <div className="tile p-3">
                   <p className="text-xs text-fg-muted">Llaves cumplidas</p>
                   <p className="text-xl font-semibold tabnum text-fg">{cumplidas}/{e.llaves.length}</p>
                 </div>

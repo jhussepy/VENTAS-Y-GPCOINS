@@ -143,8 +143,8 @@ export default function LowiDashboard() {
                     </span>
                     <span className="text-fg-muted tabnum">{n} · {pct.toFixed(0)}%</span>
                   </div>
-                  <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: COLORES_ESTADO[k] }} />
+                  <div className="barra">
+                    <div style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${COLORES_ESTADO[k]}CC, ${COLORES_ESTADO[k]})` }} />
                   </div>
                 </div>
               );
@@ -168,7 +168,7 @@ export default function LowiDashboard() {
                 return (
                   <div key={it.label}>
                     <div className="flex items-center justify-between text-xs mb-1"><span className="text-fg-soft">{it.label}</span><span className="text-fg-muted tabnum">{it.n}</span></div>
-                    <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} /></div>
+                    <div className="barra"><div className="bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${pct}%` }} /></div>
                   </div>
                 );
               })}
@@ -189,7 +189,7 @@ export default function LowiDashboard() {
                 return (
                   <div key={it.label}>
                     <div className="flex items-center justify-between text-xs mb-1"><span className="text-fg-soft">{it.label}</span><span className="text-fg-muted tabnum">{it.n}</span></div>
-                    <div className="w-full h-2 bg-bg-surface2 rounded-full overflow-hidden"><div className="h-full rounded-full bg-sky-500" style={{ width: `${pct}%` }} /></div>
+                    <div className="barra"><div className="bg-gradient-to-r from-sky-600 to-sky-400" style={{ width: `${pct}%` }} /></div>
                   </div>
                 );
               })}
@@ -206,7 +206,7 @@ export default function LowiDashboard() {
           </SectionTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {contenidosTV.map(([nombre, n]) => (
-              <div key={nombre} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
+              <div key={nombre} className="tile flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm text-fg-soft"><Tv size={15} className="text-sky-400 shrink-0" /> {nombre}</span>
                 <span className="text-lg font-semibold text-fg tabnum">{n}</span>
               </div>
@@ -240,7 +240,7 @@ export default function LowiDashboard() {
           </SectionTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {motivos.map(([motivo, n]) => (
-              <div key={motivo} className="bg-bg-surface2 rounded-lg p-4 border border-bg-border flex items-center justify-between">
+              <div key={motivo} className="tile flex items-center justify-between">
                 <span className="text-sm text-fg-soft">{motivo}</span>
                 <span className="text-lg font-semibold text-fg tabnum">{n}</span>
               </div>

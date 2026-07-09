@@ -202,7 +202,7 @@ export default function Fe() {
           </SectionTitle>
           <div className="space-y-3">
             {favs.map((f) => (
-              <div key={f.cita} className="flex items-start gap-3 bg-bg-surface2 rounded-lg p-3 border border-bg-border">
+              <div key={f.cita} className="flex items-start gap-3 tile p-3">
                 <Sparkles size={16} className="text-gp-gold shrink-0 mt-1" />
                 <div className="min-w-0 flex-1">
                   <p className="font-serif text-fg-soft leading-relaxed">{f.texto}</p>
