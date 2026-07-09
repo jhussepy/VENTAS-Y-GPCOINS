@@ -5,7 +5,7 @@ import { estadoDe } from '../lib/estados.js';
 import { PERIODO } from '../data/incentivos.js';
 import { Card, SectionTitle, Badge } from '../components/ui.jsx';
 import {
-  SUBTIPOS, TARIFA_COMISION, UMBRALES_VALLA, ETIQUETA_CATEGORIA,
+  SUBTIPOS, TARIFA_COMISION, UMBRALES_VALLA, UMBRALES_CLIENTES, ETIQUETA_CATEGORIA,
   comisionCategoria, comisionTotal, faltanParaSiguiente, contarDesdeVentas, prorratearUmbrales, fmtSol,
 } from '../lib/comision.js';
 
@@ -206,6 +206,7 @@ export default function Comision() {
             <thead>
               <tr className="text-[11px] uppercase tracking-wide text-fg-muted border-b border-bg-border bg-bg-surface2/60">
                 <th className="px-3 py-2 font-semibold text-left" rowSpan={2}>Valla</th>
+                <th className="px-3 py-2 font-semibold text-center border-l border-bg-border" rowSpan={2}>Clientes</th>
                 <th className="px-3 py-2 font-semibold text-center border-l border-bg-border" colSpan={4}>Fijo</th>
                 <th className="px-3 py-2 font-semibold text-center border-l border-bg-border" colSpan={4}>Móvil</th>
               </tr>
@@ -224,6 +225,9 @@ export default function Comision() {
               {ROMANOS.map((rom, i) => (
                 <tr key={i} className="border-b border-bg-border/60 odd:bg-bg-surface2/25">
                   <td className="px-3 py-2 font-medium text-fg">{rom} valla</td>
+                  <td className={`px-3 py-2 text-center tabnum border-l border-bg-border font-semibold ${i === ROMANOS.length - 1 ? 'bg-gp-gold/15 text-gp-gold' : 'text-fg-soft'}`}>
+                    ≥{UMBRALES_CLIENTES[i]}
+                  </td>
                   <td className="px-3 py-2 text-center text-fg-muted tabnum border-l border-bg-border">≥{UMBRALES_VALLA.fijo[i]}</td>
                   <td className="px-3 py-2 text-center tabnum">{fmtSol(TARIFA_COMISION.fijo.BV[i])}</td>
                   <td className="px-3 py-2 text-center tabnum">{fmtSol(TARIFA_COMISION.fijo.MV[i])}</td>

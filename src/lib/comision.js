@@ -43,6 +43,10 @@ export const UMBRALES_VALLA = {
   movil: [13, 24, 34, 42],
 };
 
+// Umbrales de clientes nuevos por valla (referencia informativa; el objetivo
+// de "clientes nuevos" en sí se sigue en Llaves/Incentivos, no aquí)
+export const UMBRALES_CLIENTES = [7, 11, 16, 22];
+
 import { mesDesdeFecha } from './engine.js';
 
 export const ETIQUETA_CATEGORIA = { fijo: 'Fijo', movil: 'Móvil' };
