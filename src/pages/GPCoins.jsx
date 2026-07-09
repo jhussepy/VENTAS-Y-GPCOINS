@@ -50,7 +50,7 @@ export default function GPCoins() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="stagger grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard icon={Wallet} label="GP Coins directos al monedero" value={fmtNum(r.gpDirectosTotal)} sub="Samsung · Honor · JBL · Motorola" accent="text-gp-gold" />
         <StatCard icon={Trophy} label="GP Coins potenciales (ranking)" value={fmtNum(r.gpPotencialRanking)} sub="Si quedas 1º en los que clasificas" accent="text-emerald-400" />
         <StatCard icon={TrendingUp} label="Puntos de fibra (Cliente Nuevo)" value={fmtNum(ptsFibra)} accent="text-vf-red" />

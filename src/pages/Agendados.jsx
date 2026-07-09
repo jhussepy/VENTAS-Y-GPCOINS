@@ -269,7 +269,7 @@ export default function Agendados() {
       </div>
 
       {/* Resumen rápido */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="stagger grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-bg-border bg-bg-surface p-4">
           <p className="text-xs text-fg-muted">Pendientes</p>
           <p className="text-2xl font-bold tabnum text-gp-gold mt-0.5">{resumen.pendientes}</p>
