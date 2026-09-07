@@ -60,8 +60,9 @@ npm run check    # lint + tests + build, igual que CI
 - Los usuarios con `versionEsquema: 2` se leen desde las subcolecciones
   `ventasVodafone`, `ventasLowi` y `agendados`; los usuarios sin esa marca
   continúan usando automáticamente los arrays históricos del documento.
-  La escritura permanece en el esquema histórico hasta ejecutar la fase de
-  migración, por lo que aún no debe activarse manualmente `versionEsquema: 2`.
+  Las escrituras se dirigen al esquema correspondiente y se serializan para
+  preservar su orden. Aun así, no debe activarse manualmente la versión 2 hasta
+  incorporar el migrador, los backups y el panel de supervisor compatibles.
 
 ## Campañas
 

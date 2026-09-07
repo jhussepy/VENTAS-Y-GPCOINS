@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   collection: vi.fn(),
+  deleteDoc: vi.fn(),
   doc: vi.fn(),
   onSnapshot: vi.fn(),
   setDoc: vi.fn(),
@@ -11,10 +12,12 @@ vi.mock('firebase/firestore', () => mocks);
 vi.mock('../lib/firebase.js', () => ({ db: { nombre: 'db-test' } }));
 
 import {
+  calcularCambiosColeccion,
   guardarCampoUsuario,
   guardarPerfilUsuario,
   normalizarDatosUsuario,
   observarDatosUsuario,
+  sincronizarColeccionUsuario,
 } from './userDataRepository.js';
 
 describe('normalizarDatosUsuario', () => {
@@ -57,9 +60,10 @@ describe('normalizarDatosUsuario', () => {
 describe('acceso al documento de usuario', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.doc.mockReturnValue({ path: 'usuarios/uid-1' });
+    mocks.doc.mockImplementation((_db, ...partes) => ({ path: partes.join('/') }));
     mocks.collection.mockImplementation((_db, _usuarios, _uid, ruta) => ({ ruta }));
     mocks.setDoc.mockResolvedValue(undefined);
+    mocks.deleteDoc.mockResolvedValue(undefined);
   });
 
   it('guarda un perfil normalizado con merge', async () => {
@@ -139,5 +143,54 @@ describe('acceso al documento de usuario', () => {
 
   it('rechaza operaciones sin uid', () => {
     expect(() => guardarCampoUsuario('', 'ventas', [])).toThrow('Se necesita un uid');
+  });
+});
+
+describe('escrituras del esquema v2', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.doc.mockImplementation((_db, ...partes) => ({ path: partes.join('/') }));
+    mocks.setDoc.mockResolvedValue(undefined);
+    mocks.deleteDoc.mockResolvedValue(undefined);
+  });
+
+  it('clasifica registros creados, actualizados y eliminados', () => {
+    expect(calcularCambiosColeccion(
+      [{ id: 'igual', valor: 1 }, { id: 'editar', valor: 1 }, { id: 'borrar' }],
+      [{ id: 'igual', valor: 1 }, { id: 'editar', valor: 2 }, { id: 'crear' }],
+    )).toEqual({
+      creados: [{ id: 'crear' }],
+      actualizados: [{ id: 'editar', valor: 2 }],
+      eliminados: ['borrar'],
+    });
+  });
+
+  it('escribe y elimina únicamente los documentos que cambiaron', async () => {
+    await sincronizarColeccionUsuario(
+      'uid-1',
+      'ventas',
+      [{ id: 'editar', valor: 1 }, { id: 'borrar' }],
+      [{ id: 'editar', valor: 2 }, { id: 'crear' }],
+    );
+
+    expect(mocks.setDoc).toHaveBeenCalledTimes(2);
+    expect(mocks.setDoc).toHaveBeenCalledWith(
+      { path: 'usuarios/uid-1/ventasVodafone/crear' },
+      { id: 'crear' },
+    );
+    expect(mocks.setDoc).toHaveBeenCalledWith(
+      { path: 'usuarios/uid-1/ventasVodafone/editar' },
+      { id: 'editar', valor: 2 },
+    );
+    expect(mocks.deleteDoc).toHaveBeenCalledWith({ path: 'usuarios/uid-1/ventasVodafone/borrar' });
+  });
+
+  it('rechaza colecciones desconocidas, ids vacíos y duplicados', () => {
+    expect(() => sincronizarColeccionUsuario('uid-1', 'otra', [], []))
+      .toThrow('Colección de usuario no permitida');
+    expect(() => calcularCambiosColeccion([], [{}])).toThrow('necesitan un id de texto');
+    expect(() => calcularCambiosColeccion([], [{ id: 'ruta/no-valida' }])).toThrow('Id no válido');
+    expect(() => calcularCambiosColeccion([], [{ id: 'x' }, { id: 'x' }]))
+      .toThrow('Id duplicado');
   });
 });
