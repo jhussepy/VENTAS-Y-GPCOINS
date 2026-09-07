@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock, BookOpen, Loader2, Check, Trophy, RotateCcw, PhoneCall } from 'lucide-react';
+import { Database, ShoppingCart, Wifi, Tag, Smartphone, HardDrive, CalendarClock, BookOpen, Loader2, Check, Trophy, RotateCcw, PhoneCall, ShieldCheck, Download } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { Card, SectionTitle, Badge, useConfirm } from '../components/ui.jsx';
 import { fmtNum } from '../lib/format.js';
@@ -7,6 +7,7 @@ import { mesEfectivo } from '../lib/engine.js';
 import { OBJETIVOS_LOGROS_DEFECTO, calcularLogros } from '../lib/logros.js';
 import { VERSION_BIBLICA } from '../data/biblia.js';
 import { getApiKey, setApiKey, getBible, setBible, listarBiblias } from '../lib/bibliaApi.js';
+import { exportarBackup } from '../lib/backup.js';
 
 // --- Objetivos de las insignias del Dashboard (editables por el usuario) ----
 function ObjetivosInsignias() {
@@ -154,8 +155,11 @@ function VersionBiblica() {
 }
 
 export default function Ajustes() {
-  const { ventas, setVentas, ventasLowi, tarifas, precios, agendados } = useApp();
+  const { ventas, setVentas, ventasLowi, tarifas, precios, objetivosLogros, agendados, versionDatos, migrarEsquemaV2 } = useApp();
   const [msg, setMsg] = useState(null);
+  const [migrando, setMigrando] = useState(false);
+  const [etapaMigracion, setEtapaMigracion] = useState('');
+  const [mensajeMigracion, setMensajeMigracion] = useState(null);
   const { confirmar, dialogo } = useConfirm();
 
   // Ventas de Vodafone cuyo "mes" guardado no coincide con la regla actual
@@ -181,6 +185,29 @@ export default function Ajustes() {
     }));
     setMsg({ tone: 'green', text: `Mes recalculado en ${desactualizadas} venta(s).` });
     setTimeout(() => setMsg(null), 5000);
+  };
+
+  const migrar = async () => {
+    const ok = await confirmar(
+      'Se descargará una copia de seguridad y después se copiarán tus ventas y agendados al almacenamiento ampliado. No cierres esta pestaña durante el proceso.',
+      { titulo: 'Ampliar almacenamiento', accion: 'Descargar copia y migrar' }
+    );
+    if (!ok) return;
+    exportarBackup({ ventas, ventasLowi, tarifas, precios, objetivosLogros, agendados });
+    setMigrando(true);
+    setMensajeMigracion(null);
+    try {
+      const resultado = await migrarEsquemaV2(setEtapaMigracion);
+      setMensajeMigracion({
+        tone: 'green',
+        text: `Migración completada: ${resultado.conteos.ventas} ventas Vodafone, ${resultado.conteos.ventasLowi} ventas Lowi y ${resultado.conteos.agendados} agendados verificados.`,
+      });
+    } catch (e) {
+      setMensajeMigracion({ tone: 'red', text: e.message || 'No se pudo completar la migración. Tus datos originales siguen disponibles.' });
+    } finally {
+      setMigrando(false);
+      setEtapaMigracion('');
+    }
   };
 
   const d = useMemo(() => {
@@ -230,6 +257,37 @@ export default function Ajustes() {
             ? ' Estás cerca del límite: haz una Copia de seguridad y avísame para ampliar el almacenamiento.'
             : ' Tienes espacio de sobra; aquí podrás vigilar el uso a medida que registres ventas.'}
         </p>
+      </Card>
+
+      <Card>
+        <SectionTitle right={<Badge tone={versionDatos >= 2 ? 'green' : 'neutral'}>Esquema v{versionDatos}</Badge>}>
+          <span className="flex items-center gap-2"><ShieldCheck size={18} className="text-vf-red" /> Almacenamiento ampliado</span>
+        </SectionTitle>
+        {versionDatos >= 2 ? (
+          <div className="flex items-start gap-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 p-4">
+            <Check size={20} className="text-emerald-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-fg">Migración completada</p>
+              <p className="text-xs text-fg-muted mt-1">Ventas y agendados se guardan como registros independientes. La copia legacy permanece temporalmente como respaldo hasta la fase de limpieza.</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-fg-soft mb-4">
+              Prepara ventas y agendados como registros independientes para superar posteriormente el límite del documento principal. Primero descargaremos automáticamente una copia JSON y solo activaremos el nuevo almacenamiento después de verificar todos los registros.
+            </p>
+            <button className="btn-primary min-h-11" onClick={migrar} disabled={migrando}>
+              {migrando ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              {migrando ? ({ respaldo: 'Guardando respaldo…', copiando: 'Copiando registros…', verificando: 'Verificando…', activando: 'Activando…' }[etapaMigracion] || 'Preparando…') : 'Descargar copia y ampliar'}
+            </button>
+            <p className="text-[11px] text-fg-muted mt-3">Proceso seguro y reintentable: los arrays originales no se eliminan.</p>
+          </>
+        )}
+        {mensajeMigracion && (
+          <div className={`mt-4 text-sm px-4 py-3 rounded-lg ${mensajeMigracion.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="status">
+            {mensajeMigracion.text}
+          </div>
+        )}
       </Card>
 
       {/* Desglose por tipo de dato */}

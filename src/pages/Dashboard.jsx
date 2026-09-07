@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat, Smartphone, Tv, BookOpen,
+  ShoppingCart, Coins, Wifi, UserPlus, Trophy, CalendarClock, Repeat, Smartphone, Tv, BookOpen,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList,
