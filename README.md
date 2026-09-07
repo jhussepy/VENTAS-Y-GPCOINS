@@ -3,7 +3,7 @@
 Dashboard para agentes de captación (Televenta Outbound) que registra ventas,
 calcula GP Coins, sigue los incentivos de Vodafone y, de forma independiente,
 hace seguimiento de las ventas de **Lowi**.
-**Período de incentivos cubierto: 1 de junio al 31 de julio de 2026.**
+**Período de incentivos cubierto: 1 de junio al 30 de septiembre de 2026.**
 
 ## Características
 
@@ -73,6 +73,9 @@ Cada mes relaciona un identificador persistido con su valor ISO `YYYY-MM`; esto
 mantiene compatibles las ventas antiguas de junio/julio y evita asignar fechas
 de campañas futuras al mes de junio. Para añadir una campaña, crea su entrada
 en `CAMPANAS`, actualiza `CAMPANA_ACTIVA_ID` y aporta sus tablas comerciales.
+Mientras Vodafone no publique nuevas tablas, agosto y septiembre heredan las
+condiciones comerciales de julio; la herencia queda declarada explícitamente
+en la configuración y puede retirarse cuando cambien.
 
 ## Stack
 

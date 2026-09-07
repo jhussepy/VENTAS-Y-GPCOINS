@@ -22,7 +22,7 @@ export const ventaVacia = () => ({
   idWeb: '',               // ID Web
   fechaVenta: '',
   fechaInstalacion: '',
-  mes: 'junio',            // ID de mes de campaña; legacy: junio | julio
+  mes: 'junio',            // ID persistido del mes dentro de la campaña activa
   // Fibra / convergencia
   convergencia: '',        // '' | '3P' (Fibra+Fijo+Móvil) | '4P' (+TV)
   velocidad: '',           // '' | 'Fibra 300 MB' | 'Fibra 600 MB' | 'Fibra 1 GB'

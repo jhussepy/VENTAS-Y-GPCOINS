@@ -8,7 +8,7 @@ export function useCloudData(user) {
   const [ventas, setVentasState] = useState([]);
   const [ventasLowi, setVentasLowiState] = useState([]);
   const [tarifas, setTarifasState] = useState([]);
-  const [precios, setPreciosState] = useState({}); // { [sap]: { junio, julio } }
+  const [precios, setPreciosState] = useState({}); // { [sap]: { [mesCampana]: precio } }
   const [objetivosLogros, setObjetivosLogrosState] = useState({}); // { [idLogro]: objetivoPersonalizado }
   const [agendados, setAgendadosState] = useState([]); // clientes que piden que se les llame otro día/hora
   const [tema, setTemaState] = useState('dark');

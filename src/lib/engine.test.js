@@ -1,13 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { mesDesdeFecha, mesEfectivo, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas, estadoEntregaTerminal, lineaPrincipal } from './engine.js';
 import { CAMPANA_ACTIVA, mesActivoCampanaDesdeFecha, periodoDesdeCampana } from '../data/campanas.js';
+import { CATALOGO, PUNTOS_CONVERGENCIA, convPts, estDe, gpDe, ptsDe, udsDe } from '../data/incentivos.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
 import { resumenLowi, mesLowi, mesEfectivoLowi, ventaLowiVacia } from './lowi.js';
 
 describe('mesDesdeFecha', () => {
-  it('clasifica junio y julio correctamente (getMonth base 0)', () => {
+  it('clasifica los meses de la campaña correctamente', () => {
     expect(mesDesdeFecha('2026-06-15')).toBe('junio');
     expect(mesDesdeFecha('2026-07-01')).toBe('julio');
+    expect(mesDesdeFecha('2026-08-01')).toBe('agosto');
+    expect(mesDesdeFecha('2026-09-07')).toBe('septiembre');
   });
   it('por defecto junio si no hay fecha', () => {
     expect(mesDesdeFecha('')).toBe('junio');
@@ -16,9 +19,8 @@ describe('mesDesdeFecha', () => {
     expect(mesDesdeFecha('2026-06-30')).toBe('junio');
     expect(mesDesdeFecha('2026-07-01')).toBe('julio');
   });
-  it('no atribuye los meses externos a junio', () => {
-    expect(mesDesdeFecha('2026-08-01')).toBe('2026-08');
-    expect(mesDesdeFecha('2026-09-07')).toBe('2026-09');
+  it('mantiene en ISO los meses externos a la campaña', () => {
+    expect(mesDesdeFecha('2026-10-01')).toBe('2026-10');
     expect(mesDesdeFecha('2027-01-01')).toBe('2027-01');
   });
   it('mantiene los identificadores legacy para la campaña actual', () => {
@@ -30,14 +32,26 @@ describe('mesDesdeFecha', () => {
 describe('campaña versionada', () => {
   it('selecciona el límite más cercano cuando hoy cae fuera de la campaña', () => {
     expect(mesActivoCampanaDesdeFecha('2026-05-01')).toBe('junio');
-    expect(mesActivoCampanaDesdeFecha('2026-09-07')).toBe('julio');
+    expect(mesActivoCampanaDesdeFecha('2026-09-07')).toBe('septiembre');
+    expect(mesActivoCampanaDesdeFecha('2026-10-01')).toBe('septiembre');
   });
   it('genera la interfaz de período que consume la aplicación', () => {
     expect(periodoDesdeCampana(CAMPANA_ACTIVA)).toMatchObject({
-      id: 'vodafone-captacion-2026-06-07',
-      meses: ['junio', 'julio'],
-      etiquetas: { junio: 'JUNIO', julio: 'JULIO' },
+      id: 'vodafone-captacion-2026-06-09',
+      meses: ['junio', 'julio', 'agosto', 'septiembre'],
+      etiquetas: { junio: 'JUNIO', julio: 'JULIO', agosto: 'AGOSTO', septiembre: 'SEPTIEMBRE' },
     });
+  });
+  it('hereda en agosto y septiembre las condiciones de julio', () => {
+    const xiaomi = CATALOGO.xiaomi.productos[0];
+    const samsung = CATALOGO.samsung.productos[0];
+    for (const mes of ['agosto', 'septiembre']) {
+      expect(ptsDe(xiaomi, mes)).toBe(ptsDe(xiaomi, 'julio'));
+      expect(estDe(xiaomi, mes)).toBe(estDe(xiaomi, 'julio'));
+      expect(gpDe(samsung, mes)).toBe(gpDe(samsung, 'julio'));
+      expect(udsDe(samsung, mes)).toBe(udsDe(samsung, 'julio'));
+      expect(convPts(PUNTOS_CONVERGENCIA[0], mes)).toBe(convPts(PUNTOS_CONVERGENCIA[0], 'julio'));
+    }
   });
   it('tolera una fecha Date inválida usando el primer mes configurado', () => {
     expect(mesActivoCampanaDesdeFecha(new Date('fecha-invalida'))).toBe('junio');

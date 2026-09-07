@@ -17,6 +17,8 @@ import { ventanaRelevante, fmtVentana, TONO_VENTANA } from '../lib/portabilidad.
 
 const VELOCIDADES = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
 const MARCAS = Object.keys(CATALOGO);
+const etiquetaMes = (mes) => PERIODO.etiquetas[mes] || mes || '—';
+const etiquetaMesCorta = (mes) => etiquetaMes(mes).slice(0, 3);
 
 function FormVenta({ inicial, onGuardar, onCancelar }) {
   const [v, setV] = useState(inicial);
@@ -67,7 +69,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 
   const productos = v.marca ? CATALOGO[v.marca]?.productos ?? [] : [];
 
-  // ¿La fecha de venta cae fuera del período del incentivo (1-jun → 31-jul 2026)?
+  // ¿La fecha de venta cae fuera del período del incentivo activo?
   const fechaFuera = !!v.fechaVenta && (v.fechaVenta < PERIODO.inicio || v.fechaVenta > PERIODO.fin);
   const avisosDatos = avisosContacto(v);
 
@@ -97,7 +99,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           <input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} />
           {fechaFuera && (
             <p className="text-xs text-amber-400 mt-1">
-              Fecha fuera del período del incentivo (1 jun → 31 jul 2026).
+              Fecha fuera del período del incentivo ({PERIODO.inicio} → {PERIODO.fin}).
             </p>
           )}
         </div>
@@ -271,7 +273,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
         <div>
           <label className="label">Mes (auto)</label>
           <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!(v.fechaInstalacion || v.fechaVenta)} title={(v.fechaInstalacion || v.fechaVenta) ? 'Se autodetecta desde la fecha de instalación (o la de venta si aún no hay instalación)' : undefined}>
-            <option value="junio">Junio</option><option value="julio">Julio</option>
+            {PERIODO.meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
           </select>
         </div>
       </div>
@@ -426,7 +428,7 @@ export default function Ventas() {
     const avisos = [];
 
     if (venta.fechaVenta && (venta.fechaVenta < PERIODO.inicio || venta.fechaVenta > PERIODO.fin)) {
-      avisos.push('La fecha de venta está fuera del período del incentivo (1 jun → 31 jul 2026).');
+      avisos.push(`La fecha de venta está fuera del período del incentivo (${PERIODO.inicio} → ${PERIODO.fin}).`);
     }
 
     avisos.push(...avisosContacto(venta));
@@ -526,11 +528,10 @@ export default function Ventas() {
             className="input w-auto"
             value={filtroMes}
             onChange={(e) => setFiltroMes(e.target.value)}
-            title="Se sincroniza con el Período activo de arriba; elige 'Todos los meses' para ver ambos a la vez"
+            title="Se sincroniza con el período activo de arriba; elige 'Todos los meses' para ver el período completo"
           >
             <option value="todos">Todos los meses</option>
-            <option value="junio">Junio</option>
-            <option value="julio">Julio</option>
+            {PERIODO.meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
           </select>
           <select className="input w-auto" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
             <option value="todos">Todos los estados</option>
@@ -592,7 +593,7 @@ export default function Ventas() {
         {filtroMes !== 'todos' && lista.some((v) => v.mes !== filtroMes) && (
           <div className="px-5 py-2 border-b border-bg-border bg-sky-500/[0.06] text-xs text-sky-300 flex items-center gap-2">
             <CalendarClock size={13} className="shrink-0" />
-            Las filas resaltadas en azul son ventas de otro mes que aparecen aquí porque su porta activa en {filtroMes === 'julio' ? 'julio' : 'junio'}.
+            Las filas resaltadas en azul son ventas de otro mes que aparecen aquí porque su porta activa en {etiquetaMes(filtroMes).toLowerCase()}.
           </div>
         )}
         {lista.length === 0 ? (
@@ -681,7 +682,7 @@ export default function Ventas() {
                                   <span key={i} className="inline-flex items-center gap-1" title={`Portabilidad móvil: ${fmtVentana(p.raw)}${p.activa ? ' · activada' : ''}${p.otroMes ? ` · cuenta en ${p.mes}` : ''}`}>
                                     <CalendarClock size={11} className="text-fg-muted" />
                                     <Badge tone={tono}>{fmtVentana(p.raw)}</Badge>
-                                    {p.otroMes && <span className="text-[10px] font-semibold text-fg-muted">{p.mes === 'julio' ? 'Jul' : 'Jun'}</span>}
+                                    {p.otroMes && <span className="text-[10px] font-semibold text-fg-muted">{etiquetaMesCorta(p.mes)}</span>}
                                   </span>
                                 );
                               })}
@@ -701,14 +702,14 @@ export default function Ventas() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <Badge tone={porPortaCruzada ? 'sky' : 'neutral'}>{v.mes === 'julio' ? 'Jul' : 'Jun'}</Badge>
+                          <Badge tone={porPortaCruzada ? 'sky' : 'neutral'}>{etiquetaMesCorta(v.mes)}</Badge>
                           {(() => {
                             // Si alguna porta activa en otro mes, se indica aquí
                             const otros = [...mesesImplicados(v)].filter((m) => m !== v.mes);
                             if (!otros.length) return null;
                             return otros.map((m) => (
                               <span key={m} title={`Esta venta es de ${v.mes}, pero su porta activa en ${m} y por eso también cuenta en ese mes`}>
-                                <Badge tone="sky">↳ cuenta en {m === 'julio' ? 'Jul' : 'Jun'}</Badge>
+                                <Badge tone="sky">↳ cuenta en {etiquetaMesCorta(m)}</Badge>
                               </span>
                             ));
                           })()}

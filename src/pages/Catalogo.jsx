@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { CATALOGO, ptsDe, gpDe, udsDe, estDe, PERIODO } from '../data/incentivos.js';
+import { mesAnteriorCampana } from '../data/campanas.js';
 import { SEGUROS, PLAZOS, CATALOGOS_FIN, OFERTAS_FIN, calcFinanciacion } from '../data/financiacion.js';
 import { unidadesVendidas } from '../lib/engine.js';
 import { Card, Badge, EstrellaTag, EmptyState } from '../components/ui.jsx';
@@ -180,7 +181,7 @@ export default function Catalogo() {
 
   const tieneRanking = cat.mecanica === 'ranking' || cat.mecanica === 'mixta';
   const tieneDirecto = cat.mecanica === 'directo' || cat.mecanica === 'mixta';
-  const otroMes = mes === 'junio' ? 'julio' : 'junio';
+  const otroMes = mesAnteriorCampana(mes);
 
   // Valor principal de un producto (puntos si es ranking, GP si es directo)
   const valorDe = (p, m) => (tieneRanking ? ptsDe(p, m) : gpDe(p, m));

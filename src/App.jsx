@@ -405,7 +405,15 @@ export default function App() {
               {!esLowi && !enAgendados && (
                 <>
                   <span className="text-xs text-fg-muted hidden sm:inline">Período activo:</span>
-                  <div className="flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
+                  <select
+                    className="input sm:hidden w-28 py-1 text-xs font-semibold"
+                    value={mes}
+                    onChange={(e) => setMes(e.target.value)}
+                    aria-label="Período activo"
+                  >
+                    {PERIODO.meses.map((m) => <option key={m} value={m}>{PERIODO.etiquetas[m]}</option>)}
+                  </select>
+                  <div className="hidden sm:flex bg-bg-surface2 rounded-lg p-1 border border-bg-border">
                     {PERIODO.meses.map((m) => (
                       <button
                         key={m}
