@@ -53,6 +53,14 @@ npm test         # tests del motor de cálculo (Vitest)
 - Firestore: reglas en [`firestore.rules`](./firestore.rules). El correo admin se
   define tanto ahí como en `src/lib/admin.js`.
 
+## Campañas
+
+La campaña comercial se declara de forma versionada en `src/data/campanas.js`.
+Cada mes relaciona un identificador persistido con su valor ISO `YYYY-MM`; esto
+mantiene compatibles las ventas antiguas de junio/julio y evita asignar fechas
+de campañas futuras al mes de junio. Para añadir una campaña, crea su entrada
+en `CAMPANAS`, actualiza `CAMPANA_ACTIVA_ID` y aporta sus tablas comerciales.
+
 ## Stack
 
 React + Vite · Tailwind CSS · Recharts · SheetJS (xlsx) · Firebase
