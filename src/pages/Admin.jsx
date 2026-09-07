@@ -38,7 +38,7 @@ export default function Admin() {
         };
       });
       setAgentes(data);
-    } catch (e) {
+    } catch {
       setError('No se pudieron cargar los datos. Revisa las reglas de Firestore.');
     }
     setLoading(false);

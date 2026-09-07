@@ -98,9 +98,9 @@ export function Insignia({ logro }) {
 export function useConfirm() {
   const [estado, setEstado] = useState(null);
   const confirmar = useCallback((mensaje, opts = {}) =>
-    new Promise((resolve) => setEstado({ mensaje, resolve, ...opts })), []);
+    new Promise((resolve) => { setEstado({ mensaje, resolve, ...opts }); }), []);
   const avisar = useCallback((mensaje, opts = {}) =>
-    new Promise((resolve) => setEstado({ mensaje, resolve, soloAviso: true, ...opts })), []);
+    new Promise((resolve) => { setEstado({ mensaje, resolve, soloAviso: true, ...opts }); }), []);
   const cerrar = (ok) => { estado?.resolve(ok); setEstado(null); };
 
   const dialogo = estado ? (
