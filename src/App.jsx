@@ -5,7 +5,6 @@ import {
   Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator, Search,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
-import { mesDesdeFecha } from './lib/engine.js';
 import { versiculoDelDia, LEMA } from './data/biblia.js';
 import { estaAtrasado } from './lib/agendados.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -14,6 +13,7 @@ import { cerrarSesion } from './lib/firebase.js';
 import { esAdmin } from './lib/admin.js';
 import { exportarBackup, leerBackup } from './lib/backup.js';
 import { ventasDemo, ventasLowiDemo } from './lib/demo.js';
+import { mesActivoCampanaDesdeFecha } from './data/campanas.js';
 
 // Páginas con carga diferida (code-splitting) para aligerar el arranque
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
@@ -86,9 +86,9 @@ export default function App() {
   const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
-  // El período activo arranca en el mes real de hoy (no siempre "junio"),
-  // para que el Dashboard/GP Coins/Llaves no muestren un mes vencido por defecto.
-  const [mes, setMes] = useState(() => mesDesdeFecha(new Date()));
+  // Si hoy cae dentro de la campaña usamos su mes; si la campaña ya terminó,
+  // mostramos su último mes en vez de atribuir la fecha actual a junio.
+  const [mes, setMes] = useState(() => mesActivoCampanaDesdeFecha(new Date()));
   const [open, setOpen] = useState(false);
   const [prefillVenta, setPrefillVenta] = useState(null); // {marca, sap} para "Vender" desde Catálogo
   const [avisoAgendaCerrado, setAvisoAgendaCerrado] = useState(false); // recordatorio de atrasados descartado esta sesión

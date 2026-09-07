@@ -4,7 +4,7 @@ import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, Al
 import { useApp } from '../App.jsx';
 import { agendadoVacio, ESTADOS_AGENDA, ORDEN_ESTADOS_AGENDA, estaAtrasado, esDeHoy, siguienteDiaHabil, ahoraLocalISO, fechaHoraAgendado } from '../lib/agendados.js';
 import { importarAgendados, exportarAgendados, plantillaAgendados } from '../lib/excelAgendados.js';
-import { Card, SectionTitle, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
+import { Card, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { fmtFecha } from '../lib/format.js';
 import { fmtVentana } from '../lib/portabilidad.js';
 
