@@ -54,6 +54,17 @@ npm run check    # lint + tests + build, igual que CI
 - Autenticación: proveedor Google habilitado y dominios autorizados configurados.
 - Firestore: reglas en [`firestore.rules`](./firestore.rules). El correo admin se
   define tanto ahí como en `src/lib/admin.js`.
+- El acceso al documento de cada usuario está encapsulado en
+  `src/repositories/userDataRepository.js`; el esquema almacenado sigue siendo
+  compatible con los datos existentes.
+
+## Campañas
+
+La campaña comercial se declara de forma versionada en `src/data/campanas.js`.
+Cada mes relaciona un identificador persistido con su valor ISO `YYYY-MM`; esto
+mantiene compatibles las ventas antiguas de junio/julio y evita asignar fechas
+de campañas futuras al mes de junio. Para añadir una campaña, crea su entrada
+en `CAMPANAS`, actualiza `CAMPANA_ACTIVA_ID` y aporta sus tablas comerciales.
 
 ## Campañas
 
