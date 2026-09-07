@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 
 export const CAMPOS_PERSISTIBLES = new Set([
@@ -36,6 +36,11 @@ const referenciaUsuario = (uid) => {
   return doc(db, 'usuarios', uid);
 };
 
+const registrosDeSnapshot = (snapshot) => snapshot.docs.map((item) => ({
+  ...item.data(),
+  id: item.id,
+}));
+
 export function guardarPerfilUsuario(user, ahora = Date.now()) {
   return setDoc(referenciaUsuario(user?.uid), {
     email: user.email || '',
@@ -68,10 +73,7 @@ export function observarDatosUsuario(uid, { onData, onError }) {
     cancelarColecciones = Object.entries(COLECCIONES_V2).map(([campo, ruta]) => onSnapshot(
       collection(db, 'usuarios', uid, ruta),
       (snapshot) => {
-        datosColecciones[campo] = snapshot.docs.map((item) => {
-          const datos = item.data();
-          return { ...datos, id: item.id };
-        });
+        datosColecciones[campo] = registrosDeSnapshot(snapshot);
         emitirColecciones();
       },
       onError,
@@ -143,11 +145,7 @@ export function calcularCambiosColeccion(anteriores, siguientes) {
   return { creados, actualizados, eliminados };
 }
 
-export function sincronizarColeccionUsuario(uid, campo, anteriores, siguientes) {
-  const ruta = COLECCIONES_V2[campo];
-  if (!ruta) throw new Error(`Colección de usuario no permitida: ${campo}`);
-  if (!uid) throw new Error('Se necesita un uid para sincronizar datos del usuario.');
-  const cambios = calcularCambiosColeccion(anteriores, siguientes);
+const aplicarCambiosColeccion = (uid, ruta, cambios) => {
   const referencia = (id) => doc(db, 'usuarios', uid, ruta, id);
   const escrituras = [
     ...cambios.creados.map((registro) => setDoc(referencia(registro.id), registro)),
@@ -155,4 +153,64 @@ export function sincronizarColeccionUsuario(uid, campo, anteriores, siguientes) 
     ...cambios.eliminados.map((id) => deleteDoc(referencia(id))),
   ];
   return Promise.all(escrituras);
+};
+
+export function sincronizarColeccionUsuario(uid, campo, anteriores, siguientes) {
+  const ruta = COLECCIONES_V2[campo];
+  if (!ruta) throw new Error(`Colección de usuario no permitida: ${campo}`);
+  if (!uid) throw new Error('Se necesita un uid para sincronizar datos del usuario.');
+  const cambios = calcularCambiosColeccion(anteriores, siguientes);
+  return aplicarCambiosColeccion(uid, ruta, cambios);
+}
+
+export async function cargarUsuariosSupervisor() {
+  const snapshot = await getDocs(collection(db, 'usuarios'));
+  return Promise.all(snapshot.docs.map(async (item) => {
+    const raw = item.data();
+    const datos = normalizarDatosUsuario(raw);
+    if (datos.versionEsquema >= 2) {
+      const entradas = await Promise.all(Object.entries(COLECCIONES_V2).map(async ([campo, ruta]) => {
+        const snap = await getDocs(collection(db, 'usuarios', item.id, ruta));
+        return [campo, registrosDeSnapshot(snap)];
+      }));
+      Object.assign(datos, Object.fromEntries(entradas));
+    }
+    return {
+      ...datos,
+      uid: item.id,
+      email: raw.email || '(sin email)',
+      nombre: raw.nombre || '',
+      foto: raw.foto || '',
+      ultimoAcceso: raw.ultimoAcceso || 0,
+    };
+  }));
+}
+
+export function reemplazarDatosUsuario(uid, versionEsquema, actuales, siguientes) {
+  const configuracion = {
+    tarifas: Array.isArray(siguientes.tarifas) ? siguientes.tarifas : [],
+    precios: objetoPlano(siguientes.precios),
+    objetivosLogros: objetoPlano(siguientes.objetivosLogros),
+  };
+  if (versionEsquema < 2) {
+    return setDoc(referenciaUsuario(uid), {
+      ...configuracion,
+      ventas: Array.isArray(siguientes.ventas) ? siguientes.ventas : [],
+      ventasLowi: Array.isArray(siguientes.ventasLowi) ? siguientes.ventasLowi : [],
+      agendados: Array.isArray(siguientes.agendados) ? siguientes.agendados : [],
+    }, { merge: true });
+  }
+  // Calculamos y validamos todas las diferencias antes de iniciar la primera
+  // escritura, evitando una restauración parcial por IDs inválidos/duplicados.
+  const cambios = Object.entries(COLECCIONES_V2).map(([campo, ruta]) => ({
+    ruta,
+    cambios: calcularCambiosColeccion(
+      actuales[campo] || [],
+      Array.isArray(siguientes[campo]) ? siguientes[campo] : [],
+    ),
+  }));
+  return Promise.all([
+    setDoc(referenciaUsuario(uid), configuracion, { merge: true }),
+    ...cambios.map((entrada) => aplicarCambiosColeccion(uid, entrada.ruta, entrada.cambios)),
+  ]);
 }

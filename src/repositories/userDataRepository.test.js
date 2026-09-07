@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   collection: vi.fn(),
   deleteDoc: vi.fn(),
   doc: vi.fn(),
+  getDocs: vi.fn(),
   onSnapshot: vi.fn(),
   setDoc: vi.fn(),
 }));
@@ -13,10 +14,12 @@ vi.mock('../lib/firebase.js', () => ({ db: { nombre: 'db-test' } }));
 
 import {
   calcularCambiosColeccion,
+  cargarUsuariosSupervisor,
   guardarCampoUsuario,
   guardarPerfilUsuario,
   normalizarDatosUsuario,
   observarDatosUsuario,
+  reemplazarDatosUsuario,
   sincronizarColeccionUsuario,
 } from './userDataRepository.js';
 
@@ -152,6 +155,75 @@ describe('escrituras del esquema v2', () => {
     mocks.doc.mockImplementation((_db, ...partes) => ({ path: partes.join('/') }));
     mocks.setDoc.mockResolvedValue(undefined);
     mocks.deleteDoc.mockResolvedValue(undefined);
+  });
+
+  it('carga agentes v1 y v2 para el panel de supervisor', async () => {
+    mocks.collection.mockImplementation((_db, _usuarios, _uid, ruta) => ({ ruta }));
+    mocks.getDocs.mockImplementation((ref) => {
+      if (!ref.ruta) {
+        return Promise.resolve({ docs: [
+          { id: 'legacy', data: () => ({ email: 'legacy@test', ventas: [{ id: 'l1' }] }) },
+          { id: 'nuevo', data: () => ({ email: 'nuevo@test', versionEsquema: 2, ventas: [{ id: 'ignorar' }] }) },
+        ] });
+      }
+      const porRuta = {
+        ventasVodafone: [{ id: 'v2', data: () => ({ nombre: 'Venta v2' }) }],
+        ventasLowi: [],
+        agendados: [{ id: 'a2', data: () => ({ nombre: 'Agenda v2' }) }],
+      };
+      return Promise.resolve({ docs: porRuta[ref.ruta] });
+    });
+
+    const usuarios = await cargarUsuariosSupervisor();
+
+    expect(usuarios).toHaveLength(2);
+    expect(usuarios[0]).toMatchObject({ uid: 'legacy', ventas: [{ id: 'l1' }] });
+    expect(usuarios[1]).toMatchObject({
+      uid: 'nuevo',
+      ventas: [{ id: 'v2', nombre: 'Venta v2' }],
+      ventasLowi: [],
+      agendados: [{ id: 'a2', nombre: 'Agenda v2' }],
+    });
+  });
+
+  it('reemplaza un backup legacy en una sola escritura', async () => {
+    await reemplazarDatosUsuario('uid-1', 1, {}, {
+      ventas: [{ id: 'v1' }], ventasLowi: [], agendados: [],
+      tarifas: [{ id: 't1' }], precios: {}, objetivosLogros: {},
+    });
+
+    expect(mocks.setDoc).toHaveBeenCalledOnce();
+    expect(mocks.setDoc).toHaveBeenCalledWith(
+      { path: 'usuarios/uid-1' },
+      expect.objectContaining({ ventas: [{ id: 'v1' }], tarifas: [{ id: 't1' }] }),
+      { merge: true },
+    );
+  });
+
+  it('reemplaza un backup v2 eliminando documentos ausentes', async () => {
+    await reemplazarDatosUsuario(
+      'uid-1',
+      2,
+      { ventas: [{ id: 'borrar' }], ventasLowi: [], agendados: [] },
+      { ventas: [{ id: 'crear' }], ventasLowi: [], agendados: [], tarifas: [], precios: {}, objetivosLogros: {} },
+    );
+
+    expect(mocks.setDoc).toHaveBeenCalledWith(
+      { path: 'usuarios/uid-1/ventasVodafone/crear' },
+      { id: 'crear' },
+    );
+    expect(mocks.deleteDoc).toHaveBeenCalledWith({ path: 'usuarios/uid-1/ventasVodafone/borrar' });
+  });
+
+  it('valida todo el backup v2 antes de iniciar escrituras', () => {
+    expect(() => reemplazarDatosUsuario(
+      'uid-1',
+      2,
+      { ventas: [], ventasLowi: [], agendados: [] },
+      { ventas: [{ id: 'valida' }], ventasLowi: [{ id: '' }], agendados: [] },
+    )).toThrow('necesitan un id de texto');
+    expect(mocks.setDoc).not.toHaveBeenCalled();
+    expect(mocks.deleteDoc).not.toHaveBeenCalled();
   });
 
   it('clasifica registros creados, actualizados y eliminados', () => {

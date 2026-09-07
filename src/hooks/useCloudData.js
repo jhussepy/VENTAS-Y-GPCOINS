@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { guardarCampoUsuario, guardarPerfilUsuario, observarDatosUsuario, sincronizarColeccionUsuario } from '../repositories/userDataRepository.js';
+import { guardarCampoUsuario, guardarPerfilUsuario, observarDatosUsuario, reemplazarDatosUsuario, sincronizarColeccionUsuario } from '../repositories/userDataRepository.js';
 
 const DEBOUNCE_MS = 1500;
 
@@ -168,6 +168,39 @@ export function useCloudData(user) {
 
   const setAgendados = (fn) => actualizarColeccion('agendados', setAgendadosState, fn);
 
+  const restaurarDatos = async (datos) => {
+    Object.values(timers.current).forEach(clearTimeout);
+    setEstadoGuardado('guardando');
+    const version = versionEsquema.current;
+    const actuales = colecciones.current;
+    const pendientes = Object.values(colasEscritura.current).map((tarea) => tarea.catch(() => {}));
+    const tarea = Promise.all(pendientes)
+      .then(() => reemplazarDatosUsuario(uid, version, actuales, datos));
+    if (version >= 2) {
+      Object.keys(colecciones.current).forEach((campo) => { colasEscritura.current[campo] = tarea; });
+    }
+    try {
+      await tarea;
+      if (uidActual.current !== uid) return;
+      colecciones.current = {
+        ventas: datos.ventas,
+        ventasLowi: datos.ventasLowi,
+        agendados: datos.agendados,
+      };
+      setVentasState(datos.ventas);
+      setVentasLowiState(datos.ventasLowi);
+      setAgendadosState(datos.agendados);
+      setTarifasState(datos.tarifas);
+      setPreciosState(datos.precios);
+      setObjetivosLogrosState(datos.objetivosLogros);
+      setEstadoGuardado('guardado');
+    } catch (e) {
+      console.error('No se pudo restaurar la copia:', e);
+      if (uidActual.current === uid) setEstadoGuardado('error');
+      throw e;
+    }
+  };
+
   const setTema = (t) => {
     setTemaState(t);
     // Persistimos también en localStorage para el anti-parpadeo de index.html
@@ -178,5 +211,5 @@ export function useCloudData(user) {
     if (uid) persist('tema', t);
   };
 
-  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, tema, setTema, loading, estadoGuardado };
+  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, restaurarDatos, tema, setTema, loading, estadoGuardado };
 }

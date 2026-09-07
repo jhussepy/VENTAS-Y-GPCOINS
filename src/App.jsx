@@ -83,7 +83,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, tema, setTema, loading, estadoGuardado } = useCloudData(user);
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, restaurarDatos, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
   // Si hoy cae dentro de la campaña usamos su mes; si la campaña ya terminó,
@@ -152,12 +152,7 @@ export default function App() {
     if (!ok) return;
     try {
       const d = await leerBackup(file);
-      setVentas(d.ventas);
-      setVentasLowi(d.ventasLowi);
-      setTarifas(d.tarifas);
-      setPrecios(d.precios);
-      setObjetivosLogros(d.objetivosLogros);
-      setAgendados(d.agendados);
+      await restaurarDatos(d);
       avisar('Copia restaurada correctamente.', { titulo: 'Restaurado' });
     } catch {
       avisar('No se pudo leer el archivo de copia de seguridad.', { titulo: 'Error', peligro: true });
