@@ -62,8 +62,9 @@ npm run check    # lint + tests + build, igual que CI
   continúan usando automáticamente los arrays históricos del documento.
   Las escrituras se dirigen al esquema correspondiente y se serializan para
   preservar su orden. El panel de supervisor y la restauración de backups leen
-  y escriben ambos esquemas. Aun así, no debe activarse manualmente la versión 2
-  hasta incorporar y validar el migrador.
+  y escriben ambos esquemas. La migración se inicia desde Ajustes: descarga un
+  backup, copia y verifica los registros y solo entonces activa la versión 2.
+  No establezcas `versionEsquema` manualmente desde la consola de Firebase.
 
 ## Campañas
 

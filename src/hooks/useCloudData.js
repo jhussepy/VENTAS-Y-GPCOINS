@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { guardarCampoUsuario, guardarPerfilUsuario, observarDatosUsuario, reemplazarDatosUsuario, sincronizarColeccionUsuario } from '../repositories/userDataRepository.js';
+import { guardarCampoUsuario, guardarPerfilUsuario, migrarUsuarioAV2, observarDatosUsuario, reemplazarDatosUsuario, sincronizarColeccionUsuario } from '../repositories/userDataRepository.js';
 
 const DEBOUNCE_MS = 1500;
 
@@ -14,8 +14,9 @@ export function useCloudData(user) {
   const [tema, setTemaState] = useState('dark');
   const [loading, setLoading] = useState(true);
   const [estadoGuardado, setEstadoGuardado] = useState('idle'); // idle | guardando | guardado | error
+  const [versionDatos, setVersionDatos] = useState(1);
   const timers = useRef({});
-  const versionEsquema = useRef(1);
+  const versionEsquemaRef = useRef(1);
   const colecciones = useRef({ ventas: [], ventasLowi: [], agendados: [] });
   const colasEscritura = useRef({});
   const uidActual = useRef(uid);
@@ -26,7 +27,8 @@ export function useCloudData(user) {
     // Al cambiar de usuario: reinicia el estado para no mostrar datos del anterior
     setLoading(true);
     setEstadoGuardado('idle');
-    versionEsquema.current = 1;
+    versionEsquemaRef.current = 1;
+    setVersionDatos(1);
     colecciones.current = { ventas: [], ventasLowi: [], agendados: [] };
     colasEscritura.current = {};
     setVentasState([]);
@@ -39,7 +41,8 @@ export function useCloudData(user) {
     guardarPerfilUsuario(user).catch((e) => console.error('No se pudo guardar el perfil:', e));
     const unsub = observarDatosUsuario(uid, {
       onData: (d) => {
-        versionEsquema.current = d.versionEsquema;
+        versionEsquemaRef.current = d.versionEsquema;
+        setVersionDatos(d.versionEsquema);
         colecciones.current = { ventas: d.ventas, ventasLowi: d.ventasLowi, agendados: d.agendados };
         setVentasState(d.ventas);
         setVentasLowiState(d.ventasLowi);
@@ -86,7 +89,7 @@ export function useCloudData(user) {
   };
 
   const persistColeccion = (field, prev, next) => {
-    if (versionEsquema.current < 2) {
+    if (versionEsquemaRef.current < 2) {
       persist(field, next);
       return;
     }
@@ -171,7 +174,7 @@ export function useCloudData(user) {
   const restaurarDatos = async (datos) => {
     Object.values(timers.current).forEach(clearTimeout);
     setEstadoGuardado('guardando');
-    const version = versionEsquema.current;
+    const version = versionEsquemaRef.current;
     const actuales = colecciones.current;
     const pendientes = Object.values(colasEscritura.current).map((tarea) => tarea.catch(() => {}));
     const tarea = Promise.all(pendientes)
@@ -201,6 +204,31 @@ export function useCloudData(user) {
     }
   };
 
+  const migrarEsquemaV2 = async (onProgress) => {
+    if (versionEsquemaRef.current >= 2) return { versionEsquema: 2, yaMigrado: true };
+    Object.values(timers.current).forEach(clearTimeout);
+    setEstadoGuardado('guardando');
+    const datos = {
+      ...colecciones.current,
+      tarifas,
+      precios,
+      objetivosLogros,
+    };
+    try {
+      const resultado = await migrarUsuarioAV2(uid, datos, { onProgress });
+      if (uidActual.current === uid) {
+        versionEsquemaRef.current = 2;
+        setVersionDatos(2);
+        setEstadoGuardado('guardado');
+      }
+      return resultado;
+    } catch (e) {
+      console.error('No se pudo migrar el esquema:', e);
+      if (uidActual.current === uid) setEstadoGuardado('error');
+      throw e;
+    }
+  };
+
   const setTema = (t) => {
     setTemaState(t);
     // Persistimos también en localStorage para el anti-parpadeo de index.html
@@ -211,5 +239,5 @@ export function useCloudData(user) {
     if (uid) persist('tema', t);
   };
 
-  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, restaurarDatos, tema, setTema, loading, estadoGuardado };
+  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, restaurarDatos, versionDatos, migrarEsquemaV2, tema, setTema, loading, estadoGuardado };
 }

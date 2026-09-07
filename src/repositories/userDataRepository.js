@@ -214,3 +214,53 @@ export function reemplazarDatosUsuario(uid, versionEsquema, actuales, siguientes
     ...cambios.map((entrada) => aplicarCambiosColeccion(uid, entrada.ruta, entrada.cambios)),
   ]);
 }
+
+const idsOrdenados = (registros) => registros.map((registro) => registro.id).sort();
+
+const mismosIds = (esperados, recibidos) => (
+  JSON.stringify(idsOrdenados(esperados)) === JSON.stringify(idsOrdenados(recibidos))
+);
+
+export async function migrarUsuarioAV2(uid, datos, { ahora = Date.now(), onProgress = () => {} } = {}) {
+  if (!uid) throw new Error('Se necesita un uid para migrar los datos del usuario.');
+  const deseados = Object.fromEntries(Object.keys(COLECCIONES_V2).map((campo) => [
+    campo,
+    Array.isArray(datos[campo]) ? datos[campo] : [],
+  ]));
+
+  // Valida todas las colecciones antes de tocar Firestore.
+  Object.values(deseados).forEach((registros) => calcularCambiosColeccion([], registros));
+  onProgress('respaldo');
+  // Conserva en el documento legacy la versión más reciente para poder volver
+  // atrás incluso si había un debounce pendiente al iniciar la migración.
+  await reemplazarDatosUsuario(uid, 1, {}, datos);
+
+  onProgress('copiando');
+  const existentes = Object.fromEntries(await Promise.all(Object.entries(COLECCIONES_V2).map(async ([campo, ruta]) => {
+    const snapshot = await getDocs(collection(db, 'usuarios', uid, ruta));
+    return [campo, registrosDeSnapshot(snapshot)];
+  })));
+  await Promise.all(Object.keys(COLECCIONES_V2).map((campo) => sincronizarColeccionUsuario(
+    uid, campo, existentes[campo], deseados[campo],
+  )));
+
+  onProgress('verificando');
+  const verificados = Object.fromEntries(await Promise.all(Object.entries(COLECCIONES_V2).map(async ([campo, ruta]) => {
+    const snapshot = await getDocs(collection(db, 'usuarios', uid, ruta));
+    return [campo, registrosDeSnapshot(snapshot)];
+  })));
+  for (const campo of Object.keys(COLECCIONES_V2)) {
+    if (!mismosIds(deseados[campo], verificados[campo])) {
+      throw new Error(`La verificación de ${campo} no coincide; el esquema v2 no fue activado.`);
+    }
+  }
+
+  const conteos = Object.fromEntries(Object.keys(COLECCIONES_V2).map((campo) => [campo, deseados[campo].length]));
+  onProgress('activando');
+  await setDoc(referenciaUsuario(uid), {
+    versionEsquema: 2,
+    migracionV2: { completadaEn: ahora, conteos },
+  }, { merge: true });
+  onProgress('completada');
+  return { versionEsquema: 2, conteos };
+}

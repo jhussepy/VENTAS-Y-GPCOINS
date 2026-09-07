@@ -83,7 +83,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, restaurarDatos, tema, setTema, loading, estadoGuardado } = useCloudData(user);
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, restaurarDatos, versionDatos, migrarEsquemaV2, tema, setTema, loading, estadoGuardado } = useCloudData(user);
   const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
   const [page, setPage] = useState('dashboard');
   // Si hoy cae dentro de la campaña usamos su mes; si la campaña ya terminó,
@@ -233,7 +233,7 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, convertirAgendado, marcarAgendadoConvertido, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta, toast };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, versionDatos, migrarEsquemaV2, convertirAgendado, marcarAgendadoConvertido, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta, toast };
   const Active = paginas.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   // Navegación desde la barra de comandos: ajusta el operador si hace falta
