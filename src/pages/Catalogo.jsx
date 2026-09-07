@@ -194,7 +194,6 @@ export default function Catalogo() {
     if (soloEstrella) lista = lista.filter((p) => estDe(p, mes));
     if (soloStock && tieneDirecto) lista = lista.filter((p) => udsDe(p, mes) - vendDe(p) > 0);
     return [...lista].sort((a, b) => (orden === 'desc' ? valorDe(b, mes) - valorDe(a, mes) : valorDe(a, mes) - valorDe(b, mes)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cat, q, soloEstrella, soloStock, orden, mes, vendidas]);
 
   // Resumen de la marca
@@ -202,7 +201,6 @@ export default function Catalogo() {
     const maxVal = cat.productos.reduce((m, p) => Math.max(m, valorDe(p, mes)), 0);
     const estrellas = cat.productos.filter((p) => estDe(p, mes)).length;
     return { total: cat.productos.length, maxVal, estrellas };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cat, mes]);
 
   const unidad = tieneRanking ? 'pts' : 'GP';

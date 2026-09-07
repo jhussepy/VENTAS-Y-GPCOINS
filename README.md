@@ -45,6 +45,8 @@ npm run dev      # http://localhost:5173
 npm run build    # genera dist/
 npm run preview
 npm test         # tests del motor de cálculo (Vitest)
+npm run lint     # análisis estático de JavaScript/JSX
+npm run check    # lint + tests + build, igual que CI
 ```
 
 ## Firebase

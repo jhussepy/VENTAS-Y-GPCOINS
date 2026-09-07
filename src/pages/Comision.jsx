@@ -192,7 +192,6 @@ export default function Comision() {
     const XLSX = await import('xlsx');
     const filas = [];
     for (const cat of ['fijo', 'movil']) {
-      const counts = cat === 'fijo' ? fijo : movil;
       const r = cat === 'fijo' ? total.fijo : total.movil;
       for (const s of SUBTIPOS[cat]) {
         const det = r.detalle[s.id];

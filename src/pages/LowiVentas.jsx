@@ -13,7 +13,7 @@ import { OPERADORES_PORTA, lineaMovilVacia, INCIDENCIAS_PORTA } from '../data/mo
 import { nuevoId } from '../lib/id.js';
 import { importarLowi, exportarLowi, plantillaLowi } from '../lib/excelLowi.js';
 import { avisosContacto } from '../lib/validacion.js';
-import { Card, SectionTitle, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
+import { Card, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { ventanaRelevante, fmtVentana, TONO_VENTANA, ETIQUETA_VENTANA } from '../lib/portabilidad.js';
 import { fmtFecha, fmtEur } from '../lib/format.js';
 
