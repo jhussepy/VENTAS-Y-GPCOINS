@@ -57,14 +57,11 @@ npm run check    # lint + tests + build, igual que CI
 - El acceso al documento de cada usuario está encapsulado en
   `src/repositories/userDataRepository.js`; el esquema almacenado sigue siendo
   compatible con los datos existentes.
-
-## Campañas
-
-La campaña comercial se declara de forma versionada en `src/data/campanas.js`.
-Cada mes relaciona un identificador persistido con su valor ISO `YYYY-MM`; esto
-mantiene compatibles las ventas antiguas de junio/julio y evita asignar fechas
-de campañas futuras al mes de junio. Para añadir una campaña, crea su entrada
-en `CAMPANAS`, actualiza `CAMPANA_ACTIVA_ID` y aporta sus tablas comerciales.
+- Los usuarios con `versionEsquema: 2` se leen desde las subcolecciones
+  `ventasVodafone`, `ventasLowi` y `agendados`; los usuarios sin esa marca
+  continúan usando automáticamente los arrays históricos del documento.
+  La escritura permanece en el esquema histórico hasta ejecutar la fase de
+  migración, por lo que aún no debe activarse manualmente `versionEsquema: 2`.
 
 ## Campañas
 

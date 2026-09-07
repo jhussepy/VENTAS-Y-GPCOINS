@@ -1,4 +1,4 @@
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 
 export const CAMPOS_PERSISTIBLES = new Set([
@@ -21,6 +21,7 @@ export function normalizarDatosUsuario(datos) {
     objetivosLogros: objetoPlano(d.objetivosLogros),
     agendados: Array.isArray(d.agendados) ? d.agendados : [],
     tema: d.tema === 'light' || d.tema === 'dark' ? d.tema : 'dark',
+    versionEsquema: Number(d.versionEsquema) >= 2 ? 2 : 1,
   };
 }
 
@@ -39,11 +40,67 @@ export function guardarPerfilUsuario(user, ahora = Date.now()) {
 }
 
 export function observarDatosUsuario(uid, { onData, onError }) {
-  return onSnapshot(
+  let cancelarColecciones = [];
+  let versionObservada = 1;
+  let datosDocumento = normalizarDatosUsuario(null);
+  let datosColecciones = null;
+
+  const detenerColecciones = () => {
+    cancelarColecciones.forEach((cancelar) => cancelar());
+    cancelarColecciones = [];
+    datosColecciones = null;
+  };
+
+  const emitirColecciones = () => {
+    if (!datosColecciones || Object.values(datosColecciones).some((valor) => valor === null)) return;
+    onData({ ...datosDocumento, ...datosColecciones });
+  };
+
+  const iniciarColecciones = () => {
+    detenerColecciones();
+    datosColecciones = { ventas: null, ventasLowi: null, agendados: null };
+    const rutas = {
+      ventas: 'ventasVodafone',
+      ventasLowi: 'ventasLowi',
+      agendados: 'agendados',
+    };
+    cancelarColecciones = Object.entries(rutas).map(([campo, ruta]) => onSnapshot(
+      collection(db, 'usuarios', uid, ruta),
+      (snapshot) => {
+        datosColecciones[campo] = snapshot.docs.map((item) => {
+          const datos = item.data();
+          return { ...datos, id: datos.id || item.id };
+        });
+        emitirColecciones();
+      },
+      onError,
+    ));
+  };
+
+  const cancelarDocumento = onSnapshot(
     referenciaUsuario(uid),
-    (snapshot) => onData(normalizarDatosUsuario(snapshot.exists() ? snapshot.data() : null)),
+    (snapshot) => {
+      datosDocumento = normalizarDatosUsuario(snapshot.exists() ? snapshot.data() : null);
+      if (datosDocumento.versionEsquema >= 2) {
+        if (versionObservada < 2) {
+          versionObservada = 2;
+          iniciarColecciones();
+        } else {
+          emitirColecciones();
+        }
+      } else {
+        versionObservada = 1;
+        detenerColecciones();
+        onData(datosDocumento);
+      }
+    },
     onError,
   );
+
+  return () => {
+    cancelarDocumento();
+    detenerColecciones();
+  };
 }
 
 export function guardarCampoUsuario(uid, campo, valor) {

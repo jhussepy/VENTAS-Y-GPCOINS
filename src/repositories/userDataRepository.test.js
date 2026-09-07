@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  collection: vi.fn(),
   doc: vi.fn(),
   onSnapshot: vi.fn(),
   setDoc: vi.fn(),
@@ -26,6 +27,7 @@ describe('normalizarDatosUsuario', () => {
       objetivosLogros: {},
       agendados: [],
       tema: 'dark',
+      versionEsquema: 1,
     });
   });
 
@@ -47,6 +49,7 @@ describe('normalizarDatosUsuario', () => {
       objetivosLogros: {},
       agendados: [{ id: 'agenda-1' }],
       tema: 'dark',
+      versionEsquema: 1,
     });
   });
 });
@@ -55,6 +58,7 @@ describe('acceso al documento de usuario', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.doc.mockReturnValue({ path: 'usuarios/uid-1' });
+    mocks.collection.mockImplementation((_db, _usuarios, _uid, ruta) => ({ ruta }));
     mocks.setDoc.mockResolvedValue(undefined);
   });
 
@@ -78,13 +82,48 @@ describe('acceso al documento de usuario', () => {
       return unsubscribe;
     });
 
-    expect(observarDatosUsuario('uid-1', { onData, onError })).toBe(unsubscribe);
+    const cancelar = observarDatosUsuario('uid-1', { onData, onError });
     expect(onData).toHaveBeenCalledWith(expect.objectContaining({
       ventas: [{ id: 'v1' }],
       ventasLowi: [],
       tema: 'dark',
     }));
     expect(mocks.onSnapshot.mock.calls[0][2]).toBe(onError);
+    cancelar();
+    expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it('espera las tres subcolecciones antes de emitir un documento v2', () => {
+    const cancelaciones = [];
+    const onData = vi.fn();
+    mocks.onSnapshot.mockImplementation((ref, next) => {
+      const cancelar = vi.fn();
+      cancelaciones.push(cancelar);
+      if (ref.path) {
+        next({ exists: () => true, data: () => ({ versionEsquema: 2, tema: 'light' }) });
+      } else {
+        const datos = ref.ruta === 'ventasVodafone' ? [{ nombre: 'Ana' }] : [];
+        next({
+          docs: datos.map((dato, i) => ({ id: `${ref.ruta}-${i}`, data: () => dato })),
+        });
+      }
+      return cancelar;
+    });
+
+    const cancelar = observarDatosUsuario('uid-1', { onData, onError: vi.fn() });
+
+    expect(mocks.collection).toHaveBeenCalledTimes(3);
+    expect(onData).toHaveBeenCalledOnce();
+    expect(onData).toHaveBeenCalledWith(expect.objectContaining({
+      versionEsquema: 2,
+      tema: 'light',
+      ventas: [{ id: 'ventasVodafone-0', nombre: 'Ana' }],
+      ventasLowi: [],
+      agendados: [],
+    }));
+    cancelar();
+    expect(cancelaciones).toHaveLength(4);
+    cancelaciones.forEach((fn) => expect(fn).toHaveBeenCalledOnce());
   });
 
   it('guarda únicamente campos autorizados', async () => {
