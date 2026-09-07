@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  ShoppingCart, Coins, Wifi, UserPlus, Trophy, KeyRound, Star, CalendarClock, Repeat, Smartphone, Tv, BookOpen,
+  ShoppingCart, Coins, Wifi, UserPlus, Trophy, CalendarClock, Repeat, Smartphone, Tv, BookOpen,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList,
@@ -14,6 +14,7 @@ import { useVersiculo } from '../lib/bibliaApi.js';
 import { useHoy, fechaDeHoy } from '../hooks/useHoy.js';
 import { fmtVentana } from '../lib/portabilidad.js';
 import { INCENTIVOS, ORDEN_INCENTIVOS, PERIODO } from '../data/incentivos.js';
+import { isoMesCampana } from '../data/campanas.js';
 import { ESTADOS, ORDEN_ESTADOS, estadoDe } from '../lib/estados.js';
 import { TARIFAS_MOVIL } from '../data/movil.js';
 
@@ -47,7 +48,7 @@ export default function Dashboard() {
   const { ventas, mes, user, objetivosLogros } = useApp();
   const hoy = useHoy(); // se actualiza al cambiar de día aunque la app siga abierta
   const r = useMemo(() => resumenGlobal(ventas, mes), [ventas, mes]);
-  // Comparativa entre los meses del período (Junio vs Julio)
+  // Comparativa entre todos los meses del período activo.
   const comparativa = useMemo(() => PERIODO.meses.map((m) => {
     const rm = resumenGlobal(ventas, m);
     return { mes: PERIODO.etiquetas[m], Ventas: rm.totalVentas, Activas: rm.instalacionesActivas, 'GP Coins': rm.gpDirectosTotal };
@@ -137,8 +138,8 @@ export default function Dashboard() {
 
   // Evolución de ventas por día del mes activo (por fecha de venta)
   const ventasPorDia = useMemo(() => {
-    const anio = Number(PERIODO.inicio.slice(0, 4));
-    const idx = mes === 'julio' ? 6 : 5;
+    const [anio, numeroMes] = isoMesCampana(mes).split('-').map(Number);
+    const idx = numeroMes - 1;
     const nDias = new Date(anio, idx + 1, 0).getDate();
     const arr = Array.from({ length: nDias }, (_, i) => ({ dia: i + 1, ventas: 0 }));
     let sinFecha = 0;
@@ -189,9 +190,8 @@ export default function Dashboard() {
   };
 
   const proyeccion = useMemo(() => {
-    // Año del período (2026) y mes activo (junio=5, julio=6 en base 0)
-    const anio = Number(PERIODO.inicio.slice(0, 4));
-    const mesIdx = mes === 'julio' ? 6 : 5;
+    const [anio, numeroMes] = isoMesCampana(mes).split('-').map(Number);
+    const mesIdx = numeroMes - 1;
     const inicioMes = new Date(anio, mesIdx, 1);
     const finMes = new Date(anio, mesIdx + 1, 0); // último día del mes
     const diasTotales = contarLaborables(inicioMes, finMes);

@@ -7,6 +7,7 @@ import {
 } from '../data/incentivos.js';
 import { estadoDe } from './estados.js';
 import { nuevoId } from './id.js';
+import { mesCampanaDesdeFecha } from '../data/campanas.js';
 
 // Estructura de una venta (campos opcionales, todos los contadores por defecto 0)
 export const ventaVacia = () => ({
@@ -21,7 +22,7 @@ export const ventaVacia = () => ({
   idWeb: '',               // ID Web
   fechaVenta: '',
   fechaInstalacion: '',
-  mes: 'junio',            // junio | julio (se autodetecta de la fecha)
+  mes: 'junio',            // ID persistido del mes dentro de la campaña activa
   // Fibra / convergencia
   convergencia: '',        // '' | '3P' (Fibra+Fijo+Móvil) | '4P' (+TV)
   velocidad: '',           // '' | 'Fibra 300 MB' | 'Fibra 600 MB' | 'Fibra 1 GB'
@@ -52,13 +53,7 @@ export const ventaVacia = () => ({
 });
 
 export const mesDesdeFecha = (fecha) => {
-  if (!fecha) return 'junio';
-  // Leemos el mes directamente de la cadena YYYY-MM-DD para evitar desfases de zona horaria
-  const s = fecha instanceof Date ? fecha.toISOString().slice(0, 10) : String(fecha);
-  const m = Number(s.slice(5, 7)); // 1=ene … 6=junio, 7=julio
-  if (m === 6) return 'junio';
-  if (m === 7) return 'julio';
-  return 'junio'; // fallback: siempre devolvemos 'junio' o 'julio', nunca null
+  return mesCampanaDesdeFecha(fecha);
 };
 
 // El incentivo se paga por ACTIVACIONES, no por ventas: si ya hay fecha de

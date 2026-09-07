@@ -3,6 +3,7 @@ import { Calculator, Wifi, Smartphone, UserPlus, RotateCcw, DownloadCloud, FileS
 import { useApp } from '../App.jsx';
 import { estadoDe } from '../lib/estados.js';
 import { PERIODO } from '../data/incentivos.js';
+import { isoMesCampana } from '../data/campanas.js';
 import { Card, SectionTitle, Badge } from '../components/ui.jsx';
 import {
   SUBTIPOS, TARIFA_COMISION, UMBRALES_VALLA, UMBRALES_CLIENTES, ETIQUETA_CATEGORIA,
@@ -16,8 +17,8 @@ const ETIQUETA_GATE = { fijo: 'Fijo', movil: 'Móvil', clientes: 'Clientes' };
 
 // Días naturales del mes activo (para prorratear por vacaciones/ausencias)
 const diasDelMes = (mes) => {
-  const anio = Number(PERIODO.inicio.slice(0, 4));
-  const idx = mes === 'julio' ? 6 : 5;
+  const [anio, numeroMes] = isoMesCampana(mes).split('-').map(Number);
+  const idx = numeroMes - 1;
   return new Date(anio, idx + 1, 0).getDate();
 };
 
@@ -192,7 +193,6 @@ export default function Comision() {
     const XLSX = await import('xlsx');
     const filas = [];
     for (const cat of ['fijo', 'movil']) {
-      const counts = cat === 'fijo' ? fijo : movil;
       const r = cat === 'fijo' ? total.fijo : total.movil;
       for (const s of SUBTIPOS[cat]) {
         const det = r.detalle[s.id];

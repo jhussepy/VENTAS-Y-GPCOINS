@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase.js';
 import { useApp } from '../App.jsx';
+import { cargarUsuariosSupervisor } from '../repositories/userDataRepository.js';
 import { resumenGlobal, mesEfectivo, mesDesdeFecha } from '../lib/engine.js';
 import { rachaVentas } from '../lib/logros.js';
 import { resumenLowi } from '../lib/lowi.js';
@@ -23,22 +22,9 @@ export default function Admin() {
     setLoading(true);
     setError(null);
     try {
-      const snap = await getDocs(collection(db, 'usuarios'));
-      const data = snap.docs.map((d) => {
-        const u = d.data();
-        return {
-          uid: d.id,
-          email: u.email || '(sin email)',
-          nombre: u.nombre || '',
-          foto: u.foto || '',
-          ventas: Array.isArray(u.ventas) ? u.ventas : [],
-          ventasLowi: Array.isArray(u.ventasLowi) ? u.ventasLowi : [],
-          tarifas: Array.isArray(u.tarifas) ? u.tarifas : [],
-          ultimoAcceso: u.ultimoAcceso || 0,
-        };
-      });
+      const data = await cargarUsuariosSupervisor();
       setAgentes(data);
-    } catch (e) {
+    } catch {
       setError('No se pudieron cargar los datos. Revisa las reglas de Firestore.');
     }
     setLoading(false);

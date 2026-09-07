@@ -1,16 +1,13 @@
+import { mesBaseCampana, periodoDesdeCampana } from './campanas.js';
+
 // ============================================================================
 //  DATOS MAESTROS - INCENTIVO VODAFONE CLIENTE NUEVO / CAPTACIÓN
-//  Período: 1 de junio al 31 de julio de 2026 (ambos incluidos)
+//  Período: 1 de junio al 30 de septiembre de 2026 (ambos incluidos)
 //  Plataforma: Televenta Outbound - Captación
 //  Fuente: bases legales + tablas de puntos suministradas por el agente
 // ============================================================================
 
-export const PERIODO = {
-  inicio: '2026-06-01',
-  fin: '2026-07-31',
-  meses: ['junio', 'julio'],
-  etiquetas: { junio: 'JUNIO', julio: 'JULIO' },
-};
+export const PERIODO = periodoDesdeCampana();
 
 // Contenidos de TV disponibles en paquetes 4P (Fibra + Fijo + Móvil + TV)
 export const TV_CONTENIDOS = [
@@ -263,8 +260,8 @@ export const INCENTIVOS = {
 export const ORDEN_INCENTIVOS = ['clienteNuevo', 'xiaomi', 'samsung', 'honor', 'motorola', 'jbl'];
 
 // Helpers de acceso por mes ---------------------------------------------------
-export const ptsDe = (prod, mes) => prod[`pts_${mes}`] ?? 0;
-export const gpDe = (prod, mes) => prod[`gp_${mes}`] ?? 0;
-export const udsDe = (prod, mes) => prod[`uds_${mes}`] ?? 0;
-export const estDe = (prod, mes) => prod[`est_${mes}`] ?? false;
-export const convPts = (row, mes) => row[mes] ?? 0;
+export const ptsDe = (prod, mes) => prod[`pts_${mesBaseCampana(mes)}`] ?? 0;
+export const gpDe = (prod, mes) => prod[`gp_${mesBaseCampana(mes)}`] ?? 0;
+export const udsDe = (prod, mes) => prod[`uds_${mesBaseCampana(mes)}`] ?? 0;
+export const estDe = (prod, mes) => prod[`est_${mesBaseCampana(mes)}`] ?? false;
+export const convPts = (row, mes) => row[mesBaseCampana(mes)] ?? 0;

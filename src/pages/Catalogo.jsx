@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { CATALOGO, ptsDe, gpDe, udsDe, estDe, PERIODO } from '../data/incentivos.js';
+import { mesAnteriorCampana } from '../data/campanas.js';
 import { SEGUROS, PLAZOS, CATALOGOS_FIN, OFERTAS_FIN, calcFinanciacion } from '../data/financiacion.js';
 import { unidadesVendidas } from '../lib/engine.js';
 import { Card, Badge, EstrellaTag, EmptyState } from '../components/ui.jsx';
@@ -180,7 +181,7 @@ export default function Catalogo() {
 
   const tieneRanking = cat.mecanica === 'ranking' || cat.mecanica === 'mixta';
   const tieneDirecto = cat.mecanica === 'directo' || cat.mecanica === 'mixta';
-  const otroMes = mes === 'junio' ? 'julio' : 'junio';
+  const otroMes = mesAnteriorCampana(mes);
 
   // Valor principal de un producto (puntos si es ranking, GP si es directo)
   const valorDe = (p, m) => (tieneRanking ? ptsDe(p, m) : gpDe(p, m));
@@ -194,7 +195,6 @@ export default function Catalogo() {
     if (soloEstrella) lista = lista.filter((p) => estDe(p, mes));
     if (soloStock && tieneDirecto) lista = lista.filter((p) => udsDe(p, mes) - vendDe(p) > 0);
     return [...lista].sort((a, b) => (orden === 'desc' ? valorDe(b, mes) - valorDe(a, mes) : valorDe(a, mes) - valorDe(b, mes)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cat, q, soloEstrella, soloStock, orden, mes, vendidas]);
 
   // Resumen de la marca
@@ -202,7 +202,6 @@ export default function Catalogo() {
     const maxVal = cat.productos.reduce((m, p) => Math.max(m, valorDe(p, mes)), 0);
     const estrellas = cat.productos.filter((p) => estDe(p, mes)).length;
     return { total: cat.productos.length, maxVal, estrellas };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cat, mes]);
 
   const unidad = tieneRanking ? 'pts' : 'GP';

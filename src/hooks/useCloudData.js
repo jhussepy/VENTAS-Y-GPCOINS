@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase.js';
+import { guardarCampoUsuario, guardarPerfilUsuario, migrarUsuarioAV2, observarDatosUsuario, reemplazarDatosUsuario, sincronizarColeccionUsuario } from '../repositories/userDataRepository.js';
 
 const DEBOUNCE_MS = 1500;
 
@@ -9,50 +8,62 @@ export function useCloudData(user) {
   const [ventas, setVentasState] = useState([]);
   const [ventasLowi, setVentasLowiState] = useState([]);
   const [tarifas, setTarifasState] = useState([]);
-  const [precios, setPreciosState] = useState({}); // { [sap]: { junio, julio } }
+  const [precios, setPreciosState] = useState({}); // { [sap]: { [mesCampana]: precio } }
   const [objetivosLogros, setObjetivosLogrosState] = useState({}); // { [idLogro]: objetivoPersonalizado }
   const [agendados, setAgendadosState] = useState([]); // clientes que piden que se les llame otro día/hora
   const [tema, setTemaState] = useState('dark');
   const [loading, setLoading] = useState(true);
   const [estadoGuardado, setEstadoGuardado] = useState('idle'); // idle | guardando | guardado | error
+  const [versionDatos, setVersionDatos] = useState(1);
   const timers = useRef({});
+  const versionEsquemaRef = useRef(1);
+  const colecciones = useRef({ ventas: [], ventasLowi: [], agendados: [] });
+  const colasEscritura = useRef({});
+  const uidActual = useRef(uid);
 
   useEffect(() => {
+    uidActual.current = uid;
     if (!uid) { setLoading(false); return; }
     // Al cambiar de usuario: reinicia el estado para no mostrar datos del anterior
     setLoading(true);
+    setEstadoGuardado('idle');
+    versionEsquemaRef.current = 1;
+    setVersionDatos(1);
+    colecciones.current = { ventas: [], ventasLowi: [], agendados: [] };
+    colasEscritura.current = {};
     setVentasState([]);
     setVentasLowiState([]);
     setTarifasState([]);
     setPreciosState({});
     setObjetivosLogrosState({});
     setAgendadosState([]);
-    const ref = doc(db, 'usuarios', uid);
     // Guarda/actualiza el perfil para que el admin pueda identificar al agente
-    setDoc(ref, {
-      email: user.email || '',
-      nombre: user.displayName || '',
-      foto: user.photoURL || '',
-      ultimoAcceso: Date.now(),
-    }, { merge: true }).catch((e) => console.error('No se pudo guardar el perfil:', e));
-    const unsub = onSnapshot(ref, (snap) => {
-      if (snap.exists()) {
-        const d = snap.data();
-        if (Array.isArray(d.ventas)) setVentasState(d.ventas);
-        if (Array.isArray(d.ventasLowi)) setVentasLowiState(d.ventasLowi);
-        if (Array.isArray(d.tarifas)) setTarifasState(d.tarifas);
-        if (d.precios && typeof d.precios === 'object') setPreciosState(d.precios);
-        if (d.objetivosLogros && typeof d.objetivosLogros === 'object') setObjetivosLogrosState(d.objetivosLogros);
-        if (Array.isArray(d.agendados)) setAgendadosState(d.agendados);
+    guardarPerfilUsuario(user).catch((e) => console.error('No se pudo guardar el perfil:', e));
+    const unsub = observarDatosUsuario(uid, {
+      onData: (d) => {
+        versionEsquemaRef.current = d.versionEsquema;
+        setVersionDatos(d.versionEsquema);
+        colecciones.current = { ventas: d.ventas, ventasLowi: d.ventasLowi, agendados: d.agendados };
+        setVentasState(d.ventas);
+        setVentasLowiState(d.ventasLowi);
+        setTarifasState(d.tarifas);
+        setPreciosState(d.precios);
+        setObjetivosLogrosState(d.objetivosLogros);
+        setAgendadosState(d.agendados);
+        setTemaState(d.tema);
+        try { localStorage.setItem('vf_tema', JSON.stringify(d.tema)); } catch { /* ignore */ }
         if (d.tema) {
-          setTemaState(d.tema);
-          try { localStorage.setItem('vf_tema', JSON.stringify(d.tema)); } catch { /* ignore */ }
           const root = document.documentElement;
           root.classList.remove('light', 'dark');
           root.classList.add(d.tema);
         }
-      }
-      setLoading(false);
+        setLoading(false);
+      },
+      onError: (e) => {
+        console.error('No se pudieron cargar los datos de la nube:', e);
+        setEstadoGuardado('error');
+        setLoading(false);
+      },
     });
     // Cleanup: cancela el listener y los timers de guardado pendientes del usuario saliente
     const timersRef = timers.current;
@@ -66,7 +77,7 @@ export function useCloudData(user) {
     clearTimeout(timers.current[field]);
     setEstadoGuardado('guardando');
     timers.current[field] = setTimeout(() => {
-      setDoc(doc(db, 'usuarios', uid), { [field]: value }, { merge: true })
+      guardarCampoUsuario(uid, field, value)
         .then(() => {
           setEstadoGuardado('guardado');
           // Tras 2s volvemos a reposo (registrado para poder limpiarlo en el cleanup)
@@ -77,21 +88,45 @@ export function useCloudData(user) {
     }, DEBOUNCE_MS);
   };
 
-  const setVentas = (fn) => {
-    setVentasState((prev) => {
-      const next = typeof fn === 'function' ? fn(prev) : fn;
-      if (uid) persist('ventas', next);
-      return next;
-    });
+  const persistColeccion = (field, prev, next) => {
+    if (versionEsquemaRef.current < 2) {
+      persist(field, next);
+      return;
+    }
+    setEstadoGuardado('guardando');
+    try {
+      const tarea = (colasEscritura.current[field] || Promise.resolve())
+        .catch(() => {})
+        .then(() => sincronizarColeccionUsuario(uid, field, prev, next));
+      colasEscritura.current[field] = tarea;
+      tarea
+        .then(() => {
+          if (uidActual.current !== uid) return;
+          setEstadoGuardado('guardado');
+          clearTimeout(timers.current._idle);
+          timers.current._idle = setTimeout(() => setEstadoGuardado('idle'), 2000);
+        })
+        .catch((e) => {
+          console.error('Error al guardar la colección:', e);
+          if (uidActual.current === uid) setEstadoGuardado('error');
+        });
+    } catch (e) {
+      console.error('Error al preparar la colección:', e);
+      setEstadoGuardado('error');
+    }
   };
 
-  const setVentasLowi = (fn) => {
-    setVentasLowiState((prev) => {
-      const next = typeof fn === 'function' ? fn(prev) : fn;
-      if (uid) persist('ventasLowi', next);
-      return next;
-    });
+  const actualizarColeccion = (field, setState, fn) => {
+    const prev = colecciones.current[field];
+    const next = typeof fn === 'function' ? fn(prev) : fn;
+    colecciones.current = { ...colecciones.current, [field]: next };
+    setState(next);
+    if (uid) persistColeccion(field, prev, next);
   };
+
+  const setVentas = (fn) => actualizarColeccion('ventas', setVentasState, fn);
+
+  const setVentasLowi = (fn) => actualizarColeccion('ventasLowi', setVentasLowiState, fn);
 
   const setTarifas = (fn) => {
     setTarifasState((prev) => {
@@ -134,12 +169,64 @@ export function useCloudData(user) {
     });
   };
 
-  const setAgendados = (fn) => {
-    setAgendadosState((prev) => {
-      const next = typeof fn === 'function' ? fn(prev) : fn;
-      if (uid) persist('agendados', next);
-      return next;
-    });
+  const setAgendados = (fn) => actualizarColeccion('agendados', setAgendadosState, fn);
+
+  const restaurarDatos = async (datos) => {
+    Object.values(timers.current).forEach(clearTimeout);
+    setEstadoGuardado('guardando');
+    const version = versionEsquemaRef.current;
+    const actuales = colecciones.current;
+    const pendientes = Object.values(colasEscritura.current).map((tarea) => tarea.catch(() => {}));
+    const tarea = Promise.all(pendientes)
+      .then(() => reemplazarDatosUsuario(uid, version, actuales, datos));
+    if (version >= 2) {
+      Object.keys(colecciones.current).forEach((campo) => { colasEscritura.current[campo] = tarea; });
+    }
+    try {
+      await tarea;
+      if (uidActual.current !== uid) return;
+      colecciones.current = {
+        ventas: datos.ventas,
+        ventasLowi: datos.ventasLowi,
+        agendados: datos.agendados,
+      };
+      setVentasState(datos.ventas);
+      setVentasLowiState(datos.ventasLowi);
+      setAgendadosState(datos.agendados);
+      setTarifasState(datos.tarifas);
+      setPreciosState(datos.precios);
+      setObjetivosLogrosState(datos.objetivosLogros);
+      setEstadoGuardado('guardado');
+    } catch (e) {
+      console.error('No se pudo restaurar la copia:', e);
+      if (uidActual.current === uid) setEstadoGuardado('error');
+      throw e;
+    }
+  };
+
+  const migrarEsquemaV2 = async (onProgress) => {
+    if (versionEsquemaRef.current >= 2) return { versionEsquema: 2, yaMigrado: true };
+    Object.values(timers.current).forEach(clearTimeout);
+    setEstadoGuardado('guardando');
+    const datos = {
+      ...colecciones.current,
+      tarifas,
+      precios,
+      objetivosLogros,
+    };
+    try {
+      const resultado = await migrarUsuarioAV2(uid, datos, { onProgress });
+      if (uidActual.current === uid) {
+        versionEsquemaRef.current = 2;
+        setVersionDatos(2);
+        setEstadoGuardado('guardado');
+      }
+      return resultado;
+    } catch (e) {
+      console.error('No se pudo migrar el esquema:', e);
+      if (uidActual.current === uid) setEstadoGuardado('error');
+      throw e;
+    }
   };
 
   const setTema = (t) => {
@@ -152,5 +239,5 @@ export function useCloudData(user) {
     if (uid) persist('tema', t);
   };
 
-  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, tema, setTema, loading, estadoGuardado };
+  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, restaurarDatos, versionDatos, migrarEsquemaV2, tema, setTema, loading, estadoGuardado };
 }
