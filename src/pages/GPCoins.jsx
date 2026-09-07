@@ -62,7 +62,7 @@ export default function GPCoins() {
         <StatCard icon={Wallet} label="GP Coins directos al monedero" value={r.gpDirectosTotal ?? 0} sub="Samsung · Honor · JBL · Motorola" accent="text-gp-gold" />
         <StatCard icon={Trophy} label="GP Coins potenciales (ranking)" value={r.gpPotencialRanking ?? 0} sub="Si quedas 1º en los que clasificas" accent="text-emerald-400" />
         <StatCard icon={TrendingUp} label="Puntos de fibra (Cliente Nuevo)" value={ptsFibra ?? 0} accent="text-vf-red" />
-        <StatCard icon={Coins} label="Total estimado GP Coins" value={r.gpDirectosTotal + r.gpPotencialRanking ?? 0} sub="Directos + mejor ranking" accent="text-gp-gold" />
+        <StatCard icon={Coins} label="Total estimado GP Coins" value={(r.gpDirectosTotal ?? 0) + (r.gpPotencialRanking ?? 0)} sub="Directos + mejor ranking" accent="text-gp-gold" />
       </div>
 
       {/* Llave de portas (común a todos los incentivos): % alcanzado y detalle X/Y */}

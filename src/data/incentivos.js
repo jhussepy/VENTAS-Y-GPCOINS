@@ -1,3 +1,5 @@
+import { periodoDesdeCampana } from './campanas.js';
+
 // ============================================================================
 //  DATOS MAESTROS - INCENTIVO VODAFONE CLIENTE NUEVO / CAPTACIÓN
 //  Período: 1 de junio al 31 de julio de 2026 (ambos incluidos)
@@ -5,12 +7,7 @@
 //  Fuente: bases legales + tablas de puntos suministradas por el agente
 // ============================================================================
 
-export const PERIODO = {
-  inicio: '2026-06-01',
-  fin: '2026-07-31',
-  meses: ['junio', 'julio'],
-  etiquetas: { junio: 'JUNIO', julio: 'JULIO' },
-};
+export const PERIODO = periodoDesdeCampana();
 
 // Contenidos de TV disponibles en paquetes 4P (Fibra + Fijo + Móvil + TV)
 export const TV_CONTENIDOS = [
