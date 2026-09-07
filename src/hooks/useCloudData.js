@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase.js';
+import { guardarCampoUsuario, guardarPerfilUsuario, observarDatosUsuario } from '../repositories/userDataRepository.js';
 
 const DEBOUNCE_MS = 1500;
 
@@ -21,38 +20,37 @@ export function useCloudData(user) {
     if (!uid) { setLoading(false); return; }
     // Al cambiar de usuario: reinicia el estado para no mostrar datos del anterior
     setLoading(true);
+    setEstadoGuardado('idle');
     setVentasState([]);
     setVentasLowiState([]);
     setTarifasState([]);
     setPreciosState({});
     setObjetivosLogrosState({});
     setAgendadosState([]);
-    const ref = doc(db, 'usuarios', uid);
     // Guarda/actualiza el perfil para que el admin pueda identificar al agente
-    setDoc(ref, {
-      email: user.email || '',
-      nombre: user.displayName || '',
-      foto: user.photoURL || '',
-      ultimoAcceso: Date.now(),
-    }, { merge: true }).catch((e) => console.error('No se pudo guardar el perfil:', e));
-    const unsub = onSnapshot(ref, (snap) => {
-      if (snap.exists()) {
-        const d = snap.data();
-        if (Array.isArray(d.ventas)) setVentasState(d.ventas);
-        if (Array.isArray(d.ventasLowi)) setVentasLowiState(d.ventasLowi);
-        if (Array.isArray(d.tarifas)) setTarifasState(d.tarifas);
-        if (d.precios && typeof d.precios === 'object') setPreciosState(d.precios);
-        if (d.objetivosLogros && typeof d.objetivosLogros === 'object') setObjetivosLogrosState(d.objetivosLogros);
-        if (Array.isArray(d.agendados)) setAgendadosState(d.agendados);
+    guardarPerfilUsuario(user).catch((e) => console.error('No se pudo guardar el perfil:', e));
+    const unsub = observarDatosUsuario(uid, {
+      onData: (d) => {
+        setVentasState(d.ventas);
+        setVentasLowiState(d.ventasLowi);
+        setTarifasState(d.tarifas);
+        setPreciosState(d.precios);
+        setObjetivosLogrosState(d.objetivosLogros);
+        setAgendadosState(d.agendados);
+        setTemaState(d.tema);
+        try { localStorage.setItem('vf_tema', JSON.stringify(d.tema)); } catch { /* ignore */ }
         if (d.tema) {
-          setTemaState(d.tema);
-          try { localStorage.setItem('vf_tema', JSON.stringify(d.tema)); } catch { /* ignore */ }
           const root = document.documentElement;
           root.classList.remove('light', 'dark');
           root.classList.add(d.tema);
         }
-      }
-      setLoading(false);
+        setLoading(false);
+      },
+      onError: (e) => {
+        console.error('No se pudieron cargar los datos de la nube:', e);
+        setEstadoGuardado('error');
+        setLoading(false);
+      },
     });
     // Cleanup: cancela el listener y los timers de guardado pendientes del usuario saliente
     const timersRef = timers.current;
@@ -66,7 +64,7 @@ export function useCloudData(user) {
     clearTimeout(timers.current[field]);
     setEstadoGuardado('guardando');
     timers.current[field] = setTimeout(() => {
-      setDoc(doc(db, 'usuarios', uid), { [field]: value }, { merge: true })
+      guardarCampoUsuario(uid, field, value)
         .then(() => {
           setEstadoGuardado('guardado');
           // Tras 2s volvemos a reposo (registrado para poder limpiarlo en el cleanup)

@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build-test:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,5 +15,6 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm test
-      - run: npm run build
+      - name: Install pinned quality tools
+        run: npm install --global eslint@10.2.1
+      - run: npm run check
