@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   vallaAlcanzada, faltanParaSiguiente, comisionCategoria, comisionTotal, totalCategoria,
-  contarDesdeVentas, prorratearUmbrales, UMBRALES_VALLA, UMBRALES_CLIENTES,
+  contarDesdeVentas, prorratearUmbrales, UMBRALES_VALLA,
 } from './comision.js';
 
 describe('vallaAlcanzada', () => {

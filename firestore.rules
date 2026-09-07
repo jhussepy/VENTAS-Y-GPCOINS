@@ -18,6 +18,15 @@ service cloud.firestore {
       allow read: if request.auth != null && (request.auth.uid == uid || esAdmin());
       // Escritura: solo el propio usuario sobre su documento
       allow write: if request.auth != null && request.auth.uid == uid;
+
+      // Esquema v2: registros independientes. Solo se habilitan las colecciones
+      // conocidas para no abrir cualquier ruta bajo el documento del usuario.
+      match /{coleccion}/{documento} {
+        allow read: if coleccion in ['ventasVodafone', 'ventasLowi', 'agendados'] &&
+          request.auth != null && (request.auth.uid == uid || esAdmin());
+        allow write: if coleccion in ['ventasVodafone', 'ventasLowi', 'agendados'] &&
+          request.auth != null && request.auth.uid == uid;
+      }
     }
   }
 }
