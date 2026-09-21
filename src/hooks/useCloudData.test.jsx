@@ -86,4 +86,18 @@ describe('cola durable y estado global de sincronización', () => {
     navigator.locks.request.mockImplementation((_key,_opts,callback)=>callback(null));
     await mount(); expect(state.errorGuardado).toContain('otra pestaña'); expect(mock.observer).toBeNull();
   });
+  it('resolver pendientes archiva la edición y bloquea nuevos cambios durante la recuperación', async () => {
+    mock.save.mockRejectedValue(new Error('Conflicto'));
+    await mount(); await emit(empty());
+    await act(async () => state.setVentas([{ id: 'pendiente' }]));
+    let liberar;
+    mock.load.mockImplementationOnce(() => new Promise(resolve => { liberar = resolve; }));
+    const recuperacion = state.recuperarDesdeNube();
+    await tick();
+    expect(() => state.setVentas([{ id: 'otra' }])).toThrow('Espera');
+    await act(async () => { liberar(empty()); await recuperacion; });
+    expect(state.ventas).toEqual([]); expect(state.pendientes).toBe(0);
+    expect(JSON.parse(localStorage.getItem('gpcoins:pendientes-archivados:owner')).datos.ventas).toEqual([{ id: 'pendiente' }]);
+  });
+
 });

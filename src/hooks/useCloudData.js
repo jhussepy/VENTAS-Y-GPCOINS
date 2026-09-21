@@ -58,7 +58,10 @@ export function useCloudData(user) {
           publish();
         }
         if (s.alive) setEstado(s.queue.length ? 'guardando' : 'guardado');
-      })().catch(fail).finally(() => { s.running = null; });
+      })().catch(fail).finally(() => {
+        s.running = null;
+        if (s.alive && !s.error && s.queue.length) void run();
+      });
       return s.running;
     };
     s.run = run;
@@ -184,12 +187,17 @@ export function useCloudData(user) {
       await s.flush();
     },
     recuperarDesdeNube: async () => {
-      const s = session.current; await s.running;
-      const base = await cargarDatosCoherentes(uid);
-      localStorage.setItem(`gpcoins:pendientes-archivados:${uid}`, JSON.stringify({ base: s.base, queue: s.queue, datos: s.view }));
-      localStorage.setItem(`gpcoins:outbox:${uid}`, JSON.stringify({ base, queue: [] }));
-      s.base = base; s.view = base; s.queue = []; s.error = null; s.revision = base.revision || 0;
-      setDatos(base); setPendientes(0); setError(''); setEstado('guardado');
+      const s = session.current;
+      if (!s?.writable) throw new Error('Esta pestaña no tiene el permiso de edición.');
+      s.exclusive = true;
+      try {
+        await s.running;
+        const base = await cargarDatosCoherentes(uid);
+        localStorage.setItem(`gpcoins:pendientes-archivados:${uid}`, JSON.stringify({ base: s.base, queue: s.queue, datos: s.view }));
+        localStorage.setItem(`gpcoins:outbox:${uid}`, JSON.stringify({ base, queue: [] }));
+        s.base = base; s.view = base; s.queue = []; s.error = null; s.revision = base.revision || 0;
+        setDatos(base); setPendientes(0); setError(''); setEstado('guardado');
+      } finally { s.exclusive = false; }
     },
     restaurarPapelera: id => {
       const s = session.current; const personal = s.view.personal; const item = personal.papelera?.[id];

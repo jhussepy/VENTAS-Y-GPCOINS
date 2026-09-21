@@ -24,7 +24,7 @@ Esta rama mantiene React, Vite y Firebase. No cambia tarifas comerciales ni inve
 
 Las pruebas están en `src/lib`, `src/hooks`, `src/pages` y `src/repositories`. `npm run check` ejecuta lint, pruebas y compilación.
 
-Resultado de la instalación limpia: **241 pruebas aprobadas**, lint sin errores y build correcto. `npm audit` tras actualizar las dependencias compatibles: **0 vulnerabilidades reportadas** (21/09/2026).
+Resultado de la instalación limpia: **242 pruebas aprobadas**, lint sin errores y build correcto. `npm audit` tras actualizar las dependencias compatibles: **0 vulnerabilidades reportadas** (21/09/2026).
 
 ## Nuevas funciones
 
