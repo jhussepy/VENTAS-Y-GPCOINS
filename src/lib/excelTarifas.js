@@ -1,3 +1,4 @@
+import { numeroLocal } from './parsing.js';
 import { nuevoId } from './id.js';
 
 // xlsx se carga de forma diferida (coherente con excel.js / excelLowi.js)
@@ -13,7 +14,7 @@ export async function importarTarifas(file) {
     id: nuevoId(),
     concepto: String(r.concepto ?? r.Concepto ?? r.nombre ?? '').trim(),
     descripcion: String(r.descripcion ?? r.Descripcion ?? '').trim(),
-    precio: Number(r.precio ?? r.Precio ?? 0) || 0,
+    precio: numeroLocal(r.precio ?? r.Precio ?? 0),
     promo: String(r.promo ?? '').trim(),
   })).filter((t) => t.concepto);
 }

@@ -93,7 +93,7 @@ export function resumenLowi(ventas) {
     // independientemente de si la venta (fibra/alta) ya está activa o no.
     // Si el cliente canceló el proceso (ES M1), esa porta nunca se activará
     // y no debe seguir contando como pendiente.
-    for (const l of v.lineasMoviles || []) {
+    for (const l of (e === 'cancelada' || e === 'baja' ? [] : v.lineasMoviles || [])) {
       if (l.tipo === 'porta' && l.incidenciaPorta !== 'cancelada_m1') {
         portasTotales += 1;
         if (l.activa) portasActivas += 1;

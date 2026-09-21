@@ -38,7 +38,7 @@ export default function CommandPalette({ abierto, cerrar, secciones, irA, ventas
             items.push({
               tipo: 'cliente', id: `${origen}-${v.id}`, label: nombre, sub: origen,
               icon: origen === 'Agendados' ? PhoneCall : User,
-              run: () => irA(pagina),
+              run: () => irA(pagina, v),
             });
           }
           if (items.length > 24) return;

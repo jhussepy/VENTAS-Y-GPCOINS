@@ -1,3 +1,5 @@
+import { useLocalStorage } from '../hooks/useLocalStorage.js';
+import DialogSurface from '../components/DialogSurface.jsx';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -76,17 +78,17 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div><label className="label">Nombre</label><input className="input" value={v.nombre} onChange={(e) => set('nombre', e.target.value)} /></div>
-        <div><label className="label">Apellido</label><input className="input" value={v.apellido} onChange={(e) => set('apellido', e.target.value)} /></div>
-        <div><label className="label">DNI / NIE</label><input className="input" value={v.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></div>
-        <div><label className="label">Teléfono de contacto</label><input type="tel" className="input" value={v.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></div>
+        <div><label className="label">Nombre<input className="input" value={v.nombre} onChange={(e) => set('nombre', e.target.value)} /></label></div>
+        <div><label className="label">Apellido<input className="input" value={v.apellido} onChange={(e) => set('apellido', e.target.value)} /></label></div>
+        <div><label className="label">DNI / NIE<input className="input" value={v.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></label></div>
+        <div><label className="label">Teléfono de contacto<input type="tel" className="input" value={v.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></label></div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span></label><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></div>
-        <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></div>
-        <div><label className="label">ID Smart <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
-        <div><label className="label">ID Web <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.idWeb} onChange={(e) => set('idWeb', e.target.value)} /></div>
+        <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></label></div>
+        <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></label></div>
+        <div><label className="label">ID Smart <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></label></div>
+        <div><label className="label">ID Web <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.idWeb} onChange={(e) => set('idWeb', e.target.value)} /></label></div>
       </div>
 
       {avisosDatos.length > 0 && (
@@ -95,8 +97,8 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
-          <label className="label">Fecha de venta</label>
-          <input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} />
+          <label className="label">Fecha de venta
+          <input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></label>
           {fechaFuera && (
             <p className="text-xs text-amber-400 mt-1">
               Fecha fuera del período del incentivo ({PERIODO.inicio} → {PERIODO.fin}).
@@ -104,50 +106,50 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           )}
         </div>
         <div>
-          <label className="label">Fecha de instalación</label>
-          <input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} />
+          <label className="label">Fecha de instalación
+          <input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} /></label>
           <p className="text-[11px] text-fg-muted mt-1">Esta fecha decide el mes del incentivo (activación), no la de venta.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
-          <label className="label">Convergencia (fibra)</label>
+          <label className="label">Convergencia (fibra)
           <select className="input" value={v.convergencia} onChange={(e) => set('convergencia', e.target.value)}>
             <option value="">—</option>
             <option value="3P">3P · Fibra + Fijo + Móvil</option>
             <option value="4P">4P · Fibra + Fijo + Móvil + TV</option>
-          </select>
+          </select></label>
         </div>
         <div>
-          <label className="label">Velocidad</label>
+          <label className="label">Velocidad
           <select className="input" value={v.velocidad} onChange={(e) => set('velocidad', e.target.value)}>
             <option value="">—</option>
             {VELOCIDADES.map((x) => <option key={x} value={x}>{x}</option>)}
-          </select>
+          </select></label>
         </div>
         {v.convergencia === '4P' && (
           <div>
-            <label className="label">Contenido TV <span className="text-fg-muted font-normal">(4P)</span></label>
+            <label className="label">Contenido TV <span className="text-fg-muted font-normal">(4P)</span>
             <select className="input" value={v.tv} onChange={(e) => set('tv', e.target.value)}>
               <option value="">—</option>
               {TV_CONTENIDOS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            </select></label>
           </div>
         )}
         <div>
-          <label className="label">Marca terminal <span className="text-fg-muted font-normal">(opcional)</span></label>
+          <label className="label">Marca terminal <span className="text-fg-muted font-normal">(opcional)</span>
           <select className="input" value={v.marca} onChange={(e) => set('marca', e.target.value)}>
             <option value="">Sin terminal</option>
             {MARCAS.map((m) => <option key={m} value={m}>{CATALOGO[m].marca}</option>)}
-          </select>
+          </select></label>
         </div>
         <div>
-          <label className="label">Modelo (SAP) <span className="text-fg-muted font-normal">(opcional)</span></label>
+          <label className="label">Modelo (SAP) <span className="text-fg-muted font-normal">(opcional)</span>
           <select className="input" value={v.sap} onChange={(e) => set('sap', e.target.value)} disabled={!v.marca}>
             <option value="">{v.marca ? '—' : 'Sin terminal'}</option>
             {productos.map((p) => <option key={p.sap} value={p.sap}>{p.sap} · {p.modelo}</option>)}
-          </select>
+          </select></label>
         </div>
       </div>
 
@@ -182,31 +184,31 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
                   </div>
                 )}
                 <div className="sm:col-span-3">
-                  <label className="label">Tarifa línea {i + 1}</label>
+                  <label className="label">Tarifa línea {i + 1}
                   <select className="input" value={l.tarifa} onChange={(e) => updLinea(l.id, 'tarifa', e.target.value)}>
                     <option value="">—</option>
                     {TARIFAS_MOVIL.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-                  </select>
+                  </select></label>
                 </div>
                 <div className="sm:col-span-3">
-                  <label className="label">Número</label>
-                  <input type="tel" className="input" value={l.numero} onChange={(e) => updLinea(l.id, 'numero', e.target.value)} placeholder="6XX XXX XXX" />
+                  <label className="label">Número
+                  <input type="tel" className="input" value={l.numero} onChange={(e) => updLinea(l.id, 'numero', e.target.value)} placeholder="6XX XXX XXX" /></label>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="label">Tipo</label>
+                  <label className="label">Tipo
                   <select className="input" value={l.tipo} onChange={(e) => updLinea(l.id, 'tipo', e.target.value)}>
                     <option value="nueva">Nueva</option>
                     <option value="porta">Porta</option>
-                  </select>
+                  </select></label>
                 </div>
                 {l.tipo === 'porta' ? (
                   <>
                     <div className="sm:col-span-3">
-                      <label className="label">Operador origen</label>
+                      <label className="label">Operador origen
                       <select className="input" value={l.operador} onChange={(e) => updLinea(l.id, 'operador', e.target.value)}>
                         <option value="">—</option>
                         {OPERADORES_PORTA.map((o) => <option key={o} value={o}>{o}</option>)}
-                      </select>
+                      </select></label>
                     </div>
                     <div className="sm:col-span-1 flex items-center justify-between gap-1 pb-2">
                       <label className="flex items-center gap-1 text-xs text-fg-soft cursor-pointer" title="Porta ya activada">
@@ -216,14 +218,14 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
                       <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
                     </div>
                     <div className="sm:col-span-3">
-                      <label className="label">Fecha ventana portabilidad</label>
-                      <input type="datetime-local" className="input" value={l.ventanaPorta || ''} onChange={(e) => updLinea(l.id, 'ventanaPorta', e.target.value)} />
+                      <label className="label">Fecha ventana portabilidad
+                      <input type="datetime-local" className="input" value={l.ventanaPorta || ''} onChange={(e) => updLinea(l.id, 'ventanaPorta', e.target.value)} /></label>
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="label">Incidencia porta</label>
+                      <label className="label">Incidencia porta
                       <select className="input" value={l.incidenciaPorta || ''} onChange={(e) => updLinea(l.id, 'incidenciaPorta', e.target.value)}>
                         {INCIDENCIAS_PORTA.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
-                      </select>
+                      </select></label>
                     </div>
                   </>
                 ) : (
@@ -243,11 +245,11 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div><label className="label">Cantidad</label><input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', (Number(e.target.value) || 0))} /></div>
+        <div><label className="label">Cantidad<input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', (Number(e.target.value) || 0))} /></label></div>
         {/* Contadores manuales: solo como respaldo si NO se usan líneas móviles (si las usas, se calculan solos) */}
         {!tieneLineas && (
           <>
-            <div><label className="label">Portas voz</label><input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', (Number(e.target.value) || 0))} /></div>
+            <div><label className="label">Portas voz<input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', (Number(e.target.value) || 0))} /></label></div>
             <div>
               <label className="label flex items-center gap-1">
                 Portas activas
@@ -257,7 +259,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
               </label>
               <input type="number" min="0" max={v.portasVoz} className="input" value={v.portasActivas} onChange={(e) => set('portasActivas', (Number(e.target.value) || 0))} />
             </div>
-            <div><label className="label">Líneas voz (total)</label><input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', (Number(e.target.value) || 0))} /></div>
+            <div><label className="label">Líneas voz (total)<input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', (Number(e.target.value) || 0))} /></label></div>
             <div>
               <label className="label flex items-center gap-1">
                 TIL65
@@ -269,12 +271,12 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
             </div>
           </>
         )}
-        <div><label className="label">Secure Net</label><input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', (Number(e.target.value) || 0))} /></div>
+        <div><label className="label">Secure Net<input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', (Number(e.target.value) || 0))} /></label></div>
         <div>
-          <label className="label">Mes (auto)</label>
+          <label className="label">Mes (auto)
           <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!(v.fechaInstalacion || v.fechaVenta)} title={(v.fechaInstalacion || v.fechaVenta) ? 'Se autodetecta desde la fecha de instalación (o la de venta si aún no hay instalación)' : undefined}>
             {PERIODO.meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
-          </select>
+          </select></label>
         </div>
       </div>
 
@@ -303,8 +305,8 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 
       {v.marca && v.dispositivoEntregado && (
         <div className="max-w-xs">
-          <label className="label">Fecha de entrega del dispositivo</label>
-          <input type="date" className="input" value={v.fechaEntrega || ''} onChange={(e) => set('fechaEntrega', e.target.value)} />
+          <label className="label">Fecha de entrega del dispositivo
+          <input type="date" className="input" value={v.fechaEntrega || ''} onChange={(e) => set('fechaEntrega', e.target.value)} /></label>
           <p className="text-[11px] text-fg-muted mt-1">
             Los puntos/GP Coins del dispositivo cuentan en el <span className="text-fg-soft">mes de esta fecha</span>
             {v.fechaEntrega ? <> (<span className="capitalize">{mesDesdeFecha(v.fechaEntrega)}</span>)</> : null}, no en el de la venta.
@@ -330,13 +332,13 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
             )}
             {(estadoEntrega === 'lista' || v.incidenciaEntrega) && (
               <div className="max-w-xs">
-                <label className="label">Incidencia en la entrega <span className="text-fg-muted font-normal">(opcional)</span></label>
+                <label className="label">Incidencia en la entrega <span className="text-fg-muted font-normal">(opcional)</span>
                 <select className="input" value={v.incidenciaEntrega || ''} onChange={(e) => set('incidenciaEntrega', e.target.value)}>
                   <option value="">Sin incidencia</option>
                   <option value="cliente_ausente">Cliente ausente</option>
                   <option value="rechaza_terminal">Cliente rechaza el terminal</option>
                   <option value="otro">Otra incidencia</option>
-                </select>
+                </select></label>
               </div>
             )}
           </div>
@@ -345,26 +347,26 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
-          <label className="label">Estado de la venta</label>
+          <label className="label">Estado de la venta
           <select className="input" value={v.estado} onChange={(e) => set('estado', e.target.value)}>
             {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS[k].label}</option>)}
-          </select>
+          </select></label>
         </div>
         {esBaja && (
           <>
-            <div><label className="label">Fecha de baja</label><input type="date" className="input" value={v.fechaBaja} onChange={(e) => set('fechaBaja', e.target.value)} /></div>
+            <div><label className="label">Fecha de baja<input type="date" className="input" value={v.fechaBaja} onChange={(e) => set('fechaBaja', e.target.value)} /></label></div>
             <div>
-              <label className="label">Motivo de baja</label>
+              <label className="label">Motivo de baja
               <select className="input" value={v.motivoBaja} onChange={(e) => set('motivoBaja', e.target.value)}>
                 <option value="">—</option>
                 {MOTIVOS_BAJA.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              </select></label>
             </div>
           </>
         )}
       </div>
 
-      <div><label className="label">Notas</label><input className="input" value={v.notas} onChange={(e) => set('notas', e.target.value)} /></div>
+      <div><label className="label">Notas<input className="input" value={v.notas} onChange={(e) => set('notas', e.target.value)} /></label></div>
 
       <div className="flex gap-2 justify-end">
         <button className="btn-ghost" onClick={onCancelar}><X size={16} /> Cancelar</button>
@@ -375,14 +377,14 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function Ventas() {
-  const { ventas, setVentas, mes, prefillVenta, setPrefillVenta, marcarAgendadoConvertido, toast } = useApp();
-  const [form, setForm] = useState(false);
-  const [editId, setEditId] = useState(null);
+  const { ventas, setVentas, mes, prefillVenta, setPrefillVenta, guardarVenta, registroSeleccionado, toast } = useApp();
+  const [form, setForm] = useState(!!registroSeleccionado?.id);
+  const [editId, setEditId] = useState(registroSeleccionado?.id || null);
   const [prefab, setPrefab] = useState(null); // marca/sap o datos de cliente precargados
   const [agendadoRef, setAgendadoRef] = useState(null); // id del agendado origen (si la venta viene de la agenda)
-  const [filtroMes, setFiltroMes] = useState(mes);
-  const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [busqueda, setBusqueda] = useState('');
+  const [filtroMes, setFiltroMes] = useState(registroSeleccionado ? 'todos' : mes);
+  const [filtroEstado, setFiltroEstado] = useLocalStorage('gpcoins:ui:Ventas.jsx:filtroEstado', 'todos');
+  const [busqueda, setBusqueda] = useState(registroSeleccionado?.dni || registroSeleccionado?.nombre || '');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
   const { confirmar, dialogo } = useConfirm();
@@ -453,14 +455,11 @@ export default function Ventas() {
       }
     }
 
-    let existia = false;
-    setVentas((prev) => {
-      existia = prev.some((p) => p.id === venta.id);
-      return existia ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
-    });
+    const existia = ventas.some(p => p.id === venta.id);
+    try { guardarVenta('ventas', venta, agendadoRef); } catch(e) { toast?.(e.message, 'error'); return; }
     setForm(false); setEditId(null); setPrefab(null);
     // Si esta alta venía de un agendado, márcalo "Convertido" (solo ahora, al guardar)
-    if (agendadoRef) { marcarAgendadoConvertido(agendadoRef); setAgendadoRef(null); }
+    setAgendadoRef(null);
 
     if (avisos.length) {
       setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
@@ -471,7 +470,7 @@ export default function Ventas() {
   };
 
   const eliminar = async (id) => {
-    const ok = await confirmar('¿Eliminar esta venta? Esta acción no se puede deshacer.', { titulo: 'Eliminar venta', accion: 'Eliminar', peligro: true });
+    const ok = await confirmar('¿Eliminar esta venta? Podrás recuperarla desde Copias y papelera.', { titulo: 'Eliminar venta', accion: 'Eliminar', peligro: true });
     if (ok) { setVentas((prev) => prev.filter((p) => p.id !== id)); toast?.('Venta eliminada', 'info'); }
   };
 
@@ -487,6 +486,8 @@ export default function Ventas() {
     if (!file) return;
     try {
       const { ventas: nuevas, duplicadas, yaExistian, fueraPeriodo } = await importarVentas(file, ventas);
+      if (nuevas.length > 400) throw new Error('Importa como máximo 400 filas por archivo.');
+      if (!await confirmar(`${nuevas.length} ventas nuevas, ${duplicadas} duplicadas y ${yaExistian} ya existentes. ¿Importar las nuevas?`, { titulo: 'Revisar importación', accion: 'Importar' })) { e.target.value = ''; return; }
       setVentas((prev) => [...nuevas, ...prev]);
       let text = `${nuevas.length} ventas importadas`;
       const omitidas = [];
@@ -496,8 +497,8 @@ export default function Ventas() {
       if (fueraPeriodo > 0) text += ` · ${fueraPeriodo} fuera de período`;
       text += '.';
       setMsg({ tone: fueraPeriodo > 0 ? 'red' : 'green', text });
-    } catch {
-      setMsg({ tone: 'red', text: 'Error al leer el Excel. Revisa el formato con la plantilla.' });
+    } catch (error) {
+      setMsg({ tone: 'red', text: error.message || 'Error al leer el Excel.' });
     }
     e.target.value = '';
     setTimeout(() => setMsg(null), 4000);
@@ -547,15 +548,16 @@ export default function Ventas() {
           className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 p-4 overflow-y-auto fade-in"
           onClick={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
         >
-          <div
+          <DialogSurface
             className="card w-full max-w-5xl p-5 my-4 max-h-[92vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            role="dialog" aria-modal="true"
+            onClose={() => setForm(false)} label="Editar registro"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-fg tracking-tight">{editId ? 'Editar venta' : 'Registrar nueva venta'}</h2>
               <button onClick={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }} className="p-1.5 rounded-lg hover:bg-bg-surface2 text-fg-muted hover:text-fg cursor-pointer" aria-label="Cerrar"><X size={18} /></button>
             </div>
+            {msg && <p role="alert" className="text-vf-redLight mb-3">{msg.text}</p>}
             <FormVenta
               inicial={editId
                 ? (() => { const f = ventas.find((v) => v.id === editId); return { ...ventaVacia(), ...f, estado: estadoDe(f) }; })()
@@ -569,7 +571,7 @@ export default function Ventas() {
               onGuardar={guardar}
               onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
             />
-          </div>
+          </DialogSurface>
         </div>,
         document.body,
       )}

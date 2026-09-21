@@ -1,3 +1,5 @@
+import { useLocalStorage } from '../hooks/useLocalStorage.js';
+import DialogSurface from '../components/DialogSurface.jsx';
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -43,28 +45,28 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div><label className="label">Nombre</label><input className="input" value={v.nombre} onChange={(e) => set('nombre', e.target.value)} /></div>
-        <div><label className="label">Apellido</label><input className="input" value={v.apellido} onChange={(e) => set('apellido', e.target.value)} /></div>
-        <div><label className="label">DNI / NIE</label><input className="input" value={v.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></div>
-        <div><label className="label">Teléfono de contacto</label><input type="tel" className="input" value={v.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></div>
+        <div><label className="label">Nombre<input className="input" value={v.nombre} onChange={(e) => set('nombre', e.target.value)} /></label></div>
+        <div><label className="label">Apellido<input className="input" value={v.apellido} onChange={(e) => set('apellido', e.target.value)} /></label></div>
+        <div><label className="label">DNI / NIE<input className="input" value={v.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></label></div>
+        <div><label className="label">Teléfono de contacto<input type="tel" className="input" value={v.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></label></div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div><label className="label">Fecha de venta</label><input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></div>
+        <div><label className="label">Fecha de venta<input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></label></div>
         <div>
-          <label className="label">Fecha de instalación</label>
-          <input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} />
+          <label className="label">Fecha de instalación
+          <input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} /></label>
           <p className="text-[11px] text-fg-muted mt-1">Esta fecha decide el mes de seguimiento (activación), no la de venta.</p>
         </div>
-        <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span></label><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></div>
-        <div><label className="label">ID Smart <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></div>
+        <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></label></div>
+        <div><label className="label">ID Smart <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></label></div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><label className="label">ID Web <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.idWeb} onChange={(e) => set('idWeb', e.target.value)} /></div>
+        <div><label className="label">ID Web <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.idWeb} onChange={(e) => set('idWeb', e.target.value)} /></label></div>
       </div>
 
-      <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></div>
+      <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></label></div>
 
       {avisosDatos.length > 0 && (
         <p className="text-xs text-amber-400 -mt-1">{avisosDatos.join(' ')}</p>
@@ -72,18 +74,18 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div>
-          <label className="label">Producto</label>
+          <label className="label">Producto
           <select className="input" value={v.producto} onChange={(e) => set('producto', e.target.value)}>
             <option value="">—</option>
             {Object.entries(PRODUCTOS_LOWI).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </select>
+          </select></label>
         </div>
         <div>
-          <label className="label">Velocidad fibra</label>
+          <label className="label">Velocidad fibra
           <select className="input" value={v.velocidad} onChange={(e) => set('velocidad', e.target.value)} disabled={!llevaFibra}>
             <option value="">{llevaFibra ? '—' : 'Sin fibra'}</option>
             {VELOCIDADES_LOWI.map((x) => <option key={x} value={x}>{x}</option>)}
-          </select>
+          </select></label>
         </div>
         <div>
           <label className="label">Líneas móvil</label>
@@ -94,15 +96,15 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
           )}
         </div>
         <div>
-          <label className="label">Cuota mensual (€)</label>
-          <input type="number" min="0" step="0.01" className="input" value={v.cuota} onChange={(e) => set('cuota', (Number(e.target.value) || 0))} />
+          <label className="label">Cuota mensual (€)
+          <input type="number" min="0" step="0.01" className="input" value={v.cuota} onChange={(e) => set('cuota', (Number(e.target.value) || 0))} /></label>
         </div>
         <div>
-          <label className="label">TV <span className="text-fg-muted font-normal">(opcional)</span></label>
+          <label className="label">TV <span className="text-fg-muted font-normal">(opcional)</span>
           <select className="input" value={v.tv} onChange={(e) => set('tv', e.target.value)}>
             <option value="">Sin TV</option>
             {TV_LOWI.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+          </select></label>
         </div>
       </div>
 
@@ -124,31 +126,31 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
               {lineas.map((l, i) => (
                 <div key={l.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end bg-bg-surface2/50 rounded-lg p-2">
                   <div className="sm:col-span-3">
-                    <label className="label">Tarifa línea {i + 1}</label>
+                    <label className="label">Tarifa línea {i + 1}
                     <select className="input" value={l.tarifa} onChange={(e) => updLinea(l.id, 'tarifa', e.target.value)}>
                       <option value="">—</option>
                       {TARIFAS_MOVIL_LOWI.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-                    </select>
+                    </select></label>
                   </div>
                   <div className="sm:col-span-3">
-                    <label className="label">Número</label>
-                    <input type="tel" className="input" value={l.numero} onChange={(e) => updLinea(l.id, 'numero', e.target.value)} placeholder="6XX XXX XXX" />
+                    <label className="label">Número
+                    <input type="tel" className="input" value={l.numero} onChange={(e) => updLinea(l.id, 'numero', e.target.value)} placeholder="6XX XXX XXX" /></label>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="label">Tipo</label>
+                    <label className="label">Tipo
                     <select className="input" value={l.tipo} onChange={(e) => updLinea(l.id, 'tipo', e.target.value)}>
                       <option value="nueva">Nueva</option>
                       <option value="porta">Porta</option>
-                    </select>
+                    </select></label>
                   </div>
                   {l.tipo === 'porta' ? (
                     <>
                       <div className="sm:col-span-3">
-                        <label className="label">Operador origen</label>
+                        <label className="label">Operador origen
                         <select className="input" value={l.operador} onChange={(e) => updLinea(l.id, 'operador', e.target.value)}>
                           <option value="">—</option>
                           {OPERADORES_PORTA.map((o) => <option key={o} value={o}>{o}</option>)}
-                        </select>
+                        </select></label>
                       </div>
                       <div className="sm:col-span-1 flex items-center justify-between gap-1 pb-2">
                         <label className="flex items-center gap-1 text-xs text-fg-soft cursor-pointer" title="Porta ya activada">
@@ -158,14 +160,14 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
                         <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
                       </div>
                       <div className="sm:col-span-3">
-                        <label className="label">Fecha ventana portabilidad</label>
-                        <input type="datetime-local" className="input" value={l.ventanaPorta || ''} onChange={(e) => updLinea(l.id, 'ventanaPorta', e.target.value)} />
+                        <label className="label">Fecha ventana portabilidad
+                        <input type="datetime-local" className="input" value={l.ventanaPorta || ''} onChange={(e) => updLinea(l.id, 'ventanaPorta', e.target.value)} /></label>
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="label">Incidencia porta</label>
+                        <label className="label">Incidencia porta
                         <select className="input" value={l.incidenciaPorta || ''} onChange={(e) => updLinea(l.id, 'incidenciaPorta', e.target.value)}>
                           {INCIDENCIAS_PORTA.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
-                        </select>
+                        </select></label>
                       </div>
                     </>
                   ) : (
@@ -184,26 +186,26 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
-          <label className="label">Estado</label>
+          <label className="label">Estado
           <select className="input" value={v.estado} onChange={(e) => set('estado', e.target.value)}>
             {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS_LOWI[k].label}</option>)}
-          </select>
+          </select></label>
         </div>
         {esBaja && (
           <>
-            <div><label className="label">Fecha de baja</label><input type="date" className="input" value={v.fechaBaja} onChange={(e) => set('fechaBaja', e.target.value)} /></div>
+            <div><label className="label">Fecha de baja<input type="date" className="input" value={v.fechaBaja} onChange={(e) => set('fechaBaja', e.target.value)} /></label></div>
             <div>
-              <label className="label">Motivo de baja</label>
+              <label className="label">Motivo de baja
               <select className="input" value={v.motivoBaja} onChange={(e) => set('motivoBaja', e.target.value)}>
                 <option value="">—</option>
                 {MOTIVOS_BAJA.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              </select></label>
             </div>
           </>
         )}
       </div>
 
-      <div><label className="label">Notas</label><input className="input" value={v.notas} onChange={(e) => set('notas', e.target.value)} /></div>
+      <div><label className="label">Notas<input className="input" value={v.notas} onChange={(e) => set('notas', e.target.value)} /></label></div>
 
       <div className="flex gap-2 justify-end">
         <button className="btn-ghost" onClick={onCancelar}><X size={16} /> Cancelar</button>
@@ -214,14 +216,14 @@ function FormLowi({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function LowiVentas() {
-  const { ventasLowi, setVentasLowi, prefillVenta, setPrefillVenta, marcarAgendadoConvertido, toast } = useApp();
-  const [form, setForm] = useState(false);
-  const [editId, setEditId] = useState(null);
+  const { ventasLowi, setVentasLowi, prefillVenta, setPrefillVenta, guardarVenta, registroSeleccionado, toast } = useApp();
+  const [form, setForm] = useState(!!registroSeleccionado?.id);
+  const [editId, setEditId] = useState(registroSeleccionado?.id || null);
   const [prefab, setPrefab] = useState(null); // nombre/dni/teléfono precargados desde Agendados
   const [agendadoRef, setAgendadoRef] = useState(null); // id del agendado origen (si viene de la agenda)
-  const [filtro, setFiltro] = useState('todos');
+  const [filtro, setFiltro] = useLocalStorage('gpcoins:ui:LowiVentas.jsx:filtro', 'todos');
   const [filtroMes, setFiltroMes] = useState('todos');
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useState(registroSeleccionado?.dni || registroSeleccionado?.nombre || '');
   const [msg, setMsg] = useState(null);
   const fileRef = useRef(null);
   const { confirmar, dialogo } = useConfirm();
@@ -260,14 +262,11 @@ export default function LowiVentas() {
       setTimeout(() => setMsg(null), 4000);
       return;
     }
-    let existia = false;
-    setVentasLowi((prev) => {
-      existia = prev.some((p) => p.id === venta.id);
-      return existia ? prev.map((p) => (p.id === venta.id ? venta : p)) : [venta, ...prev];
-    });
+    const existia = ventasLowi.some(p => p.id === venta.id);
+    try { guardarVenta('ventasLowi', venta, agendadoRef); } catch(e) { toast?.(e.message, 'error'); return; }
     setForm(false); setEditId(null); setPrefab(null);
     // Si esta alta venía de un agendado, márcalo "Convertido" (solo al guardar)
-    if (agendadoRef) { marcarAgendadoConvertido(agendadoRef); setAgendadoRef(null); }
+    setAgendadoRef(null);
     const avisos = avisosContacto(venta);
     if (avisos.length) {
       setMsg({ tone: 'red', text: `Venta guardada. ${avisos.join(' ')}` });
@@ -283,7 +282,7 @@ export default function LowiVentas() {
   };
 
   const eliminar = async (id) => {
-    const ok = await confirmar('¿Eliminar esta venta de Lowi? Esta acción no se puede deshacer.', { titulo: 'Eliminar venta', accion: 'Eliminar', peligro: true });
+    const ok = await confirmar('¿Eliminar esta venta de Lowi? Podrás recuperarla desde Copias y papelera.', { titulo: 'Eliminar venta', accion: 'Eliminar', peligro: true });
     if (ok) { setVentasLowi((prev) => prev.filter((p) => p.id !== id)); toast?.('Venta eliminada', 'info'); }
   };
 
@@ -292,6 +291,8 @@ export default function LowiVentas() {
     if (!file) return;
     try {
       const { ventas: nuevas, duplicadas, yaExistian } = await importarLowi(file, ventasLowi);
+      if (nuevas.length > 400) throw new Error('Importa como máximo 400 filas por archivo.');
+      if (!await confirmar(`${nuevas.length} ventas nuevas, ${duplicadas} duplicadas y ${yaExistian} ya existentes. ¿Importar las nuevas?`, { titulo: 'Revisar importación', accion: 'Importar' })) { e.target.value = ''; return; }
       setVentasLowi((prev) => [...nuevas, ...prev]);
       let text = `${nuevas.length} ventas importadas`;
       const omitidas = [];
@@ -299,8 +300,8 @@ export default function LowiVentas() {
       if (duplicadas > 0) omitidas.push(`${duplicadas} duplicadas`);
       if (omitidas.length) text += ` (${omitidas.join(', ')} omitidas)`;
       setMsg({ tone: 'green', text: text + '.' });
-    } catch {
-      setMsg({ tone: 'red', text: 'Error al leer el Excel. Revisa el formato con la plantilla.' });
+    } catch (error) {
+      setMsg({ tone: 'red', text: error.message || 'Error al leer el Excel.' });
     }
     e.target.value = '';
     setTimeout(() => setMsg(null), 4000);
@@ -343,15 +344,16 @@ export default function LowiVentas() {
           className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 p-4 overflow-y-auto fade-in"
           onClick={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
         >
-          <div
+          <DialogSurface
             className="card w-full max-w-5xl p-5 my-4 max-h-[92vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            role="dialog" aria-modal="true"
+            onClose={() => setForm(false)} label="Editar registro"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-fg tracking-tight">{editId ? 'Editar venta Lowi' : 'Registrar nueva venta Lowi'}</h2>
               <button onClick={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }} className="p-1.5 rounded-lg hover:bg-bg-surface2 text-fg-muted hover:text-fg cursor-pointer" aria-label="Cerrar"><X size={18} /></button>
             </div>
+            {msg && <p role="alert" className="text-vf-redLight mb-3">{msg.text}</p>}
             <FormLowi
               inicial={editId
                 ? { ...ventaLowiVacia(), ...ventasLowi.find((v) => v.id === editId) }
@@ -364,7 +366,7 @@ export default function LowiVentas() {
               onGuardar={guardar}
               onCancelar={() => { setForm(false); setEditId(null); setPrefab(null); setAgendadoRef(null); }}
             />
-          </div>
+          </DialogSurface>
         </div>,
         document.body,
       )}

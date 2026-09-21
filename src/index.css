@@ -120,7 +120,7 @@ body {
   .card:hover {
     box-shadow: var(--shadow-lg);
     border-color: color-mix(in srgb, var(--bg-border) 55%, var(--fg-muted));
-    transform: translateY(-2px);
+
   }
   /* Tarjeta con barra de acento superior */
   .card-accent::before {
@@ -183,7 +183,7 @@ body {
   }
   /* Modo enfoque en tablas: al pasar por una fila, las demás se atenúan */
   @media (hover: hover) {
-    tbody:has(tr:hover) tr:not(:hover) { opacity: 0.55; }
+
     tbody tr { transition: opacity 0.2s ease; }
   }
   .toast-in { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
@@ -220,3 +220,8 @@ body {
     animation: shimmer 1.5s infinite;
   }
 }
+
+@media (pointer: coarse) {
+  button, input:not([type="checkbox"]), select { min-height: 44px; }
+}
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }

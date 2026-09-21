@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Calculator, Wifi, Smartphone, UserPlus, RotateCcw, DownloadCloud, FileSpreadsheet, AlertTriangle } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { estadoDe } from '../lib/estados.js';
@@ -169,6 +169,7 @@ export default function Comision() {
   // Días trabajados del mes (para prorratear las vallas por vacaciones/ausencias)
   const diasMes = diasDelMes(mes);
   const [diasTrab, setDiasTrab] = useState(diasMes);
+  useEffect(() => { setDiasTrab(diasMes); setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setClientes(0); setMsg(null); }, [mes, diasMes]);
 
   const factor = Math.max(0, Math.min(1, (Number(diasTrab) || 0) / diasMes));
   const reducida = factor < 1;

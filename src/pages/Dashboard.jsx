@@ -7,7 +7,7 @@ import {
   PieChart, Pie, AreaChart, Area,
 } from 'recharts';
 import { useApp } from '../App.jsx';
-import { resumenGlobal, portasCruzadas } from '../lib/engine.js';
+import { resumenGlobal, portasCruzadas, mesDesdeFecha } from '../lib/engine.js';
 import { rachaVentas, calcularLogros } from '../lib/logros.js';
 import { versiculoDelDia, bendicionDelDia } from '../data/biblia.js';
 import { useVersiculo } from '../lib/bibliaApi.js';
@@ -125,9 +125,10 @@ export default function Dashboard() {
     const cuenta = {};
     let total = 0;
     for (const v of ventas) {
-      if (v.mes !== mes || estadoDe(v) !== 'activa') continue;
+      if (['cancelada', 'baja'].includes(estadoDe(v))) continue;
       for (const l of v.lineasMoviles || []) {
-        if (!l.tarifa) continue;
+        const enMes = l.tipo === 'porta' ? l.activa && l.incidenciaPorta !== 'cancelada_m1' && (l.ventanaPorta ? mesDesdeFecha(l.ventanaPorta) : v.mes) === mes : estadoDe(v) === 'activa' && v.mes === mes;
+        if (!l.tarifa || !enMes) continue;
         cuenta[l.tarifa] = (cuenta[l.tarifa] || 0) + 1;
         total += 1;
       }
@@ -144,8 +145,9 @@ export default function Dashboard() {
     const arr = Array.from({ length: nDias }, (_, i) => ({ dia: i + 1, ventas: 0 }));
     let sinFecha = 0;
     for (const v of ventas) {
-      if (v.mes !== mes) continue;
-      const f = v.fechaVenta || v.fechaInstalacion;
+      const f = v.fechaVenta;
+      if (f && f.slice(0, 7) !== isoMesCampana(mes)) continue;
+      if (!f && v.mes !== mes) continue;
       if (!f) { sinFecha += 1; continue; }
       const d = Number(String(f).slice(8, 10));
       if (d >= 1 && d <= nDias) arr[d - 1].ventas += 1;

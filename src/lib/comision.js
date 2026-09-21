@@ -1,3 +1,5 @@
+import { contarClientes } from './clientes.js';
+import { estadoDe } from './estados.js';
 // ============================================================================
 //  CALCULADORA DE COMISIÓN — solo Vodafone (moneda: Sol peruano S/)
 //  Mecánica de "vallas" retroactiva con RAPPEL de clientes: cada categoría
@@ -86,7 +88,7 @@ export const MOVIL_POR_TARIFA = {
 export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
   const fijo = { BV: 0, MV: 0, AV: 0 };
   const movil = { BA: 0, MV: 0, AV: 0 };
-  let clientes = 0;
+  const clientes = contarClientes(ventas.filter(v => v.mes === mes && estadoActivo(v) && v.clienteNuevo));
   let sinClasificar = 0;
   for (const v of ventas) {
     // Fibra: mes propio de la venta y activa
@@ -94,7 +96,7 @@ export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
       const b = FIJO_POR_VELOCIDAD[v.velocidad];
       if (b) fijo[b] += 1;
     }
-    if (v.mes === mes && estadoActivo(v) && v.clienteNuevo) clientes += 1;
+    if (estadoDe(v) === 'cancelada' || estadoDe(v) === 'baja') continue;
     // Líneas móviles
     const lm = v.lineasMoviles || [];
     if (lm.length > 0) {

@@ -1,3 +1,4 @@
+import DialogSurface from './DialogSurface.jsx';
 import {
   Star, AlertTriangle, Info, Flame, Target,
   Sparkles, ShoppingCart, Repeat, UserPlus, Coins, Trophy, Wifi,
@@ -103,12 +104,13 @@ export function useConfirm() {
     new Promise((resolve) => { setEstado({ mensaje, resolve, soloAviso: true, ...opts }); }), []);
   const cerrar = (ok) => { estado?.resolve(ok); setEstado(null); };
 
-  const dialogo = estado ? (
+  const dialogo = estado ? createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 fade-in" onClick={() => cerrar(false)}>
-      <div
+      <DialogSurface
+        onClose={() => cerrar(false)} label={estado.titulo || 'Confirmación'}
         className="card w-full max-w-sm p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
-        role="alertdialog" aria-modal="true" aria-label={estado.titulo || 'Confirmación'}
+        role="alertdialog"
       >
         <div className="flex items-start gap-3">
           <span className={`p-2.5 rounded-xl shrink-0 ${estado.peligro ? 'bg-vf-red/10 text-vf-red' : 'bg-sky-500/10 text-sky-400'}`}>
@@ -125,8 +127,8 @@ export function useConfirm() {
             {estado.soloAviso ? 'Entendido' : (estado.accion || 'Confirmar')}
           </button>
         </div>
-      </div>
-    </div>
+      </DialogSurface>
+    </div>, document.body
   ) : null;
 
   return { confirmar, avisar, dialogo };

@@ -1,8 +1,8 @@
 import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo, useEffect } from 'react';
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
-  Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, ShieldCheck, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Sparkles, Trash2, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator, Search,
+  Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, Cloud, CloudOff, Check, Wifi,
+  Download, Upload, Trash2, Users, Wallet, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator, Search,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { versiculoDelDia, LEMA } from './data/biblia.js';
@@ -10,10 +10,11 @@ import { estaAtrasado } from './lib/agendados.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useCloudData } from './hooks/useCloudData.js';
 import { cerrarSesion } from './lib/firebase.js';
-import { esAdmin } from './lib/admin.js';
+import { esAdmin, esPropietario } from './lib/admin.js';
 import { exportarBackup, leerBackup } from './lib/backup.js';
-import { ventasDemo, ventasLowiDemo } from './lib/demo.js';
-import { mesActivoCampanaDesdeFecha } from './data/campanas.js';
+import { useNavigation } from './hooks/useNavigation.js';
+import { useAhora } from './hooks/useAhora.js';
+
 
 // Páginas con carga diferida (code-splitting) para aligerar el arranque
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
@@ -23,7 +24,10 @@ const Llaves = lazy(() => import('./pages/Llaves.jsx'));
 const Incentivos = lazy(() => import('./pages/Incentivos.jsx'));
 const Tarifas = lazy(() => import('./pages/Tarifas.jsx'));
 const Catalogo = lazy(() => import('./pages/Catalogo.jsx'));
-const Admin = lazy(() => import('./pages/Admin.jsx'));
+const MiDia = lazy(() => import('./pages/Personal.jsx').then(m => ({ default: m.MiDia })));
+const Clientes = lazy(() => import('./pages/Personal.jsx').then(m => ({ default: m.Clientes })));
+const Ingresos = lazy(() => import('./pages/Personal.jsx').then(m => ({ default: m.Ingresos })));
+const Recuperacion = lazy(() => import('./pages/Personal.jsx').then(m => ({ default: m.Recuperacion })));
 const LowiDashboard = lazy(() => import('./pages/LowiDashboard.jsx'));
 const LowiVentas = lazy(() => import('./pages/LowiVentas.jsx'));
 const Ajustes = lazy(() => import('./pages/Ajustes.jsx'));
@@ -49,7 +53,12 @@ const NAV = [
   { id: 'catalogo', label: 'Catálogo', icon: Smartphone, Comp: Catalogo },
 ];
 
-const NAV_ADMIN = { id: 'admin', label: 'Supervisor', icon: ShieldCheck, Comp: Admin };
+const NAV_PERSONAL = [
+  { id: 'mi-dia', label: 'Mi día', icon: CalendarClock, Comp: MiDia },
+  { id: 'clientes', label: 'Clientes', icon: Users, Comp: Clientes },
+  { id: 'ingresos', label: 'Mis ingresos', icon: Wallet, Comp: Ingresos },
+  { id: 'recuperacion', label: 'Copias y papelera', icon: Trash2, Comp: Recuperacion },
+];
 const NAV_FE = { id: 'fe', label: 'Fe', icon: BookOpen, Comp: Fe };
 const NAV_AJUSTES = { id: 'ajustes', label: 'Ajustes', icon: Settings, Comp: Ajustes };
 // Agendados: compartido entre Vodafone y Lowi (un mismo agente puede tener
@@ -83,12 +92,10 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, restaurarDatos, versionDatos, migrarEsquemaV2, tema, setTema, loading, estadoGuardado } = useCloudData(user);
-  const [operador, setOperador] = useState('vodafone'); // 'vodafone' | 'lowi'
-  const [page, setPage] = useState('dashboard');
-  // Si hoy cae dentro de la campaña usamos su mes; si la campaña ya terminó,
-  // mostramos su último mes en vez de atribuir la fecha actual a junio.
-  const [mes, setMes] = useState(() => mesActivoCampanaDesdeFecha(new Date()));
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, restaurarDatos, versionDatos, migrarEsquemaV2, tema, setTema, loading, estadoGuardado, personal, setPersonal, guardarVenta, restaurarPapelera, esperarGuardado, reintentarGuardado, descargarPendientes, errorGuardado, pendientes, recuperarDesdeNube, cerrarMes } = useCloudData(user);
+  const { operador, setOperador, page, setPage, mes, setMes } = useNavigation();
+  const ahora = useAhora();
+  const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
   const [open, setOpen] = useState(false);
   const [prefillVenta, setPrefillVenta] = useState(null); // {marca, sap} para "Vender" desde Catálogo
   const [avisoAgendaCerrado, setAvisoAgendaCerrado] = useState(false); // recordatorio de atrasados descartado esta sesión
@@ -112,6 +119,7 @@ export default function App() {
 
   // Abre el alta de venta de Vodafone con una marca/modelo ya seleccionados
   const venderModelo = (marca, sap) => {
+    setRegistroSeleccionado(null);
     setOperador('vodafone');
     setPage('ventas');
     setPrefillVenta({ marca, sap });
@@ -124,6 +132,7 @@ export default function App() {
   // cancela el alta, el agendado sigue Pendiente). El id viaja con el prefill,
   // así queda ligado a ese formulario y no se queda "colgado" al navegar.
   const convertirAgendado = (a) => {
+    setRegistroSeleccionado(null);
     const datos = { nombre: a.nombre, apellido: a.apellido, dni: a.dni, telefono: a.telefono, _agendadoId: a.id };
     if (a.operador === 'lowi') {
       setOperador('lowi');
@@ -148,31 +157,15 @@ export default function App() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    const ok = await confirmar('Restaurar reemplazará TODOS tus datos actuales (ventas, Lowi y tarifas) por los del archivo.', { titulo: 'Restaurar copia', accion: 'Restaurar', peligro: true });
-    if (!ok) return;
     try {
       const d = await leerBackup(file);
+      const ok = await confirmar(`Copia válida: ${d.ventas.length} ventas Vodafone, ${d.ventasLowi.length} Lowi, ${d.agendados.length} llamadas y ${d.tarifas.length} tarifas. Reemplazará tus datos. Antes se conservará una copia de recuperación en este navegador.`, { titulo: 'Revisar restauración', accion: 'Restaurar', peligro: true });
+      if (!ok) return;
       await restaurarDatos(d);
-      avisar('Copia restaurada correctamente.', { titulo: 'Restaurado' });
-    } catch {
-      avisar('No se pudo leer el archivo de copia de seguridad.', { titulo: 'Error', peligro: true });
+      avisar('Copia restaurada y sincronizada.', { titulo: 'Restaurado' });
+    } catch (error) {
+      avisar(error.message || 'No se pudo restaurar la copia.', { titulo: 'Error', peligro: true });
     }
-  };
-
-  // Carga datos de demostración (para presentaciones)
-  const cargarDemo = async () => {
-    const ok = await confirmar('Cargar datos de DEMOSTRACIÓN reemplazará tus ventas actuales (Vodafone y Lowi).', { titulo: 'Datos de demostración', accion: 'Cargar demo', peligro: true });
-    if (!ok) return;
-    setVentas(ventasDemo());
-    setVentasLowi(ventasLowiDemo());
-  };
-
-  // Limpia todas las ventas (Vodafone y Lowi) — para dejar la app a cero
-  const limpiarDatos = async () => {
-    const ok = await confirmar('Esto borrará TODAS tus ventas de Vodafone y Lowi.', { titulo: 'Borrar todo', accion: 'Borrar todo', peligro: true });
-    if (!ok) return;
-    setVentas([]);
-    setVentasLowi([]);
   };
 
   // Monitor de tamaño del documento (Firestore limita 1 MB por documento)
@@ -182,19 +175,20 @@ export default function App() {
   }, [ventas, ventasLowi, tarifas, precios, agendados]);
   const LIMITE_DOC = 1024 * 1024;
   const pctUso = Math.round((usoDoc / LIMITE_DOC) * 100);
-  const cercaLimite = pctUso >= 75;
+  const cercaLimite = versionDatos < 2 && pctUso >= 75;
 
   // Secciones visibles en la paleta de comandos.
   // IMPORTANTE: este hook debe ir ANTES de cualquier return condicional.
   const seccionesPaleta = useMemo(() => {
-    const todas = [...NAV, ...NAV_LOWI, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES, ...(esAdmin(user) ? [NAV_ADMIN] : [])];
+    const todas = [...NAV_PERSONAL, ...NAV, ...NAV_LOWI, NAV_AGENDADOS, NAV_FE, NAV_AJUSTES];
     return todas.map((n) => ({ id: n.id, label: n.id === 'lowi-dashboard' ? 'Dashboard Lowi' : n.label, icon: n.icon }));
-  }, [user]);
+  }, []);
 
   // Auth loading
   if (user === undefined) return <Spinner />;
   // Not logged in
   if (user === null) return <Login />;
+  if (!esPropietario(user)) return <div className="min-h-dvh flex items-center justify-center p-6"><div className="card p-8 text-center space-y-4"><h1 className="text-xl font-bold">Proyecto personal</h1><p>Esta cuenta no tiene acceso a GP COINS.</p><button className="btn-primary" onClick={cerrarSesion}>Usar otra cuenta</button></div></div>;
   // Data loading
   if (loading) return <Spinner />;
 
@@ -209,11 +203,11 @@ export default function App() {
   const esLowi = operador === 'lowi';
   const enAgendados = page === 'agendados';
   // Recordatorio de llamadas agendadas atrasadas (pendientes cuya hora ya pasó)
-  const agendadosAtrasados = agendados.filter((a) => estaAtrasado(a)).length;
+  const agendadosAtrasados = agendados.filter((a) => estaAtrasado(a, ahora)).length;
   const avisoAgenda = agendadosAtrasados > 0 && !enAgendados && !avisoAgendaCerrado;
   const nav = esLowi
-    ? [...NAV_LOWI, NAV_FE, NAV_AJUSTES]
-    : (admin ? [...NAV, NAV_ADMIN, NAV_FE, NAV_AJUSTES] : [...NAV, NAV_FE, NAV_AJUSTES]);
+    ? [...NAV_PERSONAL, ...NAV_LOWI, NAV_FE, NAV_AJUSTES]
+    : [...NAV_PERSONAL, ...NAV, NAV_FE, NAV_AJUSTES];
   // Agendados no está en el menú lateral (vive en el conmutador de arriba),
   // pero debe poder resolverse como página activa y para el título de cabecera.
   const paginas = [...nav, NAV_AGENDADOS];
@@ -222,6 +216,7 @@ export default function App() {
   // Ir a un operador: siempre navega a su página inicial (aunque ya sea el
   // operador activo), para poder volver desde Agendados con un solo clic.
   const irAOperador = (op) => {
+    setRegistroSeleccionado(null);
     setOperador(op);
     setPage(OPERADORES[op].paginaInicial);
     setOpen(false);
@@ -233,11 +228,12 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, versionDatos, migrarEsquemaV2, convertirAgendado, marcarAgendadoConvertido, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta, toast };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, versionDatos, migrarEsquemaV2, convertirAgendado, marcarAgendadoConvertido, personal, setPersonal, guardarVenta, restaurarPapelera, esperarGuardado, cerrarMes, tema, restaurarDatos, navegar: irADesdePaleta, registroSeleccionado, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta, toast };
   const Active = paginas.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   // Navegación desde la barra de comandos: ajusta el operador si hace falta
-  const irADesdePaleta = (id) => {
+  function irADesdePaleta(id, registro = null) {
+    setRegistroSeleccionado(registro);
     if (id.startsWith('lowi-')) setOperador('lowi');
     else if (id !== 'agendados' && id !== 'fe' && id !== 'ajustes') setOperador('vodafone');
     setPage(id);
@@ -247,6 +243,7 @@ export default function App() {
   return (
     <AppCtx.Provider value={ctx}>
       <div className="app-ambient min-h-dvh flex">
+        <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] btn-primary" onClick={e => { e.preventDefault(); document.getElementById('contenido')?.focus(); }}>Saltar al contenido</a>
         {/* Sidebar */}
         <aside
           className={`fixed lg:static z-40 inset-y-0 left-0 w-64 bg-bg-surface/90 backdrop-blur-xl border-r border-bg-border
@@ -282,7 +279,7 @@ export default function App() {
             </div>
             {/* Agendados: seguimiento de llamadas, común a Vodafone y Lowi */}
             <button
-              onClick={() => { setPage('agendados'); setOpen(false); }}
+              onClick={() => { setRegistroSeleccionado(null); setPage('agendados'); setOpen(false); }}
               className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer border
                           ${enAgendados
                             ? 'bg-vf-red text-white border-vf-red'
@@ -297,7 +294,7 @@ export default function App() {
             {nav.map((n) => (
               <button
                 key={n.id}
-                onClick={() => { setPage(n.id); setOpen(false); }}
+                onClick={() => { setRegistroSeleccionado(null); setPage(n.id); setOpen(false); }}
                 className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
                             transition-all duration-200 cursor-pointer
                             ${page === n.id
@@ -326,7 +323,7 @@ export default function App() {
             {/* Copia de seguridad de todos los datos */}
             <div className="flex gap-1">
               <button
-                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas, precios, objetivosLogros, agendados })}
+                onClick={() => exportarBackup({ ventas, ventasLowi, tarifas, precios, objetivosLogros, agendados, personal, tema })}
                 className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
                 title="Descargar copia de seguridad (JSON)"
               >
@@ -341,24 +338,8 @@ export default function App() {
               </button>
               <input ref={backupRef} type="file" accept=".json" className="hidden" onChange={onRestaurar} />
             </div>
-            <div className="flex gap-1">
-              <button
-                onClick={cargarDemo}
-                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-fg hover:bg-bg-surface2 transition-colors cursor-pointer"
-                title="Cargar datos de demostración"
-              >
-                <Sparkles size={13} /> Demo
-              </button>
-              <button
-                onClick={limpiarDatos}
-                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] text-fg-muted hover:text-vf-redLight hover:bg-vf-red/10 transition-colors cursor-pointer"
-                title="Borrar todas las ventas (Vodafone y Lowi)"
-              >
-                <Trash2 size={13} /> Limpiar
-              </button>
-            </div>
             <button
-              onClick={() => cerrarSesion()}
+              onClick={async () => { try { await esperarGuardado(); await cerrarSesion(); } catch (e) { avisar(e.message, { titulo: 'Hay cambios pendientes', peligro: true }); } }}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-fg-muted hover:text-vf-redLight hover:bg-vf-red/10 transition-colors cursor-pointer"
             >
               <LogOut size={14} />
@@ -397,7 +378,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2">
               {guardado && (
-                <span className={`hidden sm:flex items-center gap-1 text-xs ${guardado.cls}`} title="Estado de sincronización en la nube">
+                <span className={`flex items-center gap-1 text-xs ${guardado.cls}`} title="Estado de sincronización en la nube">
                   <guardado.icon size={14} className={estadoGuardado === 'guardando' ? 'animate-pulse' : ''} />
                   {guardado.text}
                 </span>
@@ -447,7 +428,8 @@ export default function App() {
             </div>
           </header>
 
-          <main className="flex-1 p-4 lg:p-8 max-w-[1600px] w-full mx-auto">
+          <main id="contenido" tabIndex={-1} className="flex-1 p-4 lg:p-8 max-w-[1600px] w-full mx-auto">
+            {estadoGuardado === 'error' && <div role="alert" className="card p-4 mb-4 border-vf-red space-y-2"><p className="font-semibold">Sincronización pendiente · {pendientes} operaciones</p><p>{errorGuardado}</p><div className="flex flex-wrap gap-2"><button className="btn-primary" onClick={reintentarGuardado}>Reintentar</button><button className="btn-ghost" onClick={descargarPendientes}>Descargar recuperación</button><button className="btn-ghost" onClick={async () => { if (await confirmar('Los cambios pendientes se archivarán en este navegador y se recargarán los datos de la nube. Descarga primero la recuperación si quieres conservar otra copia.', { titulo: 'Resolver pendientes', accion: 'Archivar y recargar', peligro: true })) { try { await recuperarDesdeNube(); } catch (e) { avisar(e.message, { peligro: true }); } } }}>Resolver pendientes</button></div></div>}
             {avisoAgenda && (
               <div className="mb-4 flex items-center gap-3 text-sm px-4 py-3 rounded-lg bg-vf-red/10 text-vf-redLight border border-vf-red/30">
                 <AlertTriangle size={18} className="shrink-0" />
@@ -455,7 +437,7 @@ export default function App() {
                   Tienes <span className="font-semibold">{agendadosAtrasados}</span> llamada{agendadosAtrasados === 1 ? '' : 's'} agendada{agendadosAtrasados === 1 ? '' : 's'} atrasada{agendadosAtrasados === 1 ? '' : 's'}.
                 </span>
                 <button
-                  onClick={() => { setPage('agendados'); setOpen(false); }}
+                  onClick={() => { setRegistroSeleccionado(null); setPage('agendados'); setOpen(false); }}
                   className="px-3 py-1 rounded-md text-xs font-semibold bg-vf-red text-white hover:bg-vf-redDark transition-colors cursor-pointer shrink-0"
                 >
                   Ver agendados
@@ -482,8 +464,8 @@ export default function App() {
               </div>
             )}
             <Suspense fallback={<PageSkeleton />}>
-              <div key={`${operador}-${page}`} className="fade-in">
-                <Active />
+              <div key={`${operador}-${page}-${registroSeleccionado?.id || ''}`} className="fade-in">
+                <Active key={page === 'comision' ? mes : undefined} />
               </div>
             </Suspense>
           </main>
