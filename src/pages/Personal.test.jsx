@@ -47,3 +47,24 @@ it.each([[Ventas,'ventas',ventaVacia],[LowiVentas,'ventasLowi',ventaLowiVacia],[
   await render(<Page/>);const dialog=document.querySelector('[role=dialog]');expect(dialog).toBeTruthy();
   const name=[...dialog.querySelectorAll('input')].find(i=>i.value==='Ana');expect(name).toBeTruthy();expect(name.labels.length).toBeGreaterThan(0);
 });
+it('una entrada dañada ya guardada no bloquea la recuperación ni el borrado',async()=>{
+  context.personal={papelera:{ x:{}, valida:{campo:'ventas',registro:{id:'a',nombre:'Ana'},eliminadoEn:'2026-09-21T10:00:00.000Z'} }};
+  await render(<Recuperacion/>);
+  expect(host.textContent).toContain('Registro dañado');
+  const rows=host.querySelectorAll('li');
+  const damaged=[...rows].find(row=>row.textContent.includes('Registro dañado'));
+  expect(damaged.querySelector('button').disabled).toBe(true);
+  await act(async()=>[...damaged.querySelectorAll('button')].find(b=>b.textContent.includes('Borrar definitivamente')).click());
+  await act(async()=>document.querySelector('[role=alertdialog] .btn-primary').click());
+  const mutate=context.setPersonal.mock.calls[0][0];
+  const next=mutate(context.personal);
+  expect(next.papelera.x).toBeUndefined();expect(next.papelera.valida).toEqual(context.personal.papelera.valida);
+});
+it.each([null, [], 'incorrecta'])('permite descartar un contenedor de papelera dañado: %j',async papelera=>{
+  context.personal={papelera,notasClientes:{cliente:'Conservar'}};
+  await render(<Recuperacion/>);
+  expect(host.querySelector('[role=alert]').textContent).toContain('formato inválido');
+  await click('Descartar papelera dañada');
+  await act(async()=>document.querySelector('[role=alertdialog] .btn-primary').click());
+  expect(context.setPersonal.mock.calls[0][0](context.personal)).toEqual({notasClientes:{cliente:'Conservar'}});
+});
