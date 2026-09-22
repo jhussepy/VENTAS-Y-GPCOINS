@@ -20,7 +20,7 @@ export function validarBackup(d) {
     if (!Array.isArray(d[campo])) throw new Error(`Falta la colección ${campo}.`);
     const ids = new Set();
     for (const item of d[campo]) {
-      validarRegistroBackup(item, campo);
+      validarRegistroBackup(item, campo, campo);
       if (ids.has(item.id)) throw new Error(`ID duplicado en ${campo}.`);
       ids.add(item.id);
     }

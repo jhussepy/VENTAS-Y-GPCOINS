@@ -9,6 +9,9 @@ import DialogSurface from '../components/DialogSurface.jsx';
 import Ventas from './Ventas.jsx';
 import LowiVentas from './LowiVentas.jsx';
 import Agendados from './Agendados.jsx';
+import Tarifas from './Tarifas.jsx';
+import { crearBackup, validarBackup } from '../lib/backup.js';
+import { lineaMovilVacia } from '../data/movil.js';
 import { ventaVacia } from '../lib/engine.js';
 import { ventaLowiVacia } from '../lib/lowi.js';
 import { agendadoVacio } from '../lib/agendados.js';
@@ -47,8 +50,11 @@ it.each([[Ventas,'ventas',ventaVacia],[LowiVentas,'ventasLowi',ventaLowiVacia],[
   await render(<Page/>);const dialog=document.querySelector('[role=dialog]');expect(dialog).toBeTruthy();
   const name=[...dialog.querySelectorAll('input')].find(i=>i.value==='Ana');expect(name).toBeTruthy();expect(name.labels.length).toBeGreaterThan(0);
 });
-it('una entrada dañada ya guardada no bloquea la recuperación ni el borrado',async()=>{
-  context.personal={papelera:{ x:{}, valida:{campo:'ventas',registro:{id:'a',nombre:'Ana'},eliminadoEn:'2026-09-21T10:00:00.000Z'} }};
+it.each([{},
+  {campo:'ventas',registro:{id:'mala',tv:{mal:true}},eliminadoEn:'2026-09-22T10:00:00.000Z'},
+  {campo:'ventasLowi',registro:{id:'mala',lineasMoviles:[{numero:{mal:true}}]},eliminadoEn:'2026-09-22T10:00:00.000Z'},
+])('una entrada dañada ya guardada no bloquea la recuperación ni el borrado: %j',async entrada=>{
+  context.personal={papelera:{ x:entrada, valida:{campo:'ventas',registro:{id:'a',nombre:'Ana'},eliminadoEn:'2026-09-21T10:00:00.000Z'} }};
   await render(<Recuperacion/>);
   expect(host.textContent).toContain('Registro dañado');
   const rows=host.querySelectorAll('li');
@@ -67,4 +73,19 @@ it.each([null, [], 'incorrecta'])('permite descartar un contenedor de papelera d
   await click('Descartar papelera dañada');
   await act(async()=>document.querySelector('[role=alertdialog] .btn-primary').click());
   expect(context.setPersonal.mock.calls[0][0](context.personal)).toEqual({notasClientes:{cliente:'Conservar'}});
+});
+
+it.each([['ventas',Ventas,ventaVacia],['ventasLowi',LowiVentas,ventaLowiVacia]])('muestra TV y permite editar líneas después de validar la copia de %s',async(campo,Page,crear)=>{
+  const registro={...crear(),nombre:'Ana',apellido:'Prueba',fechaVenta:'2026-06-15',tv:'Pack prueba',lineasMoviles:[{...lineaMovilVacia(),id:'linea-1',numero:'600111222'}]};
+  if(campo==='ventasLowi')registro.producto='fibra_movil';
+  Object.assign(context,validarBackup(JSON.parse(JSON.stringify(crearBackup({[campo]:[registro]})))));
+  await render(<Page/>);expect(host.textContent).toContain('Pack prueba');
+  await act(async()=>host.querySelector('button[aria-label="Editar"]').click());
+  const dialog=document.querySelector('[role=dialog]');expect(dialog).toBeTruthy();
+  expect([...dialog.querySelectorAll('input')].some(input=>input.value==='600111222')).toBe(true);
+});
+it('muestra todos los textos de una tarifa restaurada',async()=>{
+  Object.assign(context,validarBackup(crearBackup({tarifas:[{id:'t',concepto:'Plan prueba',descripcion:'Detalle prueba',precio:29.9,promo:'Promo prueba'}]})));
+  await render(<Tarifas/>);await click('Mis tarifas');
+  for(const texto of ['Plan prueba','Detalle prueba','Promo prueba'])expect(host.textContent).toContain(texto);
 });
