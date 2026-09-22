@@ -115,3 +115,31 @@ describe('cola durable y estado global de sincronización', () => {
   });
 
 });
+
+const registrosInvalidos = [
+  ['ventas', { id: 'mala', tv: { mal: true } }],
+  ['ventasLowi', { id: 'mala', velocidad: { mal: true } }],
+  ['agendados', { id: 'mala', usuario: { mal: true } }],
+  ['tarifas', { id: 'mala', descripcion: { mal: true } }],
+  ['ventas', { id: 'mala', lineasMoviles: [{ numero: { mal: true } }] }],
+  ['ventasLowi', { id: 'mala', lineasMoviles: [{ activa: 'false' }] }],
+];
+it.each(registrosInvalidos)('rechaza la copia de %s sin cambiar datos ni la cola: %j', async (campo, registro) => {
+  mock.remote = { ...empty(), ventas: [{ id: 'conservar', nombre: 'Ana' }] };
+  await mount(); await emit(mock.remote);
+  const colaAntes = localStorage.getItem('gpcoins:outbox:owner');
+  await expect(state.restaurarDatos(crearBackup({ [campo]: [registro] }))).rejects.toThrow();
+  expect(mock.save).not.toHaveBeenCalled(); expect(state.pendientes).toBe(0);
+  expect(state.ventas).toEqual([{ id: 'conservar', nombre: 'Ana' }]);
+  expect(localStorage.getItem('gpcoins:outbox:owner')).toBe(colaAntes);
+});
+it.each(registrosInvalidos.filter(([campo]) => campo !== 'tarifas'))('bloquea la recuperación de %s sin borrar la entrada: %j', async (campo, registro) => {
+  const item = { campo, registro, eliminadoEn: '2026-09-22T10:00:00.000Z' };
+  mock.remote = { ...empty(), personal: { papelera: { x: item } } };
+  await mount(); await emit(mock.remote);
+  const colaAntes = localStorage.getItem('gpcoins:outbox:owner');
+  expect(() => state.restaurarPapelera('x')).toThrow();
+  expect(mock.save).not.toHaveBeenCalled(); expect(state[campo]).toEqual([]);
+  expect(state.personal.papelera.x).toEqual(item);
+  expect(localStorage.getItem('gpcoins:outbox:owner')).toBe(colaAntes);
+});

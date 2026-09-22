@@ -29,6 +29,7 @@ describe('validación de papelera dentro de las copias', () => {
   });
   it.each(['ventas', 'ventasLowi', 'agendados'])('conserva íntegra la entrada válida de %s', campo => {
     const item = { ...entrada(), campo };
+    if (campo === 'agendados') delete item.registro.lineasMoviles;
     expect(validarBackup(copia({ x: item })).personal.papelera.x).toEqual(item);
   });
   it('conserva compatibilidad con copias sin papelera y con papelera vacía', () => {
