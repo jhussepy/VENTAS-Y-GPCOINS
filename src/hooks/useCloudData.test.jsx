@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { crearBackup } from '../lib/backup.js';
 import { act } from 'react';
 import { create } from 'react-test-renderer';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
@@ -98,6 +99,19 @@ describe('cola durable y estado global de sincronización', () => {
     await act(async () => { liberar(empty()); await recuperacion; });
     expect(state.ventas).toEqual([]); expect(state.pendientes).toBe(0);
     expect(JSON.parse(localStorage.getItem('gpcoins:pendientes-archivados:owner')).datos.ventas).toEqual([{ id: 'pendiente' }]);
+  });
+
+  it('rechaza una restauración con papelera dañada antes de escribir o encolar', async () => {
+    await mount(); await emit(empty());
+    await expect(state.restaurarDatos(crearBackup({ personal: { papelera: { x: {} } } }))).rejects.toThrow(/papelera/i);
+    expect(mock.save).not.toHaveBeenCalled(); expect(state.pendientes).toBe(0);
+    expect(state.personal).toEqual({});
+  });
+  it('no recupera ni elimina una entrada dañada que ya estaba guardada', async () => {
+    mock.remote = { ...empty(), personal: { papelera: { x: {} } } };
+    await mount(); await emit(mock.remote);
+    expect(() => state.restaurarPapelera('x')).toThrow(/papelera/i);
+    expect(mock.save).not.toHaveBeenCalled(); expect(state.personal.papelera.x).toEqual({});
   });
 
 });

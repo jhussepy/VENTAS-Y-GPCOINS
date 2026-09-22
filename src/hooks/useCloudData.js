@@ -1,8 +1,9 @@
+import { validarEntradaPapelera } from '../lib/validacionBackup.js';
 import { useState, useEffect, useRef } from 'react';
 import { calcularCambiosColeccion, cargarDatosCoherentes, guardarOperacionUsuario, guardarPerfilUsuario, migrarUsuarioAV2, normalizarDatosUsuario, observarDatosCoherentes } from '../repositories/userDataRepository.js';
 import { aplicarOperacion, camposColeccion } from '../lib/mutations.js';
 import { esPropietario } from '../lib/admin.js';
-import { crearBackup, descargarJSON } from '../lib/backup.js';
+import { crearBackup, descargarJSON, validarBackup } from '../lib/backup.js';
 import { nuevoId } from '../lib/id.js';
 import { crearCierre } from '../lib/personal.js';
 import { isoMesCampana } from '../data/campanas.js';
@@ -158,6 +159,7 @@ export function useCloudData(user) {
     s.enqueue(changes);
   };
   const restaurarDatos = async nuevos => {
+    nuevos = validarBackup(nuevos);
     const s = session.current;
     await s.flush();
     localStorage.setItem(`gpcoins:recuperacion:${uid}`, JSON.stringify(crearBackup(s.view)));
@@ -201,7 +203,7 @@ export function useCloudData(user) {
     },
     restaurarPapelera: id => {
       const s = session.current; const personal = s.view.personal; const item = personal.papelera?.[id];
-      if (!item) return;
+      validarEntradaPapelera(item);
       if (s.view[item.campo].some(v => v.id === item.registro.id)) throw new Error('Ya existe un registro con ese ID. No se sobrescribirá.');
       const papelera = { ...personal.papelera }; delete papelera[id];
       s.enqueue({ [item.campo]: { before: s.view[item.campo], after: [item.registro, ...s.view[item.campo]] }, personal: { before: personal, after: { ...personal, papelera } } });

@@ -1,3 +1,4 @@
+import { inspeccionarPapelera } from '../lib/validacionBackup.js';
 import { useMemo, useState } from 'react';
 import { useApp } from '../App.jsx';
 import { useAhora } from '../hooks/useAhora.js';
@@ -71,7 +72,34 @@ export function Recuperacion() {
   const app = useApp();
   const { personal, setPersonal, restaurarPapelera, user, toast } = app;
   const { confirmar, dialogo } = useConfirm();
-  const entries = Object.entries(personal.papelera || {}).sort((a,b) => b[1].eliminadoEn.localeCompare(a[1].eliminadoEn));
+  const { entradas: entries, error: errorPapelera } = inspeccionarPapelera(personal.papelera);
   return <div className="space-y-5"><Card><SectionTitle>Copias y recuperación</SectionTitle><div className="flex flex-wrap gap-3"><button className="btn-primary" onClick={() => exportarBackup(app)}>Descargar copia completa</button><button className="btn-ghost" onClick={() => { const raw = localStorage.getItem(`gpcoins:recuperacion:${user.uid}`); if (raw) descargarJSON(JSON.parse(raw), 'gpcoins-antes-de-restaurar.json'); else toast('No hay una restauración previa en este navegador', 'info'); }}>Copia anterior a restauración</button></div><button className="btn-ghost mt-3" onClick={() => { const raw = localStorage.getItem(`gpcoins:pendientes-archivados:${user.uid}`); if (raw) { const archive = JSON.parse(raw); exportarBackup(archive.datos); } else toast('No hay pendientes archivados', 'info'); }}>Descargar pendientes archivados</button><p className="text-sm text-fg-muted mt-3">Las copias incluyen notas, cobros, cierres y papelera. Conserva tus exportaciones en un lugar privado.</p></Card>
-    <Card><SectionTitle>Papelera · {entries.length} registros</SectionTitle>{!entries.length && <p className="text-fg-muted">Aquí aparecerán las ventas y llamadas que elimines.</p>}<ul className="divide-y divide-bg-border">{entries.map(([id, item]) => <li key={id} className="py-3 flex flex-wrap items-center gap-3"><div className="flex-1"><p className="font-semibold">{item.registro.nombre} {item.registro.apellido}</p><p className="text-sm text-fg-muted">{item.campo} · {item.eliminadoEn.slice(0,10)}</p></div><button className="btn-ghost" onClick={() => { try { restaurarPapelera(id); toast('Registro recuperado'); } catch(e) { toast(e.message, 'error'); } }}>Recuperar</button><button className="btn-ghost text-vf-redLight" onClick={async () => { if (await confirmar('Se eliminará este registro de la papelera de forma permanente.', { peligro: true })) setPersonal(p => { const papelera = { ...p.papelera }; delete papelera[id]; return { ...p, papelera }; }); }}>Borrar definitivamente</button></li>)}</ul></Card>{dialogo}</div>;
+    <Card>
+      <SectionTitle>Papelera · {entries.length} registros</SectionTitle>
+      {errorPapelera && <div role="alert" className="space-y-3">
+        <p className="text-vf-redLight">{errorPapelera} Descarga el contenido para conservarlo antes de descartarlo.</p>
+        <button className="btn-ghost" onClick={() => descargarJSON(personal.papelera, 'gpcoins-papelera-danada.json')}>Descargar papelera dañada</button>
+        <button className="btn-ghost text-vf-redLight" onClick={async () => {
+          if (await confirmar('Se descartará la papelera dañada. Las ventas y llamadas activas no se modificarán.', { peligro: true })) {
+            setPersonal(p => { const next = { ...p }; delete next.papelera; return next; });
+          }
+        }}>Descartar papelera dañada</button>
+      </div>}
+      {!entries.length && !errorPapelera && <p className="text-fg-muted">Aquí aparecerán las ventas y llamadas que elimines.</p>}
+      <ul className="divide-y divide-bg-border">{entries.map(({ id, item, error }) => <li key={id} className="py-3 flex flex-wrap items-center gap-3">
+        <div className="flex-1">
+          {error ? <><p className="font-semibold">Registro dañado</p><p role="status" className="text-sm text-vf-redLight">{error}</p></>
+            : <><p className="font-semibold">{item.registro.nombre} {item.registro.apellido}</p><p className="text-sm text-fg-muted">{item.campo} · {item.eliminadoEn.slice(0,10)}</p></>}
+        </div>
+        <button className="btn-ghost disabled:opacity-50 disabled:cursor-not-allowed" disabled={!!error} onClick={() => {
+          try { restaurarPapelera(id); toast('Registro recuperado'); } catch(e) { toast(e.message, 'error'); }
+        }}>Recuperar</button>
+        {error && <button className="btn-ghost" onClick={() => descargarJSON(item ?? null, 'gpcoins-registro-danado.json')}>Descargar registro dañado</button>}
+        <button className="btn-ghost text-vf-redLight" onClick={async () => {
+          if (await confirmar('Se eliminará este registro de la papelera de forma permanente.', { peligro: true })) {
+            setPersonal(p => { const papelera = { ...p.papelera }; delete papelera[id]; return { ...p, papelera }; });
+          }
+        }}>Borrar definitivamente</button>
+      </li>)}</ul>
+    </Card>{dialogo}</div>;
 }

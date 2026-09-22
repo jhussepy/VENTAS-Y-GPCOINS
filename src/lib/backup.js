@@ -1,5 +1,4 @@
-import { fechaExcel } from './parsing.js';
-const plain = x => x && typeof x === 'object' && !Array.isArray(x);
+import { objetoPlano as plain, validarRegistroBackup, validarPapelera } from './validacionBackup.js';
 export function crearBackup(datos) {
   return { aplicacion: 'gpcoins', version: 2, generado: new Date().toISOString(),
     ventas: datos.ventas || [], ventasLowi: datos.ventasLowi || [], agendados: datos.agendados || [],
@@ -21,17 +20,14 @@ export function validarBackup(d) {
     if (!Array.isArray(d[campo])) throw new Error(`Falta la colección ${campo}.`);
     const ids = new Set();
     for (const item of d[campo]) {
-      if (!plain(item) || typeof item.id !== 'string' || !item.id.trim() || item.id.includes('/') || ids.has(item.id)) throw new Error(`Registro o ID inválido/duplicado en ${campo}.`);
+      validarRegistroBackup(item, campo);
+      if (ids.has(item.id)) throw new Error(`ID duplicado en ${campo}.`);
       ids.add(item.id);
-      for (const [key, value] of Object.entries(item)) {
-        if (/^fecha/.test(key) && value) fechaExcel(null, value);
-        if (['cantidad', 'cuota', 'precio', 'lineasVoz', 'portasVoz', 'portasActivas'].includes(key) && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) throw new Error(`Número inválido en ${campo}.`);
-      }
-      if (item.lineasMoviles !== undefined && !Array.isArray(item.lineasMoviles)) throw new Error(`Líneas móviles inválidas en ${campo}.`);
     }
   }
   for (const campo of ['precios', 'objetivosLogros']) if (!plain(d[campo])) throw new Error(`Falta la configuración ${campo}.`);
-  if (d.version === 2 && !plain(d.personal)) throw new Error('Configuración personal inválida.');
+  if ((d.version === 2 || d.personal !== undefined) && !plain(d.personal)) throw new Error('Configuración personal inválida.');
+  if (d.personal?.papelera !== undefined) validarPapelera(d.personal.papelera);
   return crearBackup(d);
 }
 export function descargarJSON(data, nombre) {
