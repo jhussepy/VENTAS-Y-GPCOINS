@@ -1,3 +1,4 @@
+import { contarClientes } from './clientes.js';
 // ============================================================================
 //  MOTOR DE CÁLCULO — GP Coins, puntos de ranking y progreso de llaves
 // ============================================================================
@@ -216,14 +217,14 @@ export function valorLlave(ventas, incentivoId, llaveId, mes) {
   const activas = delMes.filter((v) => estadoDe(v) === 'activa');
   switch (llaveId) {
     case 'clientes34': // clientes nuevos 3P y 4P
-      return activas.filter((v) => v.clienteNuevo && (v.convergencia === '3P' || v.convergencia === '4P')).length;
+      return contarClientes(activas.filter((v) => v.clienteNuevo && (v.convergencia === '3P' || v.convergencia === '4P')));
     case 'clientes': // clientes nuevos genéricos
-      return activas.filter((v) => v.clienteNuevo).length;
+      return contarClientes(activas.filter((v) => v.clienteNuevo));
     case 'portas': {
       // Las portas cuentan por su propia activación y en el MES de su ventana de
       // portabilidad (independiente del estado y del mes de la venta).
       const { portas, lineas } = portasPorMes(ventas, mes);
-      return lineas > 0 ? Math.round((portas / lineas) * 100) : 0;
+      return lineas > 0 ? (portas / lineas) * 100 : 0;
     }
     case 'til65':
       // Según bases: TIL65 cuenta en activaciones de cliente nuevo 3P o 4P
@@ -313,6 +314,7 @@ export function portasCruzadas(ventas, mes) {
 // venta de junio con una porta que activa en julio "impacta" en ambos meses.
 export function mesesImplicados(v) {
   const meses = new Set([v.mes]);
+  if (v.fechaEntrega) meses.add(mesEntrega(v));
   for (const l of v.lineasMoviles || []) {
     if (l.tipo === 'porta' && l.ventanaPorta && l.incidenciaPorta !== 'cancelada_m1') {
       meses.add(mesDesdeFecha(l.ventanaPorta));
@@ -443,7 +445,7 @@ export function resumenGlobal(ventas, mes) {
     estados,
     totalVentas: delMes.length,
     instalacionesActivas: delMes.filter((v) => estadoDe(v) === 'activa').length,
-    clientesNuevos: delMes.filter((v) => v.clienteNuevo).length,
+    clientesNuevos: contarClientes(delMes.filter((v) => v.clienteNuevo)),
     portasTotales,
     portasActivas,
     portasPendientes,

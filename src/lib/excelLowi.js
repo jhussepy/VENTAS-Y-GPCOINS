@@ -1,3 +1,4 @@
+import { fechaExcel as aFecha, numeroLocal as aNum } from './parsing.js';
 import { ventaLowiVacia, ESTADOS_LOWI, PRODUCTOS_LOWI, resumenLineasLowi } from './lowi.js';
 import { nuevoId } from './id.js';
 
@@ -11,28 +12,16 @@ export const COLUMNAS_LOWI = [
   'velocidad', 'tv', 'lineas', 'cuota', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
 ];
 
-const aNum = (x) => {
-  const n = Number(String(x ?? '').replace(',', '.'));
-  return Number.isFinite(n) ? n : 0;
-};
 
-const aFecha = (XLSX, x) => {
-  if (!x) return '';
-  if (typeof x === 'number') {
-    const d = XLSX.SSF.parse_date_code(x);
-    if (d) return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`;
-  }
-  const d = new Date(x);
-  if (!isNaN(d)) return d.toISOString().slice(0, 10);
-  return String(x);
-};
+
+
 
 const aEstado = (x) => {
   const s = String(x ?? '').trim().toLowerCase();
   if (ESTADOS_LOWI[s]) return s;
   if (s.startsWith('activ')) return 'activa';
   if (s.startsWith('pend')) return 'pendiente';
-  if (s.startsWith('baj')) return 'baja';
+  if ((s.startsWith('baj') || s === 'dada de baja')) return 'baja';
   if (s.startsWith('cancel')) return 'cancelada';
   return 'pendiente';
 };
@@ -91,10 +80,10 @@ export async function importarLowi(file, existentes = []) {
       if (Array.isArray(lm) && lm.length) {
         // Aseguramos un id único por línea: sin él, editar/eliminar una línea
         // importada afectaría a todas las que compartan id undefined.
-        v.lineasMoviles = lm.map((l) => ({ ...l, id: l.id || nuevoId() }));
+        v.lineasMoviles = lm.map((l) => ({ ...l, id: nuevoId() }));
         Object.assign(v, resumenLineasLowi(v.lineasMoviles));
       }
-    } catch { /* ignora JSON inválido */ }
+    } catch { throw new Error('Detalle de líneas móviles inválido. No se ha importado ninguna fila.'); }
     return v;
   }).filter((v) => v.nombre || v.apellido || v.producto);
 

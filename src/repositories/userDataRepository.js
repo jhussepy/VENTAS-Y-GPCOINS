@@ -1,8 +1,9 @@
-import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
+import { fusionar, fusionarRegistros } from '../lib/mutations.js';
+import { collection, deleteDoc, doc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, setDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 
 export const CAMPOS_PERSISTIBLES = new Set([
-  'ventas', 'ventasLowi', 'tarifas', 'precios', 'objetivosLogros', 'agendados', 'tema',
+  'ventas', 'ventasLowi', 'tarifas', 'precios', 'objetivosLogros', 'agendados', 'tema', 'personal',
 ]);
 
 export const COLECCIONES_V2 = {
@@ -24,6 +25,7 @@ export function normalizarDatosUsuario(datos) {
     ventasLowi: Array.isArray(d.ventasLowi) ? d.ventasLowi : [],
     tarifas: Array.isArray(d.tarifas) ? d.tarifas : [],
     precios: objetoPlano(d.precios),
+    personal: objetoPlano(d.personal),
     objetivosLogros: objetoPlano(d.objetivosLogros),
     agendados: Array.isArray(d.agendados) ? d.agendados : [],
     tema: d.tema === 'light' || d.tema === 'dark' ? d.tema : 'dark',
@@ -110,7 +112,7 @@ export function guardarCampoUsuario(uid, campo, valor) {
   if (!CAMPOS_PERSISTIBLES.has(campo)) {
     throw new Error(`Campo de usuario no permitido: ${campo}`);
   }
-  return setDoc(referenciaUsuario(uid), { [campo]: valor }, { merge: true });
+  return setDoc(referenciaUsuario(uid), { [campo]: valor }, { mergeFields: [campo] });
 }
 
 const mapaPorId = (registros, etiqueta) => {
@@ -209,58 +211,128 @@ export function reemplazarDatosUsuario(uid, versionEsquema, actuales, siguientes
       Array.isArray(siguientes[campo]) ? siguientes[campo] : [],
     ),
   }));
-  return Promise.all([
-    setDoc(referenciaUsuario(uid), configuracion, { merge: true }),
-    ...cambios.map((entrada) => aplicarCambiosColeccion(uid, entrada.ruta, entrada.cambios)),
-  ]);
+  const cantidad = cambios.reduce((n, { cambios: c }) => n + c.creados.length + c.actualizados.length + c.eliminados.length, 1);
+  if (cantidad > 400) throw new Error('La restauración supera 400 cambios. No se ha modificado ningún dato.');
+  const batch = writeBatch(db);
+  batch.set(referenciaUsuario(uid), configuracion, { mergeFields: Object.keys(configuracion) });
+  for (const { ruta, cambios: c } of cambios) {
+    for (const registro of [...c.creados, ...c.actualizados]) batch.set(doc(db, 'usuarios', uid, ruta, registro.id), registro);
+    for (const id of c.eliminados) batch.delete(doc(db, 'usuarios', uid, ruta, id));
+  }
+  return batch.commit();
 }
 
-const idsOrdenados = (registros) => registros.map((registro) => registro.id).sort();
-
-const mismosIds = (esperados, recibidos) => (
-  JSON.stringify(idsOrdenados(esperados)) === JSON.stringify(idsOrdenados(recibidos))
-);
+const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+const idsOrdenados = registros => registros.map(registro => JSON.stringify(canonical(registro))).sort();
 
 export async function migrarUsuarioAV2(uid, datos, { ahora = Date.now(), onProgress = () => {} } = {}) {
   if (!uid) throw new Error('Se necesita un uid para migrar los datos del usuario.');
-  const deseados = Object.fromEntries(Object.keys(COLECCIONES_V2).map((campo) => [
-    campo,
-    Array.isArray(datos[campo]) ? datos[campo] : [],
-  ]));
-
-  // Valida todas las colecciones antes de tocar Firestore.
-  Object.values(deseados).forEach((registros) => calcularCambiosColeccion([], registros));
-  onProgress('respaldo');
-  // Conserva en el documento legacy la versión más reciente para poder volver
-  // atrás incluso si había un debounce pendiente al iniciar la migración.
-  await reemplazarDatosUsuario(uid, 1, {}, datos);
-
-  onProgress('copiando');
-  const existentes = Object.fromEntries(await Promise.all(Object.entries(COLECCIONES_V2).map(async ([campo, ruta]) => {
-    const snapshot = await getDocs(collection(db, 'usuarios', uid, ruta));
-    return [campo, registrosDeSnapshot(snapshot)];
-  })));
-  await Promise.all(Object.keys(COLECCIONES_V2).map((campo) => sincronizarColeccionUsuario(
-    uid, campo, existentes[campo], deseados[campo],
-  )));
-
+  const campos = Object.keys(COLECCIONES_V2);
+  for (const campo of campos) calcularCambiosColeccion([], datos[campo] || []);
   onProgress('verificando');
-  const verificados = Object.fromEntries(await Promise.all(Object.entries(COLECCIONES_V2).map(async ([campo, ruta]) => {
-    const snapshot = await getDocs(collection(db, 'usuarios', uid, ruta));
-    return [campo, registrosDeSnapshot(snapshot)];
-  })));
-  for (const campo of Object.keys(COLECCIONES_V2)) {
-    if (!mismosIds(deseados[campo], verificados[campo])) {
-      throw new Error(`La verificación de ${campo} no coincide; el esquema v2 no fue activado.`);
-    }
+  const actuales = await cargarDatosCoherentes(uid);
+  if (actuales.versionEsquema >= 2) return { versionEsquema: 2, yaMigrado: true };
+  for (const campo of campos) {
+    if (JSON.stringify(idsOrdenados(datos[campo] || [])) !== JSON.stringify(idsOrdenados(actuales[campo]))) throw new Error(`La verificación de ${campo} no coincide. Sincroniza antes de migrar.`);
   }
-
-  const conteos = Object.fromEntries(Object.keys(COLECCIONES_V2).map((campo) => [campo, deseados[campo].length]));
-  onProgress('activando');
-  await setDoc(referenciaUsuario(uid), {
-    versionEsquema: 2,
-    migracionV2: { completadaEn: ahora, conteos },
-  }, { merge: true });
+  const existentes = await Promise.all(Object.entries(COLECCIONES_V2).map(async ([campo, ruta]) => {
+    const snap = await getDocsFromServer(collection(db, 'usuarios', uid, ruta));
+    return { campo, ruta, ids: snap.docs.map(d => d.id) };
+  }));
+  const conteos = Object.fromEntries(campos.map(campo => [campo, actuales[campo].length]));
+  const cambios = existentes.map(({ campo, ruta, ids }) => ({ campo, ruta, borrar: ids.filter(id => !actuales[campo].some(v => v.id === id)) }));
+  if (1 + cambios.reduce((n, c) => n + c.borrar.length + actuales[c.campo].length, 0) > 400) throw new Error('Migración de más de 399 registros: requiere un proceso por lotes específico. No se han modificado datos.');
+  onProgress('copiando');
+  await runTransaction(db, async transaction => {
+    const ref = referenciaUsuario(uid);
+    const root = await transaction.get(ref);
+    const raw = root.exists() ? root.data() : {};
+    if ((raw.revision || 0) !== actuales.revision || Number(raw.versionEsquema) >= 2) throw new Error('Otra sesión modificó los datos. Reintenta la migración.');
+    for (const campo of campos) {
+      if (JSON.stringify(idsOrdenados(raw[campo] || [])) !== JSON.stringify(idsOrdenados(actuales[campo]))) throw new Error('Los datos cambiaron antes de migrar.');
+    }
+    for (const { campo, ruta, borrar } of cambios) {
+      for (const registro of actuales[campo]) transaction.set(doc(db, 'usuarios', uid, ruta, registro.id), registro);
+      for (const id of borrar) transaction.delete(doc(db, 'usuarios', uid, ruta, id));
+    }
+    const next = { ...raw, revision: actuales.revision + 1, versionEsquema: 2, migracionV2: { completadaEn: ahora, conteos } };
+    for (const campo of campos) delete next[campo];
+    transaction.set(ref, next);
+  });
   onProgress('completada');
   return { versionEsquema: 2, conteos };
+}
+
+// The root revision is advanced in the same transaction as every record change.
+// Loading between two equal revisions avoids mixing collection snapshots.
+export async function cargarDatosCoherentes(uid) {
+  for (let intento = 0; intento < 5; intento += 1) {
+    const inicio = await getDocFromServer(referenciaUsuario(uid));
+    const raw = inicio.exists() ? inicio.data() : {};
+    const datos = normalizarDatosUsuario(raw);
+    if (datos.versionEsquema >= 2) {
+      const entradas = await Promise.all(Object.entries(COLECCIONES_V2).map(async ([campo, ruta]) => {
+        const snapshot = await getDocsFromServer(collection(db, 'usuarios', uid, ruta));
+        return [campo, registrosDeSnapshot(snapshot)];
+      }));
+      Object.assign(datos, Object.fromEntries(entradas));
+      const fin = await getDocFromServer(referenciaUsuario(uid));
+      if ((fin.data()?.revision || 0) !== (raw.revision || 0)) continue;
+    }
+    return { ...datos, revision: raw.revision || 0 };
+  }
+  throw new Error('Los datos están cambiando en otra sesión. Vuelve a intentar la sincronización.');
+}
+
+export function observarDatosCoherentes(uid, { onData, onError }) {
+  let generation = 0;
+  const unsubscribe = onSnapshot(referenciaUsuario(uid), snapshot => {
+    if (snapshot.metadata?.hasPendingWrites) return;
+    const request = ++generation;
+    cargarDatosCoherentes(uid).then(datos => { if (request === generation) onData(datos); })
+      .catch(error => { if (request === generation) onError(error); });
+  }, onError);
+  return () => { generation += 1; unsubscribe(); };
+}
+
+export async function guardarOperacionUsuario(uid, operacion) {
+  const campos = Object.keys(operacion.changes);
+  for (const campo of campos) {
+    if (!CAMPOS_PERSISTIBLES.has(campo)) throw new Error(`Campo no permitido: ${campo}`);
+    if (COLECCIONES_V2[campo]) calcularCambiosColeccion(operacion.changes[campo].before, operacion.changes[campo].after);
+  }
+  return runTransaction(db, async transaction => {
+    const root = referenciaUsuario(uid);
+    const snapshot = await transaction.get(root);
+    const raw = snapshot.exists() ? snapshot.data() : {};
+    const version = Number(raw.versionEsquema) >= 2 ? 2 : 1;
+    const configuracion = {};
+    const registros = [];
+    for (const [campo, { before, after }] of Object.entries(operacion.changes)) {
+      if (version >= 2 && COLECCIONES_V2[campo]) {
+        const cambios = calcularCambiosColeccion(before, after);
+        const old = new Map(before.map(v => [v.id, v]));
+        const next = new Map(after.map(v => [v.id, v]));
+        for (const id of [...cambios.creados, ...cambios.actualizados].map(v => v.id).concat(cambios.eliminados)) {
+          const ref = doc(db, 'usuarios', uid, COLECCIONES_V2[campo], id);
+          const item = await transaction.get(ref);
+          const value = fusionar(item.exists() ? item.data() : undefined, old.get(id), next.get(id), true, `${campo}/${id}`);
+          registros.push({ ref, value });
+        }
+      } else {
+        const current = normalizarDatosUsuario(raw)[campo];
+        configuracion[campo] = COLECCIONES_V2[campo]
+          ? fusionarRegistros(current, before, after)
+          : fusionar(current, before, after, true, campo);
+      }
+    }
+    if (registros.length > 400) throw new Error('Esta operación supera 400 cambios. Divide la importación antes de guardar. No se ha modificado la nube.');
+    const nextRoot = { ...raw, ...configuracion, revision: (raw.revision || 0) + 1 };
+    if (new Blob([JSON.stringify(nextRoot)]).size > 900000) throw new Error('El documento está cerca del límite. Exporta una copia y migra a almacenamiento ampliado.');
+    for (const { ref, value } of registros) {
+      if (value === undefined) transaction.delete(ref); else transaction.set(ref, value);
+    }
+    transaction.set(root, { ...configuracion, revision: nextRoot.revision }, { mergeFields: [...Object.keys(configuracion), 'revision'] });
+    return nextRoot.revision;
+  });
 }

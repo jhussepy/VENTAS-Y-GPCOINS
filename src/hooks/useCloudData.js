@@ -1,243 +1,212 @@
 import { useState, useEffect, useRef } from 'react';
-import { guardarCampoUsuario, guardarPerfilUsuario, migrarUsuarioAV2, observarDatosUsuario, reemplazarDatosUsuario, sincronizarColeccionUsuario } from '../repositories/userDataRepository.js';
-
-const DEBOUNCE_MS = 1500;
+import { calcularCambiosColeccion, cargarDatosCoherentes, guardarOperacionUsuario, guardarPerfilUsuario, migrarUsuarioAV2, normalizarDatosUsuario, observarDatosCoherentes } from '../repositories/userDataRepository.js';
+import { aplicarOperacion, camposColeccion } from '../lib/mutations.js';
+import { esPropietario } from '../lib/admin.js';
+import { crearBackup, descargarJSON } from '../lib/backup.js';
+import { nuevoId } from '../lib/id.js';
+import { crearCierre } from '../lib/personal.js';
+import { isoMesCampana } from '../data/campanas.js';
 
 export function useCloudData(user) {
-  const uid = user?.uid;
-  const [ventas, setVentasState] = useState([]);
-  const [ventasLowi, setVentasLowiState] = useState([]);
-  const [tarifas, setTarifasState] = useState([]);
-  const [precios, setPreciosState] = useState({}); // { [sap]: { [mesCampana]: precio } }
-  const [objetivosLogros, setObjetivosLogrosState] = useState({}); // { [idLogro]: objetivoPersonalizado }
-  const [agendados, setAgendadosState] = useState([]); // clientes que piden que se les llame otro día/hora
-  const [tema, setTemaState] = useState('dark');
+  const uid = esPropietario(user) ? user.uid : null;
+  const [datos, setDatos] = useState(() => normalizarDatosUsuario(null));
   const [loading, setLoading] = useState(true);
-  const [estadoGuardado, setEstadoGuardado] = useState('idle'); // idle | guardando | guardado | error
-  const [versionDatos, setVersionDatos] = useState(1);
-  const timers = useRef({});
-  const versionEsquemaRef = useRef(1);
-  const colecciones = useRef({ ventas: [], ventasLowi: [], agendados: [] });
-  const colasEscritura = useRef({});
-  const uidActual = useRef(uid);
+  const [estadoGuardado, setEstado] = useState('idle');
+  const [errorGuardado, setError] = useState('');
+  const [pendientes, setPendientes] = useState(0);
+  const session = useRef(null);
 
   useEffect(() => {
-    uidActual.current = uid;
-    if (!uid) { setLoading(false); return; }
-    // Al cambiar de usuario: reinicia el estado para no mostrar datos del anterior
-    setLoading(true);
-    setEstadoGuardado('idle');
-    versionEsquemaRef.current = 1;
-    setVersionDatos(1);
-    colecciones.current = { ventas: [], ventasLowi: [], agendados: [] };
-    colasEscritura.current = {};
-    setVentasState([]);
-    setVentasLowiState([]);
-    setTarifasState([]);
-    setPreciosState({});
-    setObjetivosLogrosState({});
-    setAgendadosState([]);
-    // Guarda/actualiza el perfil para que el admin pueda identificar al agente
-    guardarPerfilUsuario(user).catch((e) => console.error('No se pudo guardar el perfil:', e));
-    const unsub = observarDatosUsuario(uid, {
-      onData: (d) => {
-        versionEsquemaRef.current = d.versionEsquema;
-        setVersionDatos(d.versionEsquema);
-        colecciones.current = { ventas: d.ventas, ventasLowi: d.ventasLowi, agendados: d.agendados };
-        setVentasState(d.ventas);
-        setVentasLowiState(d.ventasLowi);
-        setTarifasState(d.tarifas);
-        setPreciosState(d.precios);
-        setObjetivosLogrosState(d.objetivosLogros);
-        setAgendadosState(d.agendados);
-        setTemaState(d.tema);
-        try { localStorage.setItem('vf_tema', JSON.stringify(d.tema)); } catch { /* ignore */ }
-        if (d.tema) {
-          const root = document.documentElement;
-          root.classList.remove('light', 'dark');
-          root.classList.add(d.tema);
+    setDatos(normalizarDatosUsuario(null));
+    setLoading(!!uid); setEstado('idle'); setError(''); setPendientes(0);
+    if (!uid) { session.current = null; return; }
+    const key = `gpcoins:outbox:${uid}`;
+    const s = { base: normalizarDatosUsuario(null), queue: [], view: null, alive: true, ready: false, writable: false, running: null, revision: -1 };
+    session.current = s;
+    const fail = error => {
+      s.error = error;
+      if (s.alive) { setEstado('error'); setError(error.message || 'No se pudo sincronizar.'); setLoading(false); }
+    };
+    const saveLocal = () => localStorage.setItem(key, JSON.stringify({ base: s.base, queue: s.queue }));
+    const publish = () => {
+      s.view = s.queue.reduce((base, op) => aplicarOperacion(base, op), s.base);
+      if (s.alive) { setDatos(s.view); setPendientes(s.queue.length); }
+    };
+    const loadLocal = () => {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const cache = JSON.parse(raw);
+        if (!Array.isArray(cache.queue) || !cache.base) throw new Error('La copia local necesita recuperación. Descárgala antes de continuar.');
+        s.base = normalizarDatosUsuario(cache.base); s.queue = cache.queue;
+        s.ready = true; publish(); setLoading(false);
+      }
+    };
+    const run = () => {
+      if (s.running) return s.running;
+      if (!s.writable || !s.ready || !s.alive) return Promise.resolve();
+      s.running = (async () => {
+        s.error = null;
+        if (s.queue.length) { setEstado('guardando'); setError(''); }
+        while (s.queue.length && s.alive) {
+          const op = s.queue[0];
+          await guardarOperacionUsuario(uid, op);
+          const base = await cargarDatosCoherentes(uid);
+          // Persist the acknowledgement before removing it from the visible queue.
+          const queue = s.queue.slice(1);
+          localStorage.setItem(key, JSON.stringify({ base, queue }));
+          s.base = base; s.revision = base.revision || 0; s.queue = queue;
+          publish();
         }
-        setLoading(false);
-      },
-      onError: (e) => {
-        console.error('No se pudieron cargar los datos de la nube:', e);
-        setEstadoGuardado('error');
-        setLoading(false);
-      },
-    });
-    // Cleanup: cancela el listener y los timers de guardado pendientes del usuario saliente
-    const timersRef = timers.current;
+        if (s.alive) setEstado(s.queue.length ? 'guardando' : 'guardado');
+      })().catch(fail).finally(() => {
+        s.running = null;
+        if (s.alive && !s.error && s.queue.length) void run();
+      });
+      return s.running;
+    };
+    s.run = run;
+    s.enqueue = changes => {
+      if (s.exclusive) throw new Error('Espera a que termine la restauración o migración.');
+      if (!s.ready || !s.writable) throw new Error('Abre una sola pestaña para editar y espera a que termine la carga.');
+      if (s.view.versionEsquema >= 2) {
+        const count = Object.entries(changes).filter(([campo]) => camposColeccion.includes(campo)).reduce((n, [, change]) => { const c = calcularCambiosColeccion(change.before, change.after); return n + c.creados.length + c.actualizados.length + c.eliminados.length; }, 0);
+        if (count > 400) throw new Error('Esta operación supera 400 cambios. Divídela antes de continuar; no se ha modificado ningún dato.');
+      }
+      const op = { id: nuevoId(), creado: new Date().toISOString(), changes };
+      const nextView = aplicarOperacion(s.view, op);
+      const rootData = { ...nextView };
+      if (nextView.versionEsquema >= 2) for (const campo of camposColeccion) delete rootData[campo];
+      if (new Blob([JSON.stringify(rootData)]).size > 850000) throw new Error('La operación supera el espacio seguro del documento. Descarga una copia y migra el almacenamiento antes de continuar.');
+      const queue = [...s.queue, op];
+      // If disk is full, reject before pretending the edit succeeded.
+      try { localStorage.setItem(key, JSON.stringify({ base: s.base, queue })); }
+      catch { const error = new Error('No hay espacio local para proteger el cambio. Descarga una copia antes de continuar.'); fail(error); throw error; }
+      s.queue = queue; publish(); setEstado('guardando'); void run();
+    };
+    s.flush = async () => { await run(); if (s.queue.length || s.error) throw s.error || new Error('Hay cambios pendientes de sincronizar.'); };
+    let releaseLock;
+    let unsubscribe = () => {};
+    const start = async () => {
+      try {
+        loadLocal();
+        guardarPerfilUsuario(user).catch(fail);
+        unsubscribe = observarDatosCoherentes(uid, {
+          onData: base => {
+            if (!s.alive || (base.revision || 0) < s.revision) return;
+            s.base = base; s.revision = base.revision || 0; s.ready = true;
+            try { saveLocal(); publish(); setLoading(false); if (!s.running) void run(); } catch (error) { fail(error); }
+          }, onError: fail,
+        });
+        if (s.ready) void run();
+      } catch (error) { fail(error); }
+    };
+    // A single editor per browser prevents two tabs replacing the same outbox.
+    if (navigator.locks?.request) {
+      navigator.locks.request(`gpcoins-editor:${uid}`, { ifAvailable: true }, async lock => {
+        if (!s.alive) return;
+        if (!lock) { fail(new Error('GP COINS ya está abierto en otra pestaña. Ciérrala y recarga esta para editar.')); return; }
+        s.writable = true;
+        const held = new Promise(resolve => { releaseLock = resolve; });
+        await start();
+        await held;
+      }).catch(fail);
+    } else {
+      fail(new Error('Este navegador no permite proteger el guardado entre pestañas. Usa un navegador actualizado con HTTPS.'));
+    }
+    const online = () => { if (s.ready) void run(); else if (s.writable) void start(); };
+    const beforeUnload = e => { if (s.queue.length) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('online', online);
+    window.addEventListener('beforeunload', beforeUnload);
     return () => {
-      unsub();
-      Object.values(timersRef).forEach(clearTimeout);
+      s.alive = false; unsubscribe();
+      Promise.resolve(s.running).finally(() => releaseLock?.());
+      window.removeEventListener('online', online); window.removeEventListener('beforeunload', beforeUnload);
+      // The durable queue remains available after closing or signing out.
     };
   }, [uid]);
 
-  const persist = (field, value) => {
-    clearTimeout(timers.current[field]);
-    setEstadoGuardado('guardando');
-    timers.current[field] = setTimeout(() => {
-      guardarCampoUsuario(uid, field, value)
-        .then(() => {
-          setEstadoGuardado('guardado');
-          // Tras 2s volvemos a reposo (registrado para poder limpiarlo en el cleanup)
-          clearTimeout(timers.current._idle);
-          timers.current._idle = setTimeout(() => setEstadoGuardado('idle'), 2000);
-        })
-        .catch((e) => { console.error('Error al guardar en la nube:', e); setEstadoGuardado('error'); });
-    }, DEBOUNCE_MS);
-  };
+  useEffect(() => {
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(datos.tema);
+    try { localStorage.setItem('vf_tema', JSON.stringify(datos.tema)); } catch { /* theme is cosmetic */ }
+  }, [datos.tema]);
 
-  const persistColeccion = (field, prev, next) => {
-    if (versionEsquemaRef.current < 2) {
-      persist(field, next);
-      return;
-    }
-    setEstadoGuardado('guardando');
-    try {
-      const tarea = (colasEscritura.current[field] || Promise.resolve())
-        .catch(() => {})
-        .then(() => sincronizarColeccionUsuario(uid, field, prev, next));
-      colasEscritura.current[field] = tarea;
-      tarea
-        .then(() => {
-          if (uidActual.current !== uid) return;
-          setEstadoGuardado('guardado');
-          clearTimeout(timers.current._idle);
-          timers.current._idle = setTimeout(() => setEstadoGuardado('idle'), 2000);
-        })
-        .catch((e) => {
-          console.error('Error al guardar la colección:', e);
-          if (uidActual.current === uid) setEstadoGuardado('error');
-        });
-    } catch (e) {
-      console.error('Error al preparar la colección:', e);
-      setEstadoGuardado('error');
-    }
-  };
-
-  const actualizarColeccion = (field, setState, fn) => {
-    const prev = colecciones.current[field];
-    const next = typeof fn === 'function' ? fn(prev) : fn;
-    colecciones.current = { ...colecciones.current, [field]: next };
-    setState(next);
-    if (uid) persistColeccion(field, prev, next);
-  };
-
-  const setVentas = (fn) => actualizarColeccion('ventas', setVentasState, fn);
-
-  const setVentasLowi = (fn) => actualizarColeccion('ventasLowi', setVentasLowiState, fn);
-
-  const setTarifas = (fn) => {
-    setTarifasState((prev) => {
-      const next = typeof fn === 'function' ? fn(prev) : fn;
-      if (uid) persist('tarifas', next);
-      return next;
-    });
-  };
-
-  // Reemplaza todo el objeto de precios (usado al restaurar copia de seguridad)
-  const setPrecios = (obj) => {
-    const next = obj && typeof obj === 'object' ? obj : {};
-    setPreciosState(next);
-    if (uid) persist('precios', next);
-  };
-
-  // Guarda el precio de un terminal por SAP y mes: precios[sap][mes] = valor
-  const guardarPrecio = (sap, mes, valor) => {
-    setPreciosState((prev) => {
-      const next = { ...prev, [sap]: { ...(prev[sap] || {}), [mes]: Number(valor) || 0 } };
-      if (uid) persist('precios', next);
-      return next;
-    });
-  };
-
-  // Reemplaza todos los objetivos personalizados de insignias (usado al restaurar copia de seguridad)
-  const setObjetivosLogros = (obj) => {
-    const next = obj && typeof obj === 'object' ? obj : {};
-    setObjetivosLogrosState(next);
-    if (uid) persist('objetivosLogros', next);
-  };
-
-  // Guarda/borra el objetivo personalizado de una sola insignia
-  const guardarObjetivoLogro = (id, valor) => {
-    setObjetivosLogrosState((prev) => {
-      const next = { ...prev };
-      if (valor > 0) next[id] = valor; else delete next[id];
-      if (uid) persist('objetivosLogros', next);
-      return next;
-    });
-  };
-
-  const setAgendados = (fn) => actualizarColeccion('agendados', setAgendadosState, fn);
-
-  const restaurarDatos = async (datos) => {
-    Object.values(timers.current).forEach(clearTimeout);
-    setEstadoGuardado('guardando');
-    const version = versionEsquemaRef.current;
-    const actuales = colecciones.current;
-    const pendientes = Object.values(colasEscritura.current).map((tarea) => tarea.catch(() => {}));
-    const tarea = Promise.all(pendientes)
-      .then(() => reemplazarDatosUsuario(uid, version, actuales, datos));
-    if (version >= 2) {
-      Object.keys(colecciones.current).forEach((campo) => { colasEscritura.current[campo] = tarea; });
-    }
-    try {
-      await tarea;
-      if (uidActual.current !== uid) return;
-      colecciones.current = {
-        ventas: datos.ventas,
-        ventasLowi: datos.ventasLowi,
-        agendados: datos.agendados,
-      };
-      setVentasState(datos.ventas);
-      setVentasLowiState(datos.ventasLowi);
-      setAgendadosState(datos.agendados);
-      setTarifasState(datos.tarifas);
-      setPreciosState(datos.precios);
-      setObjetivosLogrosState(datos.objetivosLogros);
-      setEstadoGuardado('guardado');
-    } catch (e) {
-      console.error('No se pudo restaurar la copia:', e);
-      if (uidActual.current === uid) setEstadoGuardado('error');
-      throw e;
-    }
-  };
-
-  const migrarEsquemaV2 = async (onProgress) => {
-    if (versionEsquemaRef.current >= 2) return { versionEsquema: 2, yaMigrado: true };
-    Object.values(timers.current).forEach(clearTimeout);
-    setEstadoGuardado('guardando');
-    const datos = {
-      ...colecciones.current,
-      tarifas,
-      precios,
-      objetivosLogros,
-    };
-    try {
-      const resultado = await migrarUsuarioAV2(uid, datos, { onProgress });
-      if (uidActual.current === uid) {
-        versionEsquemaRef.current = 2;
-        setVersionDatos(2);
-        setEstadoGuardado('guardado');
+  const actualizar = (campo, fn) => {
+    const s = session.current;
+    if (!s?.view) throw new Error('Espera a que carguen los datos.');
+    const before = s.view[campo];
+    const after = typeof fn === 'function' ? fn(before) : fn;
+    const changes = { [campo]: { before, after } };
+    if (camposColeccion.includes(campo)) {
+      const ids = new Set(after.map(v => v.id));
+      const borrados = before.filter(v => !ids.has(v.id));
+      if (borrados.length) {
+        const personal = s.view.personal;
+        const papelera = { ...(personal.papelera || {}) };
+        for (const registro of borrados) papelera[nuevoId()] = { campo, registro, eliminadoEn: new Date().toISOString() };
+        changes.personal = { before: personal, after: { ...personal, papelera } };
       }
-      return resultado;
-    } catch (e) {
-      console.error('No se pudo migrar el esquema:', e);
-      if (uidActual.current === uid) setEstadoGuardado('error');
-      throw e;
     }
+    s.enqueue(changes);
   };
-
-  const setTema = (t) => {
-    setTemaState(t);
-    // Persistimos también en localStorage para el anti-parpadeo de index.html
-    try { localStorage.setItem('vf_tema', JSON.stringify(t)); } catch { /* ignore */ }
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(t);
-    if (uid) persist('tema', t);
+  const guardarVenta = (campo, venta, agendaId) => {
+    const s = session.current;
+    const before = s.view[campo];
+    const after = before.some(v => v.id === venta.id) ? before.map(v => v.id === venta.id ? venta : v) : [venta, ...before];
+    const changes = { [campo]: { before, after } };
+    if (agendaId) changes.agendados = { before: s.view.agendados, after: s.view.agendados.map(a => a.id === agendaId ? { ...a, estado: 'convertido', ventaId: venta.id } : a) };
+    s.enqueue(changes);
   };
-
-  return { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, setPrecios, objetivosLogros, guardarObjetivoLogro, setObjetivosLogros, agendados, setAgendados, restaurarDatos, versionDatos, migrarEsquemaV2, tema, setTema, loading, estadoGuardado };
+  const restaurarDatos = async nuevos => {
+    const s = session.current;
+    await s.flush();
+    localStorage.setItem(`gpcoins:recuperacion:${uid}`, JSON.stringify(crearBackup(s.view)));
+    const changes = Object.fromEntries(['ventas', 'ventasLowi', 'agendados', 'tarifas', 'precios', 'objetivosLogros', 'personal', 'tema'].map(campo => [campo, { before: s.view[campo], after: nuevos[campo] ?? s.view[campo] }]));
+    s.enqueue(changes); s.exclusive = true;
+    try { await s.flush(); } finally { s.exclusive = false; }
+  };
+  const migrarEsquemaV2 = async onProgress => {
+    const s = session.current; await s.flush(); s.exclusive = true;
+    try {
+      localStorage.setItem(`gpcoins:recuperacion:${uid}`, JSON.stringify(crearBackup(s.view)));
+      const result = await migrarUsuarioAV2(uid, s.view, { onProgress });
+      s.base = await cargarDatosCoherentes(uid); s.view = s.base; setDatos(s.base); return result;
+    } finally { s.exclusive = false; }
+  };
+  return { ...datos, loading, estadoGuardado, errorGuardado, pendientes, versionDatos: datos.versionEsquema,
+    setVentas: fn => actualizar('ventas', fn), setVentasLowi: fn => actualizar('ventasLowi', fn), setAgendados: fn => actualizar('agendados', fn),
+    setTarifas: fn => actualizar('tarifas', fn), setPrecios: fn => actualizar('precios', fn), setObjetivosLogros: fn => actualizar('objetivosLogros', fn),
+    setPersonal: fn => actualizar('personal', fn), setTema: fn => actualizar('tema', fn), guardarVenta,
+    guardarPrecio: (sap, mes, valor) => actualizar('precios', prev => ({ ...prev, [sap]: { ...prev[sap], [mes]: Number(valor) || 0 } })),
+    guardarObjetivoLogro: (id, valor) => actualizar('objetivosLogros', prev => { const next = { ...prev }; if (valor > 0) next[id] = valor; else delete next[id]; return next; }),
+    cerrarMes: async mes => {
+      const s = session.current; await s.flush();
+      const periodo = isoMesCampana(mes);
+      if (s.view.personal.cierres?.[periodo]) throw new Error('Este mes ya está cerrado.');
+      actualizar('personal', p => ({ ...p, cierres: { ...p.cierres, [periodo]: crearCierre(s.view.ventas, mes) } }));
+      await s.flush();
+    },
+    recuperarDesdeNube: async () => {
+      const s = session.current;
+      if (!s?.writable) throw new Error('Esta pestaña no tiene el permiso de edición.');
+      s.exclusive = true;
+      try {
+        await s.running;
+        const base = await cargarDatosCoherentes(uid);
+        localStorage.setItem(`gpcoins:pendientes-archivados:${uid}`, JSON.stringify({ base: s.base, queue: s.queue, datos: s.view }));
+        localStorage.setItem(`gpcoins:outbox:${uid}`, JSON.stringify({ base, queue: [] }));
+        s.base = base; s.view = base; s.queue = []; s.error = null; s.revision = base.revision || 0;
+        setDatos(base); setPendientes(0); setError(''); setEstado('guardado');
+      } finally { s.exclusive = false; }
+    },
+    restaurarPapelera: id => {
+      const s = session.current; const personal = s.view.personal; const item = personal.papelera?.[id];
+      if (!item) return;
+      if (s.view[item.campo].some(v => v.id === item.registro.id)) throw new Error('Ya existe un registro con ese ID. No se sobrescribirá.');
+      const papelera = { ...personal.papelera }; delete papelera[id];
+      s.enqueue({ [item.campo]: { before: s.view[item.campo], after: [item.registro, ...s.view[item.campo]] }, personal: { before: personal, after: { ...personal, papelera } } });
+    },
+    restaurarDatos, migrarEsquemaV2, reintentarGuardado: () => session.current?.run(), esperarGuardado: () => session.current?.flush(),
+    descargarPendientes: () => descargarJSON({ ...crearBackup(session.current?.view || datos), pendientes: session.current?.queue || [], copiaLocal: localStorage.getItem(`gpcoins:outbox:${uid}`) }, 'gpcoins-recuperacion-pendientes.json'),
+  };
 }

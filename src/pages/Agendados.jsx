@@ -1,3 +1,6 @@
+import { useLocalStorage } from '../hooks/useLocalStorage.js';
+import DialogSurface from '../components/DialogSurface.jsx';
+import { useAhora } from '../hooks/useAhora.js';
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, X, Check, PhoneCall, Search, Pencil, Trash2, ArrowRightCircle, AlertTriangle, Upload, Download, FileSpreadsheet, CalendarPlus, PhoneOutgoing, Minus } from 'lucide-react';
@@ -38,41 +41,41 @@ function FormAgendado({ inicial, onGuardar, onCancelar }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div><label className="label">Nombre</label><input className="input" value={a.nombre} onChange={(e) => set('nombre', e.target.value)} /></div>
-        <div><label className="label">Apellido</label><input className="input" value={a.apellido} onChange={(e) => set('apellido', e.target.value)} /></div>
-        <div><label className="label">DNI</label><input className="input" value={a.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></div>
-        <div><label className="label">CIF o ID <span className="text-fg-muted font-normal">(opcional)</span></label><input className="input" value={a.cif} onChange={(e) => set('cif', e.target.value)} /></div>
+        <div><label className="label">Nombre<input className="input" value={a.nombre} onChange={(e) => set('nombre', e.target.value)} /></label></div>
+        <div><label className="label">Apellido<input className="input" value={a.apellido} onChange={(e) => set('apellido', e.target.value)} /></label></div>
+        <div><label className="label">DNI<input className="input" value={a.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></label></div>
+        <div><label className="label">CIF o ID <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={a.cif} onChange={(e) => set('cif', e.target.value)} /></label></div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div><label className="label">Número de contacto</label><input type="tel" className="input" value={a.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></div>
-        <div><label className="label">Fecha de llamada</label><input type="date" className="input" value={a.fechaLlamada} onChange={(e) => set('fechaLlamada', e.target.value)} /></div>
-        <div><label className="label">Hora</label><input type="time" className="input" value={a.hora} onChange={(e) => set('hora', e.target.value)} /></div>
+        <div><label className="label">Número de contacto<input type="tel" className="input" value={a.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></label></div>
+        <div><label className="label">Fecha de llamada<input type="date" className="input" value={a.fechaLlamada} onChange={(e) => set('fechaLlamada', e.target.value)} /></label></div>
+        <div><label className="label">Hora<input type="time" className="input" value={a.hora} onChange={(e) => set('hora', e.target.value)} /></label></div>
         <div>
-          <label className="label">Operador</label>
+          <label className="label">Operador
           <select className="input" value={a.operador} onChange={(e) => set('operador', e.target.value)}>
             <option value="vodafone">Vodafone</option>
             <option value="lowi">Lowi</option>
-          </select>
+          </select></label>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="label">Estado</label>
+          <label className="label">Estado
           <select className="input" value={a.estado} onChange={(e) => set('estado', e.target.value)}>
             {ORDEN_ESTADOS_AGENDA.map((k) => <option key={k} value={k}>{ESTADOS_AGENDA[k].label}</option>)}
-          </select>
+          </select></label>
         </div>
-        <div><label className="label">Usuario <span className="text-fg-muted font-normal">(quién agenda)</span></label><input className="input" value={a.usuario} onChange={(e) => set('usuario', e.target.value)} /></div>
+        <div><label className="label">Usuario <span className="text-fg-muted font-normal">(quién agenda)</span><input className="input" value={a.usuario} onChange={(e) => set('usuario', e.target.value)} /></label></div>
       </div>
 
       <div className="max-w-[10rem]">
-        <label className="label">Intentos de llamada</label>
-        <input type="number" min="0" className="input" value={a.intentos} onChange={(e) => set('intentos', Number(e.target.value) || 0)} />
+        <label className="label">Intentos de llamada
+        <input type="number" min="0" className="input" value={a.intentos} onChange={(e) => set('intentos', Number(e.target.value) || 0)} /></label>
       </div>
 
-      <div><label className="label">Observaciones</label><textarea className="input min-h-24 resize-y" value={a.observaciones} onChange={(e) => set('observaciones', e.target.value)} placeholder="Prefiere que le llamen por la tarde, oferta comentada, email del cliente..." /></div>
+      <div><label className="label">Observaciones<textarea className="input min-h-24 resize-y" value={a.observaciones} onChange={(e) => set('observaciones', e.target.value)} placeholder="Prefiere que le llamen por la tarde, oferta comentada, email del cliente..." /></label></div>
 
       <div className="flex gap-2 justify-end">
         <button className="btn-ghost" onClick={onCancelar}><X size={16} /> Cancelar</button>
@@ -83,16 +86,17 @@ function FormAgendado({ inicial, onGuardar, onCancelar }) {
 }
 
 export default function Agendados() {
-  const { agendados, setAgendados, user, convertirAgendado, toast } = useApp();
+  const ahora = useAhora();
+  const { agendados, setAgendados, user, convertirAgendado, registroSeleccionado, toast } = useApp();
   // Nota: la conversión a venta NO marca aquí el agendado como "Convertido";
   // eso ocurre solo cuando la venta se guarda de verdad (App.finalizarConversion),
   // para no dar un falso positivo si se cancela el alta.
-  const [form, setForm] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [filtroOperador, setFiltroOperador] = useState('todos');
+  const [form, setForm] = useState(!!registroSeleccionado?.id);
+  const [editId, setEditId] = useState(registroSeleccionado?.id || null);
+  const [filtroEstado, setFiltroEstado] = useLocalStorage('gpcoins:ui:Agendados.jsx:filtroEstado', 'todos');
+  const [filtroOperador, setFiltroOperador] = useLocalStorage('gpcoins:ui:Agendados.jsx:filtroOperador', 'todos');
   const [filtroMes, setFiltroMes] = useState('todos');
-  const [orden, setOrden] = useState('fecha_asc');
+  const [orden, setOrden] = useLocalStorage('gpcoins:ui:Agendados.jsx:orden', 'fecha_asc');
   const [busqueda, setBusqueda] = useState('');
   const [soloHoy, setSoloHoy] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -104,6 +108,8 @@ export default function Agendados() {
     if (!file) return;
     try {
       const { agendados: nuevos, importadas, vacias, duplicadas } = await importarAgendados(file, agendados);
+      if (nuevos.length > 400) throw new Error('Importa como máximo 400 registros por archivo.');
+      if (!await confirmar(`${importadas} llamadas nuevas, ${duplicadas} duplicadas y ${vacias} filas vacías. ¿Importar?`, { titulo: 'Revisar importación', accion: 'Importar' })) { e.target.value = ''; return; }
       setAgendados((prev) => [...nuevos, ...prev]);
       let text = `${importadas} agendados importados`;
       const omitidas = [];
@@ -131,19 +137,19 @@ export default function Agendados() {
       if (filtroEstado !== 'todos' && a.estado !== filtroEstado) return false;
       if (filtroOperador !== 'todos' && a.operador !== filtroOperador) return false;
       if (filtroMes !== 'todos' && String(a.fechaLlamada || '').slice(0, 7) !== filtroMes) return false;
-      if (soloHoy && !esDeHoy(a)) return false;
+      if (soloHoy && !esDeHoy(a, ahora)) return false;
       if (!q) return true;
       return [a.nombre, a.apellido, a.dni, a.cif, a.telefono, a.usuario, a.observaciones].some((c) => String(c || '').toLowerCase().includes(q));
     });
     return [...filtrada].sort(ORDENADORES[orden] || ORDENADORES.fecha_asc);
-  }, [agendados, filtroEstado, filtroOperador, filtroMes, soloHoy, orden, q]);
+  }, [agendados, filtroEstado, filtroOperador, filtroMes, soloHoy, orden, q, ahora]);
 
   // Resumen rápido para la cabecera (pendientes / hoy / atrasados)
   const resumen = useMemo(() => ({
     pendientes: agendados.filter((a) => a.estado === 'pendiente').length,
-    hoy: agendados.filter((a) => esDeHoy(a)).length,
-    atrasados: agendados.filter((a) => estaAtrasado(a)).length,
-  }), [agendados]);
+    hoy: agendados.filter((a) => esDeHoy(a, ahora)).length,
+    atrasados: agendados.filter((a) => estaAtrasado(a, ahora)).length,
+  }), [agendados, ahora]);
 
   const guardar = (a) => {
     if (!a.nombre.trim() || !a.apellido.trim() || !a.telefono.trim()) {
@@ -161,7 +167,7 @@ export default function Agendados() {
   };
 
   const eliminar = async (id) => {
-    const ok = await confirmar('¿Eliminar este agendado? Esta acción no se puede deshacer.', { titulo: 'Eliminar agendado', accion: 'Eliminar', peligro: true });
+    const ok = await confirmar('¿Eliminar este agendado? Podrás recuperarlo desde Copias y papelera.', { titulo: 'Eliminar agendado', accion: 'Eliminar', peligro: true });
     if (ok) { setAgendados((prev) => prev.filter((p) => p.id !== id)); toast?.('Agendado eliminado', 'info'); }
   };
 
@@ -170,7 +176,7 @@ export default function Agendados() {
   const limpiarCerrados = async () => {
     if (cerrados === 0) return;
     const ok = await confirmar(
-      `Se eliminarán ${cerrados} agendado(s) ya cerrados (convertidos o descartados) para liberar espacio. Esta acción no se puede deshacer.`,
+      `Se eliminarán ${cerrados} agendado(s) ya cerrados (convertidos o descartados) para retirarlos de la agenda activa. Podrás recuperarlo desde Copias y papelera.`,
       { titulo: 'Limpiar cerrados', accion: 'Limpiar', peligro: true }
     );
     if (ok) setAgendados((prev) => prev.filter((p) => p.estado !== 'convertido' && p.estado !== 'descartado'));
@@ -293,15 +299,16 @@ export default function Agendados() {
           className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 p-4 overflow-y-auto fade-in"
           onClick={() => { setForm(false); setEditId(null); }}
         >
-          <div
+          <DialogSurface
             className="card w-full max-w-3xl p-5 my-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            role="dialog" aria-modal="true"
+            onClose={() => setForm(false)} label="Editar registro"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-fg tracking-tight">{editId ? 'Editar agendado' : 'Agendar nueva llamada'}</h2>
               <button onClick={() => { setForm(false); setEditId(null); }} className="p-1.5 rounded-lg hover:bg-bg-surface2 text-fg-muted hover:text-fg cursor-pointer" aria-label="Cerrar"><X size={18} /></button>
             </div>
+            {msg && <p role="alert" className="text-vf-redLight mb-3">{msg.text}</p>}
             <FormAgendado
               inicial={editId
                 ? agendados.find((a) => a.id === editId) ?? agendadoVacio()
@@ -309,7 +316,7 @@ export default function Agendados() {
               onGuardar={guardar}
               onCancelar={() => { setForm(false); setEditId(null); }}
             />
-          </div>
+          </DialogSurface>
         </div>,
         document.body,
       )}
@@ -350,7 +357,7 @@ export default function Agendados() {
               </thead>
               <tbody>
                 {lista.map((a) => {
-                  const atrasado = estaAtrasado(a);
+                  const atrasado = estaAtrasado(a, ahora);
                   return (
                     <tr key={a.id} className={`border-b border-bg-border/60 odd:bg-bg-surface2/25 hover:bg-bg-surface2/60 transition-colors ${atrasado ? 'bg-vf-red/[0.04]' : ''}`}>
                       <td className="px-4 py-3">

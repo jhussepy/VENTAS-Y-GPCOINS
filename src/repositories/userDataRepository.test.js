@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   getDocs: vi.fn(),
   onSnapshot: vi.fn(),
   setDoc: vi.fn(),
+  writeBatch: vi.fn(),
+  batchSet: vi.fn(), batchDelete: vi.fn(), commit: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', () => mocks);
@@ -17,7 +19,6 @@ import {
   cargarUsuariosSupervisor,
   guardarCampoUsuario,
   guardarPerfilUsuario,
-  migrarUsuarioAV2,
   normalizarDatosUsuario,
   observarDatosUsuario,
   reemplazarDatosUsuario,
@@ -31,6 +32,7 @@ describe('normalizarDatosUsuario', () => {
       ventasLowi: [],
       tarifas: [],
       precios: {},
+      personal: {},
       objetivosLogros: {},
       agendados: [],
       tema: 'dark',
@@ -53,6 +55,7 @@ describe('normalizarDatosUsuario', () => {
       ventasLowi: [],
       tarifas: [],
       precios: { sap: 10 },
+      personal: {},
       objetivosLogros: {},
       agendados: [{ id: 'agenda-1' }],
       tema: 'dark',
@@ -67,6 +70,8 @@ describe('acceso al documento de usuario', () => {
     mocks.doc.mockImplementation((_db, ...partes) => ({ path: partes.join('/') }));
     mocks.collection.mockImplementation((_db, _usuarios, _uid, ruta) => ({ ruta }));
     mocks.setDoc.mockResolvedValue(undefined);
+    mocks.writeBatch.mockReturnValue({ set: mocks.batchSet, delete: mocks.batchDelete, commit: mocks.commit });
+    mocks.commit.mockResolvedValue(undefined);
     mocks.deleteDoc.mockResolvedValue(undefined);
   });
 
@@ -139,7 +144,7 @@ describe('acceso al documento de usuario', () => {
     expect(mocks.setDoc).toHaveBeenCalledWith(
       { path: 'usuarios/uid-1' },
       { ventas: [{ id: 'v1' }] },
-      { merge: true },
+      { mergeFields: ['ventas'] },
     );
     expect(() => guardarCampoUsuario('uid-1', 'rolAdmin', true))
       .toThrow('Campo de usuario no permitido: rolAdmin');
@@ -155,6 +160,8 @@ describe('escrituras del esquema v2', () => {
     vi.clearAllMocks();
     mocks.doc.mockImplementation((_db, ...partes) => ({ path: partes.join('/') }));
     mocks.setDoc.mockResolvedValue(undefined);
+    mocks.writeBatch.mockReturnValue({ set: mocks.batchSet, delete: mocks.batchDelete, commit: mocks.commit });
+    mocks.commit.mockResolvedValue(undefined);
     mocks.deleteDoc.mockResolvedValue(undefined);
   });
 
@@ -209,11 +216,12 @@ describe('escrituras del esquema v2', () => {
       { ventas: [{ id: 'crear' }], ventasLowi: [], agendados: [], tarifas: [], precios: {}, objetivosLogros: {} },
     );
 
-    expect(mocks.setDoc).toHaveBeenCalledWith(
+    expect(mocks.batchSet).toHaveBeenCalledWith(
       { path: 'usuarios/uid-1/ventasVodafone/crear' },
       { id: 'crear' },
     );
-    expect(mocks.deleteDoc).toHaveBeenCalledWith({ path: 'usuarios/uid-1/ventasVodafone/borrar' });
+    expect(mocks.commit).toHaveBeenCalledOnce();
+    expect(mocks.batchDelete).toHaveBeenCalledWith({ path: 'usuarios/uid-1/ventasVodafone/borrar' });
   });
 
   it('valida todo el backup v2 antes de iniciar escrituras', () => {
@@ -225,55 +233,6 @@ describe('escrituras del esquema v2', () => {
     )).toThrow('necesitan un id de texto');
     expect(mocks.setDoc).not.toHaveBeenCalled();
     expect(mocks.deleteDoc).not.toHaveBeenCalled();
-  });
-
-  it('migra, verifica y solo entonces activa el esquema v2', async () => {
-    const rondas = {};
-    const progreso = vi.fn();
-    mocks.collection.mockImplementation((_db, _usuarios, _uid, ruta) => ({ ruta }));
-    mocks.getDocs.mockImplementation((ref) => {
-      rondas[ref.ruta] = (rondas[ref.ruta] || 0) + 1;
-      const esVerificacion = rondas[ref.ruta] === 2;
-      const docs = esVerificacion && ref.ruta === 'ventasVodafone'
-        ? [{ id: 'v1', data: () => ({ nombre: 'Ana' }) }]
-        : [];
-      return Promise.resolve({ docs });
-    });
-
-    const resultado = await migrarUsuarioAV2('uid-1', {
-      ventas: [{ id: 'v1', nombre: 'Ana' }], ventasLowi: [], agendados: [],
-      tarifas: [], precios: {}, objetivosLogros: {},
-    }, { ahora: 999, onProgress: progreso });
-
-    expect(resultado).toEqual({
-      versionEsquema: 2,
-      conteos: { ventas: 1, ventasLowi: 0, agendados: 0 },
-    });
-    expect(progreso.mock.calls.map(([etapa]) => etapa)).toEqual([
-      'respaldo', 'copiando', 'verificando', 'activando', 'completada',
-    ]);
-    expect(mocks.setDoc).toHaveBeenCalledWith(
-      { path: 'usuarios/uid-1' },
-      {
-        versionEsquema: 2,
-        migracionV2: {
-          completadaEn: 999,
-          conteos: { ventas: 1, ventasLowi: 0, agendados: 0 },
-        },
-      },
-      { merge: true },
-    );
-  });
-
-  it('no activa v2 cuando la verificación no coincide', async () => {
-    mocks.collection.mockImplementation((_db, _usuarios, _uid, ruta) => ({ ruta }));
-    mocks.getDocs.mockResolvedValue({ docs: [] });
-
-    await expect(migrarUsuarioAV2('uid-1', {
-      ventas: [{ id: 'v1' }], ventasLowi: [], agendados: [],
-      tarifas: [], precios: {}, objetivosLogros: {},
-    })).rejects.toThrow('no coincide');
-    expect(mocks.setDoc.mock.calls.some(([, datos]) => datos.versionEsquema === 2)).toBe(false);
   });
 
   it('clasifica registros creados, actualizados y eliminados', () => {

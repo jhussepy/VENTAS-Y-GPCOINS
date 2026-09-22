@@ -1,9 +1,10 @@
+import { useApp } from '../App.jsx';
 import { useState } from 'react';
 import { BookOpen, Heart, Check, ChevronLeft, ChevronRight, Sparkles, ExternalLink } from 'lucide-react';
 import { versiculoDelDia, PLANES, planPorId, PLANES_YOUVERSION_URL } from '../data/biblia.js';
 import {
-  leerProgreso, alternarDia, resumenPlan,
-  leerFavoritos, alternarFavorito, esFavorito,
+  leerProgreso, resumenPlan,
+  leerFavoritos, esFavorito,
 } from '../lib/fe.js';
 import { Card, SectionTitle, Badge } from '../components/ui.jsx';
 import { useVersiculo } from '../lib/bibliaApi.js';
@@ -84,15 +85,16 @@ function DetallePlan({ plan, progreso, onToggle, onVolver }) {
 }
 
 export default function Fe() {
-  const [progreso, setProgreso] = useState(() => leerProgreso());
-  const [favs, setFavs] = useState(() => leerFavoritos());
+  const { personal, setPersonal } = useApp();
+  const progreso = personal.fe?.progreso || leerProgreso();
+  const favs = personal.fe?.favoritos || leerFavoritos();
   const [planAbierto, setPlanAbierto] = useState(null);
   const [webAbierta, setWebAbierta] = useState(false);
 
   const hoy = useHoy();
   const vd = versiculoDelDia(fechaDeHoy(hoy));
-  const toggleDia = (planId, i) => setProgreso(alternarDia(planId, i));
-  const toggleFav = (v) => setFavs(alternarFavorito(v));
+  const toggleDia = (planId, i) => setPersonal(p => { const actual = p.fe?.progreso || progreso; const plan = { ...actual[planId] }; if (plan[i]) delete plan[i]; else plan[i] = true; return { ...p, fe: { favoritos: favs, ...p.fe, progreso: { ...actual, [planId]: plan } } }; });
+  const toggleFav = v => setPersonal(p => { const actuales = p.fe?.favoritos || favs; return { ...p, fe: { progreso, ...p.fe, favoritos: actuales.some(f => f.cita === v.cita) ? actuales.filter(f => f.cita !== v.cita) : [{ cita: v.cita, texto: v.texto }, ...actuales] } }; });
 
   if (webAbierta) {
     return (

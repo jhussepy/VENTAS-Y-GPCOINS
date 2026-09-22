@@ -1,3 +1,4 @@
+import { fechaExcel as aFecha, numeroLocal as aNum } from './parsing.js';
 import { ventaVacia, mesDesdeFecha } from './engine.js';
 import { ESTADOS } from './estados.js';
 import { resumenLineas } from '../data/movil.js';
@@ -10,7 +11,7 @@ const aEstado = (x) => {
   if (ESTADOS[s]) return s;
   if (s.startsWith('activ')) return 'activa';
   if (s.startsWith('pend')) return 'pendiente';
-  if (s.startsWith('baj')) return 'baja';
+  if ((s.startsWith('baj') || s === 'dada de baja')) return 'baja';
   if (s.startsWith('cancel')) return 'cancelada';
   return '';
 };
@@ -22,7 +23,7 @@ const cargarXLSX = () => import('xlsx');
 export const COLUMNAS_VENTAS = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
   'fechaVenta', 'fechaInstalacion', 'convergencia',
-  'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'dispositivoEntregado', 'fechaEntrega', 'cantidad',
+  'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'dispositivoEntregado', 'fechaEntrega', 'incidenciaEntrega', 'cantidad',
   'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
 ];
 
@@ -33,28 +34,10 @@ const aBool = (x) => {
   return ['si', 'sí', 'true', '1', 'x', 'verdadero', 'yes'].includes(s);
 };
 
-const aNum = (x) => {
-  const n = Number(x);
-  return Number.isFinite(n) ? n : 0;
-};
+
 
 // Normaliza fecha de Excel (serial o texto) a YYYY-MM-DD
-const aFecha = (XLSX, x) => {
-  if (!x) return '';
-  if (typeof x === 'number') {
-    const d = XLSX.SSF.parse_date_code(x);
-    if (d) return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`;
-  }
-  const s = String(x).trim();
-  // Formato español dd/mm/yyyy o dd-mm-yyyy
-  const m = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-  // Ya en ISO yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
-  const d = new Date(s);
-  if (!isNaN(d)) return d.toISOString().slice(0, 10);
-  return s;
-};
+
 
 // Clave de deduplicación de una venta. Incluye el DNI: dos clientes distintos
 // con el mismo nombre+apellido, misma fecha y sin terminal/ID Smart (venta
@@ -104,6 +87,7 @@ export async function importarVentas(file, existentes = []) {
     v.sap = String(r.sap ?? r.SAP ?? '').trim();
     v.dispositivoEntregado = aBool(r.dispositivoEntregado ?? r['dispositivo entregado'] ?? r.entregado);
     v.fechaEntrega = aFecha(XLSX, r.fechaEntrega ?? r['fecha entrega']);
+    v.incidenciaEntrega = String(r.incidenciaEntrega || '');
     v.cantidad = aNum(r.cantidad) || 1;
     v.portasVoz = aNum(r.portasVoz ?? r['portas voz']);
     v.portasActivas = Math.min(aNum(r.portasActivas ?? r['portas activas']), v.portasVoz);
@@ -123,10 +107,10 @@ export async function importarVentas(file, existentes = []) {
       if (Array.isArray(lm) && lm.length) {
         // Aseguramos un id único por línea: sin él, editar/eliminar una línea
         // importada afectaría a todas las que compartan id undefined.
-        v.lineasMoviles = lm.map((l) => ({ ...l, id: l.id || nuevoId() }));
+        v.lineasMoviles = lm.map((l) => ({ ...l, id: nuevoId() }));
         Object.assign(v, resumenLineas(v.lineasMoviles));
       }
-    } catch { /* ignora JSON inválido */ }
+    } catch { throw new Error('Detalle de líneas móviles inválido. No se ha importado ninguna fila.'); }
     // El incentivo se paga por activaciones: el mes lo manda la instalación,
     // con la fecha de venta como respaldo si aún no hay instalación.
     v.mes = mesDesdeFecha(v.fechaInstalacion || v.fechaVenta);
@@ -160,6 +144,7 @@ export async function exportarVentas(ventas) {
     velocidad: v.velocidad, tv: v.tv, clienteNuevo: v.clienteNuevo ? 'SI' : 'NO',
     fibraActiva: v.fibraActiva ? 'SI' : 'NO', marca: v.marca, sap: v.sap,
     dispositivoEntregado: v.dispositivoEntregado ? 'SI' : 'NO',
+    fechaEntrega: v.fechaEntrega || '', incidenciaEntrega: v.incidenciaEntrega || '',
     cantidad: v.cantidad, portasVoz: v.portasVoz, portasActivas: v.portasActivas || 0,
     lineasVoz: v.lineasVoz, til65: v.til65, secureNet: v.secureNet,
     estado: ESTADOS[v.estado]?.label || (v.instalacionActiva ? 'Activa' : 'Pendiente'),
