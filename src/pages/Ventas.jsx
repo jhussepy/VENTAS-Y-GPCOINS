@@ -1,6 +1,6 @@
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import DialogSurface from '../components/DialogSurface.jsx';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Plus, Upload, Download, FileSpreadsheet, Trash2, Pencil, X, Check, ShoppingCart, HelpCircle, Search, Tv, CalendarClock,
@@ -11,6 +11,7 @@ import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js
 import { avisosContacto } from '../lib/validacion.js';
 import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA, estadoDe } from '../lib/estados.js';
 import { CATALOGO, PERIODO, udsDe, TV_CONTENIDOS } from '../data/incentivos.js';
+import { estadoCampanaEnFecha, etiquetaMesCampana } from '../data/campanas.js';
 import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas, INCIDENCIAS_PORTA } from '../data/movil.js';
 import { nuevoId } from '../lib/id.js';
 import { Card, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
@@ -19,7 +20,7 @@ import { ventanaRelevante, fmtVentana, TONO_VENTANA } from '../lib/portabilidad.
 
 const VELOCIDADES = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
 const MARCAS = Object.keys(CATALOGO);
-const etiquetaMes = (mes) => PERIODO.etiquetas[mes] || mes || '—';
+const etiquetaMes = (mes) => etiquetaMesCampana(mes);
 const etiquetaMesCorta = (mes) => etiquetaMes(mes).slice(0, 3);
 
 function FormVenta({ inicial, onGuardar, onCancelar }) {
@@ -276,6 +277,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           <label className="label">Mes (auto)
           <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!(v.fechaInstalacion || v.fechaVenta)} title={(v.fechaInstalacion || v.fechaVenta) ? 'Se autodetecta desde la fecha de instalación (o la de venta si aún no hay instalación)' : undefined}>
             {PERIODO.meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
+            {mesesSeguimiento.map((m) => <option key={m} value={m}>{etiquetaMes(m)} · seguimiento</option>)}
           </select></label>
         </div>
       </div>
@@ -403,9 +405,15 @@ export default function Ventas() {
     }
   }, [prefillVenta, setPrefillVenta]);
 
-  // La tabla sigue al Período activo (JUNIO/JULIO) de la cabecera; el
-  // desplegable "Todos los meses" sigue disponible para ver ambos a la vez.
+  // La tabla sigue al período de la cabecera para los meses con reglas, pero
+  // también expone meses de seguimiento fuera de campaña (p. ej. 2026-10).
   useEffect(() => { setFiltroMes(mes); }, [mes]);
+
+  const mesesSeguimiento = useMemo(() => Array.from(new Set(
+    ventas.flatMap((v) => Array.from(mesesImplicados(v)))
+      .filter((m) => m && !PERIODO.meses.includes(m))
+  )).sort(), [ventas]);
+  const campanaFinalizada = estadoCampanaEnFecha(new Date()) === 'finalizada';
 
   const q = busqueda.trim().toLowerCase();
   const lista = ventas.filter((v) => {
@@ -430,7 +438,11 @@ export default function Ventas() {
     const avisos = [];
 
     if (venta.fechaVenta && (venta.fechaVenta < PERIODO.inicio || venta.fechaVenta > PERIODO.fin)) {
-      avisos.push(`La fecha de venta está fuera del período del incentivo (${PERIODO.inicio} → ${PERIODO.fin}).`);
+      avisos.push(`La fecha de venta está fuera del período del incentivo (${PERIODO.inicio} → ${PERIODO.fin}). Se guardará para seguimiento, sin aplicar reglas antiguas.`);
+    }
+    const mesSinReglas = !!venta.mes && !PERIODO.meses.includes(venta.mes);
+    if (mesSinReglas) {
+      avisos.push(`${etiquetaMes(venta.mes)} no tiene reglas de GP Coins/comisión configuradas. La venta seguirá visible en Ventas.`);
     }
 
     avisos.push(...avisosContacto(venta));
@@ -458,6 +470,9 @@ export default function Ventas() {
     const existia = ventas.some(p => p.id === venta.id);
     try { guardarVenta('ventas', venta, agendadoRef); } catch(e) { toast?.(e.message, 'error'); return; }
     setForm(false); setEditId(null); setPrefab(null);
+    // Una venta fuera de campaña debe quedar visible inmediatamente, no oculta
+    // detrás del último mes configurado en la cabecera.
+    if (mesSinReglas) setFiltroMes(venta.mes);
     // Si esta alta venía de un agendado, márcalo "Convertido" (solo ahora, al guardar)
     setAgendadoRef(null);
 
@@ -487,16 +502,19 @@ export default function Ventas() {
     try {
       const { ventas: nuevas, duplicadas, yaExistian, fueraPeriodo } = await importarVentas(file, ventas);
       if (nuevas.length > 400) throw new Error('Importa como máximo 400 filas por archivo.');
+      const sinReglas = nuevas.filter((v) => v.mes && !PERIODO.meses.includes(v.mes)).length;
       if (!await confirmar(`${nuevas.length} ventas nuevas, ${duplicadas} duplicadas y ${yaExistian} ya existentes. ¿Importar las nuevas?`, { titulo: 'Revisar importación', accion: 'Importar' })) { e.target.value = ''; return; }
       setVentas((prev) => [...nuevas, ...prev]);
+      if (sinReglas > 0) setFiltroMes('todos');
       let text = `${nuevas.length} ventas importadas`;
       const omitidas = [];
       if (yaExistian > 0) omitidas.push(`${yaExistian} ya existentes`);
       if (duplicadas > 0) omitidas.push(`${duplicadas} duplicadas`);
       if (omitidas.length) text += ` (${omitidas.join(', ')} omitidas)`;
       if (fueraPeriodo > 0) text += ` · ${fueraPeriodo} fuera de período`;
+      if (sinReglas > 0) text += ` · ${sinReglas} en meses sin reglas (solo seguimiento)`;
       text += '.';
-      setMsg({ tone: fueraPeriodo > 0 ? 'red' : 'green', text });
+      setMsg({ tone: fueraPeriodo > 0 || sinReglas > 0 ? 'red' : 'green', text });
     } catch (error) {
       setMsg({ tone: 'red', text: error.message || 'Error al leer el Excel.' });
     }
@@ -508,6 +526,11 @@ export default function Ventas() {
 
   return (
     <div className="space-y-6">
+      {campanaFinalizada && (
+        <div className="text-sm px-4 py-3 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          La campaña de incentivos terminó el <span className="font-semibold">{PERIODO.fin}</span>. Las ventas posteriores se guardan y se muestran aquí como seguimiento; no generan GP Coins ni comisión hasta configurar una nueva campaña.
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex flex-wrap gap-2">
           <button className="btn-primary" onClick={() => { setEditId(null); setPrefab(null); setAgendadoRef(null); setForm(true); }}>
