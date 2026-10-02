@@ -155,7 +155,7 @@ function VersionBiblica() {
 }
 
 export default function Ajustes() {
-  const { ventas, setVentas, ventasLowi, tarifas, precios, objetivosLogros, agendados, versionDatos, migrarEsquemaV2 } = useApp();
+  const { ventas, setVentas, ventasLowi, tarifas, precios, objetivosLogros, agendados, personal, tema, versionDatos, migrarEsquemaV2 } = useApp();
   const [msg, setMsg] = useState(null);
   const [migrando, setMigrando] = useState(false);
   const [etapaMigracion, setEtapaMigracion] = useState('');
@@ -193,7 +193,7 @@ export default function Ajustes() {
       { titulo: 'Ampliar almacenamiento', accion: 'Descargar copia y migrar' }
     );
     if (!ok) return;
-    exportarBackup({ ventas, ventasLowi, tarifas, precios, objetivosLogros, agendados });
+    exportarBackup({ ventas, ventasLowi, tarifas, precios, objetivosLogros, agendados, personal, tema });
     setMigrando(true);
     setMensajeMigracion(null);
     try {
