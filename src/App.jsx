@@ -5,6 +5,7 @@ import {
   Download, Upload, Trash2, Users, Wallet, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator, Search,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
+import { estadoCampanaEnFecha } from './data/campanas.js';
 import { versiculoDelDia, LEMA } from './data/biblia.js';
 import { estaAtrasado } from './lib/agendados.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -199,6 +200,7 @@ export default function App() {
   const DIAS_AVISO_FIN_PERIODO = 7;
   const diasParaFinPeriodo = Math.ceil((new Date(`${PERIODO.fin}T23:59:59`) - new Date()) / 86400000);
   const avisoFinPeriodo = admin && diasParaFinPeriodo >= 0 && diasParaFinPeriodo <= DIAS_AVISO_FIN_PERIODO;
+  const estadoCampanaActual = estadoCampanaEnFecha(ahora);
 
   const esLowi = operador === 'lowi';
   const enAgendados = page === 'agendados';
@@ -385,7 +387,7 @@ export default function App() {
               )}
               {!esLowi && !enAgendados && (
                 <>
-                  <span className="text-xs text-fg-muted hidden sm:inline">Período activo:</span>
+                  <span className="text-xs text-fg-muted hidden sm:inline">{estadoCampanaActual === 'finalizada' ? 'Última campaña:' : 'Período activo:'}</span>
                   <select
                     className="input sm:hidden w-28 py-1 text-xs font-semibold"
                     value={mes}
@@ -445,6 +447,16 @@ export default function App() {
                 <button onClick={() => setAvisoAgendaCerrado(true)} className="p-1 rounded hover:bg-vf-red/20 cursor-pointer shrink-0 text-base leading-none" aria-label="Descartar aviso" title="Descartar">
                   ✕
                 </button>
+              </div>
+            )}
+            {!esLowi && estadoCampanaActual === 'finalizada' && (
+              <div className="mb-4 flex items-start gap-2 text-sm px-4 py-3 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                <span>
+                  La campaña <span className="font-semibold">{PERIODO.nombre}</span> finalizó el <span className="font-semibold">{PERIODO.fin}</span>.
+                  Puedes seguir registrando ventas posteriores para seguimiento, pero GP Coins, llaves, incentivos y comisiones solo se calculan para meses con reglas configuradas.
+                  No se heredarán automáticamente las condiciones de septiembre.
+                </span>
               </div>
             )}
             {avisoFinPeriodo && (
