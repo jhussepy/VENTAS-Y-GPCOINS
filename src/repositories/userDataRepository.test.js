@@ -18,6 +18,7 @@ import {
   guardarCampoUsuario,
   guardarPerfilUsuario,
   normalizarDatosUsuario,
+  normalizarVentaUsuario,
   observarDatosUsuario,
   reemplazarDatosUsuario,
   sincronizarColeccionUsuario,
@@ -36,6 +37,13 @@ describe('normalizarDatosUsuario', () => {
       tema: 'dark',
       versionEsquema: 1,
     });
+  });
+
+  it('normaliza ventas legacy de octubre sin cambiar su id', () => {
+    const venta = { id: 'oct-1', mes: '2026-10', nombre: 'Ana' };
+    expect(normalizarVentaUsuario(venta)).toEqual({ id: 'oct-1', mes: 'octubre', nombre: 'Ana' });
+    expect(normalizarDatosUsuario({ ventas: [venta] }).ventas[0].mes).toBe('octubre');
+    expect(venta.mes).toBe('2026-10');
   });
 
   it('conserva campos válidos y reemplaza tipos incompatibles', () => {
@@ -113,7 +121,7 @@ describe('acceso al documento de usuario', () => {
       if (ref.path) {
         next({ exists: () => true, data: () => ({ versionEsquema: 2, tema: 'light' }) });
       } else {
-        const datos = ref.ruta === 'ventasVodafone' ? [{ nombre: 'Ana' }] : [];
+        const datos = ref.ruta === 'ventasVodafone' ? [{ nombre: 'Ana', mes: '2026-10' }] : [];
         next({
           docs: datos.map((dato, i) => ({ id: `${ref.ruta}-${i}`, data: () => dato })),
         });
@@ -128,7 +136,7 @@ describe('acceso al documento de usuario', () => {
     expect(onData).toHaveBeenCalledWith(expect.objectContaining({
       versionEsquema: 2,
       tema: 'light',
-      ventas: [{ id: 'ventasVodafone-0', nombre: 'Ana' }],
+      ventas: [{ id: 'ventasVodafone-0', nombre: 'Ana', mes: 'octubre' }],
       ventasLowi: [],
       agendados: [],
     }));
