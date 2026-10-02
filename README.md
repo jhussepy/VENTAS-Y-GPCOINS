@@ -3,7 +3,7 @@
 Aplicación personal de seguimiento comercial que registra ventas,
 calcula GP Coins, sigue los incentivos de Vodafone y, de forma independiente,
 hace seguimiento de las ventas de **Lowi**.
-**Período de incentivos cubierto: 1 de junio al 30 de septiembre de 2026.**
+**Período de incentivos cubierto: 1 de junio al 31 de octubre de 2026.**
 
 ## Características
 
@@ -73,10 +73,12 @@ mantiene compatibles las ventas antiguas de junio/julio y evita asignar fechas
 de campañas futuras al mes de junio. Para añadir una campaña, crea su entrada
 en `CAMPANAS`, actualiza `CAMPANA_ACTIVA_ID` y aporta sus tablas comerciales.
 Agosto y septiembre heredan explícitamente las condiciones comerciales de
-julio dentro de la campaña cerrada. Las ventas posteriores al 30/09/2026 se
-pueden registrar para seguimiento, pero no reutilizan automáticamente GP Coins,
-llaves, incentivos ni comisiones de septiembre. Para una nueva campaña deben
-añadirse sus reglas comerciales oficiales antes de activar sus cálculos.
+julio. **Octubre 2026 replica las mismas condiciones de septiembre**; la
+herencia encadenada resuelve octubre → septiembre → julio para las tablas de
+puntos, GP Coins, stock y destacados. La comisión, llaves e incentivos se
+mantienen con las mismas reglas de septiembre. Las ventas posteriores al
+31/10/2026 se registran como seguimiento hasta configurar nuevas reglas
+comerciales.
 
 ## Stack
 
