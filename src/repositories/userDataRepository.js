@@ -1,5 +1,5 @@
 import { fusionar, fusionarRegistros } from '../lib/mutations.js';
-import { collection, deleteDoc, doc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, setDoc, runTransaction, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocFromServer, getDocsFromServer, onSnapshot, setDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 
 export const CAMPOS_PERSISTIBLES = new Set([
@@ -163,29 +163,6 @@ export function sincronizarColeccionUsuario(uid, campo, anteriores, siguientes) 
   if (!uid) throw new Error('Se necesita un uid para sincronizar datos del usuario.');
   const cambios = calcularCambiosColeccion(anteriores, siguientes);
   return aplicarCambiosColeccion(uid, ruta, cambios);
-}
-
-export async function cargarUsuariosSupervisor() {
-  const snapshot = await getDocs(collection(db, 'usuarios'));
-  return Promise.all(snapshot.docs.map(async (item) => {
-    const raw = item.data();
-    const datos = normalizarDatosUsuario(raw);
-    if (datos.versionEsquema >= 2) {
-      const entradas = await Promise.all(Object.entries(COLECCIONES_V2).map(async ([campo, ruta]) => {
-        const snap = await getDocs(collection(db, 'usuarios', item.id, ruta));
-        return [campo, registrosDeSnapshot(snap)];
-      }));
-      Object.assign(datos, Object.fromEntries(entradas));
-    }
-    return {
-      ...datos,
-      uid: item.id,
-      email: raw.email || '(sin email)',
-      nombre: raw.nombre || '',
-      foto: raw.foto || '',
-      ultimoAcceso: raw.ultimoAcceso || 0,
-    };
-  }));
 }
 
 export function reemplazarDatosUsuario(uid, versionEsquema, actuales, siguientes) {
