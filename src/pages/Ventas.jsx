@@ -19,7 +19,7 @@ import {
   filtrarVentas,
   mesesSeguimientoVentas,
 } from '../lib/ventas.js';
-import { fechaLocalISO } from '../lib/agendados.js';
+import { fechaLocalISO } from '../lib/fecha.js';
 
 
 export default function Ventas() {
