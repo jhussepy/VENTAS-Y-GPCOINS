@@ -4,18 +4,22 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useApp } from '../App.jsx';
-import { ventaVacia, mesDesdeFecha, unidadesVendidas, mesesImplicados } from '../lib/engine.js';
+import { ventaVacia, mesDesdeFecha } from '../lib/engine.js';
 import { importarVentas, exportarVentas, plantillaVentas } from '../lib/excel.js';
-import { avisosContacto } from '../lib/validacion.js';
 import { estadoDe } from '../lib/estados.js';
-import { CATALOGO, PERIODO, udsDe } from '../data/incentivos.js';
-import { estadoCampanaEnFecha, etiquetaMesCampana } from '../data/campanas.js';
+import { PERIODO } from '../data/incentivos.js';
+import { estadoCampanaEnFecha } from '../data/campanas.js';
 import { useConfirm } from '../components/ui.jsx';
 import FormVenta from '../components/ventas/FormVenta.jsx';
 import VentasControls from '../components/ventas/VentasControls.jsx';
 import VentasTable from '../components/ventas/VentasTable.jsx';
+import {
+  analizarVentaParaGuardar,
+  errorVentaParaGuardar,
+  filtrarVentas,
+  mesesSeguimientoVentas,
+} from '../lib/ventas.js';
 
-const etiquetaMes = (mes) => etiquetaMesCampana(mes);
 
 export default function Ventas() {
   const { ventas, setVentas, mes, prefillVenta, setPrefillVenta, guardarVenta, registroSeleccionado, toast } = useApp();
@@ -47,71 +51,36 @@ export default function Ventas() {
   // también expone meses de seguimiento fuera de campaña (p. ej. 2026-10).
   useEffect(() => { setFiltroMes(mes); }, [mes]);
 
-  const mesesSeguimiento = useMemo(() => Array.from(new Set(
-    ventas.flatMap((v) => Array.from(mesesImplicados(v)))
-      .filter((m) => m && !PERIODO.meses.includes(m))
-  )).sort(), [ventas]);
+  const mesesSeguimiento = useMemo(() => mesesSeguimientoVentas(ventas), [ventas]);
   const campanaFinalizada = estadoCampanaEnFecha(new Date()) === 'finalizada';
-
-  const q = busqueda.trim().toLowerCase();
-  const lista = ventas.filter((v) => {
-    // Una venta aparece en su mes propio y también en el mes de la ventana de
-    // portabilidad de sus portas (una porta de julio se ve al filtrar julio).
-    if (filtroMes !== 'todos' && !mesesImplicados(v).has(filtroMes)) return false;
-    if (filtroEstado !== 'todos' && estadoDe(v) !== filtroEstado) return false;
-    if (!q) return true;
-    return [v.nombre, v.apellido, v.dni, v.telefono, v.email, v.pedido, v.idWeb]
-      .some((c) => String(c || '').toLowerCase().includes(q));
-  });
+  const lista = useMemo(() => filtrarVentas(ventas, {
+    filtroMes,
+    filtroEstado,
+    busqueda,
+  }), [ventas, filtroMes, filtroEstado, busqueda]);
 
   const guardar = (venta) => {
-    // 1) Validación: nombre y apellido obligatorios
-    if (!venta.nombre.trim() || !venta.apellido.trim()) {
-      setMsg({ tone: 'red', text: 'Indica al menos nombre y apellido para guardar la venta.' });
+    const error = errorVentaParaGuardar(venta);
+    if (error) {
+      setMsg({ tone: 'red', text: error });
       setTimeout(() => setMsg(null), 4000);
       return;
     }
 
-    // 2) Avisos no bloqueantes (fecha fuera de período y tope de stock)
-    const avisos = [];
+    const { avisos, mesSinReglas } = analizarVentaParaGuardar(venta, ventas);
+    const existia = ventas.some((guardada) => guardada.id === venta.id);
 
-    if (venta.fechaVenta && (venta.fechaVenta < PERIODO.inicio || venta.fechaVenta > PERIODO.fin)) {
-      avisos.push(`La fecha de venta está fuera del período del incentivo (${PERIODO.inicio} → ${PERIODO.fin}). Se guardará para seguimiento, sin aplicar reglas antiguas.`);
-    }
-    const mesSinReglas = !!venta.mes && !PERIODO.meses.includes(venta.mes);
-    if (mesSinReglas) {
-      avisos.push(`${etiquetaMes(venta.mes)} no tiene reglas de GP Coins/comisión configuradas. La venta seguirá visible en Ventas.`);
-    }
-
-    avisos.push(...avisosContacto(venta));
-
-    // Aviso de stock: tope de unidades por modelo (y familia si aplica). Solo informativo.
-    if (venta.marca && venta.sap) {
-      const prod = CATALOGO[venta.marca]?.productos.find((p) => p.sap === venta.sap);
-      if (prod) {
-        const tope = udsDe(prod, venta.mes);
-        if (tope > 0) {
-          // Ventas del mes ya guardadas (excluyendo la que se edita) + esta venta
-          const otras = ventas.filter((p) => p.id !== venta.id);
-          const conEsta = [...otras, venta];
-          const { porModelo, porFamilia } = unidadesVendidas(conEsta, venta.marca, venta.mes);
-          const usadasModelo = porModelo[venta.sap] || 0;
-          const usadasFamilia = prod.familia ? (porFamilia[prod.familia] || 0) : usadasModelo;
-          const usadas = Math.max(usadasModelo, usadasFamilia);
-          if (usadas >= tope) {
-            avisos.push(`Aviso de stock: se alcanzaría el tope de ${tope} uds (${usadas}) para ${prod.modelo} en ${venta.mes}. El stock es global de plataforma; la venta se guarda igualmente.`);
-          }
-        }
-      }
+    try {
+      guardarVenta('ventas', venta, agendadoRef);
+    } catch (e) {
+      toast?.(e.message, 'error');
+      return;
     }
 
-    const existia = ventas.some(p => p.id === venta.id);
-    try { guardarVenta('ventas', venta, agendadoRef); } catch(e) { toast?.(e.message, 'error'); return; }
-    setForm(false); setEditId(null); setPrefab(null);
-    // Una venta fuera de campaña debe quedar visible inmediatamente, no oculta
-    // detrás del último mes configurado en la cabecera.
+    setForm(false);
+    setEditId(null);
+    setPrefab(null);
     if (mesSinReglas) setFiltroMes(venta.mes);
-    // Si esta alta venía de un agendado, márcalo "Convertido" (solo ahora, al guardar)
     setAgendadoRef(null);
 
     if (avisos.length) {
