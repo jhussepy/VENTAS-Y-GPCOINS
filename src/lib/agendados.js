@@ -4,6 +4,7 @@
 //  puede tener agendados de ambos mundos mezclados en su agenda).
 // ============================================================================
 import { nuevoId } from './id.js';
+import { fechaHoraLocalISO, fechaLocalISO } from './fecha.js';
 
 export const ESTADOS_AGENDA = {
   pendiente: { id: 'pendiente', label: 'Pendiente', tone: 'gold', color: '#FFB81C' },
@@ -32,16 +33,9 @@ export const agendadoVacio = () => ({
   ultimoIntento: '',  // fecha/hora del último intento (YYYY-MM-DDTHH:mm)
 });
 
-const p = (n) => String(n).padStart(2, '0');
-
-// Fecha local YYYY-MM-DD, sin convertir a UTC.
-export function fechaLocalISO(d = new Date()) {
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
 // Fecha/hora local actual como "YYYY-MM-DDTHH:mm" (para registrar un intento)
 export function ahoraLocalISO(d = new Date()) {
-  return `${fechaLocalISO(d)}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  return fechaHoraLocalISO(d);
 }
 
 // Combina fechaLlamada + hora en un Date (o null si no hay fecha válida)
