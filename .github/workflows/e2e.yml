@@ -1,0 +1,26 @@
+name: E2E
+
+on:
+  pull_request:
+  push:
+    branches:
+      - claude/vodafone-sales-dashboard-2xjpyh
+  workflow_dispatch:
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright test runner
+        run: npm install --no-save @playwright/test@1.63.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser smoke tests
+        run: npx playwright test --config=playwright.config.js

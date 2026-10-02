@@ -1,0 +1,371 @@
+import { useState } from 'react';
+import { Plus, X, Check, HelpCircle } from 'lucide-react';
+import { mesDesdeFecha, estadoEntregaTerminal, ETIQUETAS_ENTREGA, lineaPrincipal } from '../../lib/engine.js';
+import { avisosContacto } from '../../lib/validacion.js';
+import { ESTADOS, ORDEN_ESTADOS, MOTIVOS_BAJA } from '../../lib/estados.js';
+import { CATALOGO, PERIODO, TV_CONTENIDOS } from '../../data/incentivos.js';
+import { etiquetaMesCampana } from '../../data/campanas.js';
+import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas, INCIDENCIAS_PORTA } from '../../data/movil.js';
+import { nuevoId } from '../../lib/id.js';
+import { Badge } from '../ui.jsx';
+
+const VELOCIDADES = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
+const MARCAS = Object.keys(CATALOGO);
+const etiquetaMes = (mes) => etiquetaMesCampana(mes);
+
+function FormVenta({ inicial, onGuardar, onCancelar }) {
+  const [v, setV] = useState(inicial);
+  const set = (k, val) => setV((p) => {
+    const next = { ...p, [k]: val };
+    // El mes lo manda la fecha de instalación (activación); si aún no la hay,
+    // usamos la fecha de venta como respaldo.
+    if (k === 'fechaVenta') next.mes = mesDesdeFecha(next.fechaInstalacion || val);
+    if (k === 'fechaInstalacion') next.mes = mesDesdeFecha(val || next.fechaVenta);
+    if (k === 'marca') { next.sap = ''; if (!val) next.dispositivoEntregado = false; }
+    // Al marcar "entregado" sin fecha, proponemos hoy (sus puntos cuentan en ese mes)
+    if (k === 'dispositivoEntregado') {
+      if (val && !next.fechaEntrega) next.fechaEntrega = new Date().toISOString().slice(0, 10);
+      if (!val) next.fechaEntrega = '';
+    }
+    // El estado manda: "instalación activa" solo es cierto cuando el estado es 'activa'
+    if (k === 'estado') next.instalacionActiva = val === 'activa';
+    // El contenido de TV solo aplica en 4P; si deja de ser 4P, se limpia
+    if (k === 'convergencia' && val !== '4P') next.tv = '';
+    // Las portas activas no pueden superar las solicitadas
+    if (k === 'portasVoz') next.portasActivas = Math.min(next.portasActivas || 0, val || 0);
+    if (k === 'portasActivas') next.portasActivas = Math.min(val || 0, next.portasVoz || 0);
+    return next;
+  });
+  const esBaja = v.estado === 'baja' || v.estado === 'cancelada';
+
+  // --- Líneas móviles: contadores derivados automáticamente -------------------
+  const lineas = v.lineasMoviles || [];
+  const tieneLineas = lineas.length > 0;
+  const recompute = (next) => {
+    const lm = next.lineasMoviles || [];
+    // Siempre recalculamos (incluso a 0 si se borran todas las líneas): si no,
+    // quedan contadores "fantasma" de líneas ya eliminadas.
+    Object.assign(next, resumenLineas(lm));
+    return next;
+  };
+  const setLineas = (lm) => setV((p) => recompute({ ...p, lineasMoviles: lm }));
+  const addLinea = () => setLineas([...lineas, { id: nuevoId(), ...lineaMovilVacia() }]);
+  const updLinea = (id, k, val) => setLineas(lineas.map((l) => {
+    if (l.id !== id) return l;
+    const nl = { ...l, [k]: val };
+    if (k === 'tipo' && val === 'nueva') { nl.operador = ''; nl.activa = false; nl.ventanaPorta = ''; nl.incidenciaPorta = ''; }
+    return nl;
+  }));
+  const delLinea = (id) => setLineas(lineas.filter((l) => l.id !== id));
+  // El terminal va ligado a una única línea: marcarla desmarca las demás
+  const setLineaPrincipal = (id) => setLineas(lineas.map((l) => ({ ...l, principal: l.id === id })));
+
+  const productos = v.marca ? CATALOGO[v.marca]?.productos ?? [] : [];
+
+  // ¿La fecha de venta cae fuera del período del incentivo activo?
+  const fechaFuera = !!v.fechaVenta && (v.fechaVenta < PERIODO.inicio || v.fechaVenta > PERIODO.fin);
+  const avisosDatos = avisosContacto(v);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div><label className="label">Nombre<input className="input" value={v.nombre} onChange={(e) => set('nombre', e.target.value)} /></label></div>
+        <div><label className="label">Apellido<input className="input" value={v.apellido} onChange={(e) => set('apellido', e.target.value)} /></label></div>
+        <div><label className="label">DNI / NIE<input className="input" value={v.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678A" /></label></div>
+        <div><label className="label">Teléfono de contacto<input type="tel" className="input" value={v.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="600 000 000" /></label></div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div><label className="label">Email <span className="text-fg-muted font-normal">(opcional)</span><input type="email" className="input" value={v.email} onChange={(e) => set('email', e.target.value)} placeholder="cliente@email.com" /></label></div>
+        <div><label className="label">Dirección de instalación <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.direccion} onChange={(e) => set('direccion', e.target.value)} /></label></div>
+        <div><label className="label">ID Smart <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.pedido} onChange={(e) => set('pedido', e.target.value)} /></label></div>
+        <div><label className="label">ID Web <span className="text-fg-muted font-normal">(opcional)</span><input className="input" value={v.idWeb} onChange={(e) => set('idWeb', e.target.value)} /></label></div>
+      </div>
+
+      {avisosDatos.length > 0 && (
+        <p className="text-xs text-amber-400 -mt-1">{avisosDatos.join(' ')}</p>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label className="label">Fecha de venta
+          <input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></label>
+          {fechaFuera && (
+            <p className="text-xs text-amber-400 mt-1">
+              Fecha fuera del período del incentivo ({PERIODO.inicio} → {PERIODO.fin}). Se guardará solo para seguimiento hasta configurar una nueva campaña.
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="label">Fecha de instalación
+          <input type="date" className="input" value={v.fechaInstalacion} onChange={(e) => set('fechaInstalacion', e.target.value)} /></label>
+          <p className="text-[11px] text-fg-muted mt-1">Esta fecha decide el mes del incentivo (activación), no la de venta.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label className="label">Convergencia (fibra)
+          <select className="input" value={v.convergencia} onChange={(e) => set('convergencia', e.target.value)}>
+            <option value="">—</option>
+            <option value="3P">3P · Fibra + Fijo + Móvil</option>
+            <option value="4P">4P · Fibra + Fijo + Móvil + TV</option>
+          </select></label>
+        </div>
+        <div>
+          <label className="label">Velocidad
+          <select className="input" value={v.velocidad} onChange={(e) => set('velocidad', e.target.value)}>
+            <option value="">—</option>
+            {VELOCIDADES.map((x) => <option key={x} value={x}>{x}</option>)}
+          </select></label>
+        </div>
+        {v.convergencia === '4P' && (
+          <div>
+            <label className="label">Contenido TV <span className="text-fg-muted font-normal">(4P)</span>
+            <select className="input" value={v.tv} onChange={(e) => set('tv', e.target.value)}>
+              <option value="">—</option>
+              {TV_CONTENIDOS.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select></label>
+          </div>
+        )}
+        <div>
+          <label className="label">Marca terminal <span className="text-fg-muted font-normal">(opcional)</span>
+          <select className="input" value={v.marca} onChange={(e) => set('marca', e.target.value)}>
+            <option value="">Sin terminal</option>
+            {MARCAS.map((m) => <option key={m} value={m}>{CATALOGO[m].marca}</option>)}
+          </select></label>
+        </div>
+        <div>
+          <label className="label">Modelo (SAP) <span className="text-fg-muted font-normal">(opcional)</span>
+          <select className="input" value={v.sap} onChange={(e) => set('sap', e.target.value)} disabled={!v.marca}>
+            <option value="">{v.marca ? '—' : 'Sin terminal'}</option>
+            {productos.map((p) => <option key={p.sap} value={p.sap}>{p.sap} · {p.modelo}</option>)}
+          </select></label>
+        </div>
+      </div>
+
+      {!v.marca && (
+        <p className="text-xs text-fg-muted -mt-1">
+          Sin terminal: venta de solo fibra y/o líneas móviles. Puntúa para <span className="text-fg-soft">Cliente Nuevo</span> y sus llaves, pero no genera GP Coins de dispositivo.
+        </p>
+      )}
+
+      {/* Líneas móviles detalladas (vía recomendada) */}
+      <div className="border border-sky-500/30 bg-sky-500/[0.04] rounded-lg p-3 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-fg flex items-center gap-2">
+            Líneas móviles {tieneLineas && <span className="text-fg-muted font-normal">({lineas.length})</span>}
+            <Badge tone="neutral">Recomendado</Badge>
+          </span>
+          <button type="button" className="btn-lowi text-xs py-1" onClick={addLinea}><Plus size={14} /> Añadir línea</button>
+        </div>
+        <p className="text-[11px] text-sky-300/90 -mt-1">
+          Registra aquí cada línea con su tarifa: los contadores (portas, TIL65…) se rellenan solos y el desglose por tarifa del panel se calcula automáticamente.
+        </p>
+        {tieneLineas ? (
+          <div className="space-y-2">
+            {lineas.map((l, i) => (
+              <div key={l.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end bg-bg-surface2/50 rounded-lg p-2">
+                {v.marca && lineas.length > 1 && (
+                  <div className="sm:col-span-12 -mb-1">
+                    <label className="flex items-center gap-2 text-xs text-fg-soft cursor-pointer" title="El terminal se entrega según la activación de esta línea">
+                      <input type="radio" name="lineaPrincipal" checked={!!l.principal} onChange={() => setLineaPrincipal(l.id)} className="accent-vf-red w-3.5 h-3.5" />
+                      Línea principal (asociada al terminal)
+                    </label>
+                  </div>
+                )}
+                <div className="sm:col-span-3">
+                  <label className="label">Tarifa línea {i + 1}
+                  <select className="input" value={l.tarifa} onChange={(e) => updLinea(l.id, 'tarifa', e.target.value)}>
+                    <option value="">—</option>
+                    {TARIFAS_MOVIL.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                  </select></label>
+                </div>
+                <div className="sm:col-span-3">
+                  <label className="label">Número
+                  <input type="tel" className="input" value={l.numero} onChange={(e) => updLinea(l.id, 'numero', e.target.value)} placeholder="6XX XXX XXX" /></label>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Tipo
+                  <select className="input" value={l.tipo} onChange={(e) => updLinea(l.id, 'tipo', e.target.value)}>
+                    <option value="nueva">Nueva</option>
+                    <option value="porta">Porta</option>
+                  </select></label>
+                </div>
+                {l.tipo === 'porta' ? (
+                  <>
+                    <div className="sm:col-span-3">
+                      <label className="label">Operador origen
+                      <select className="input" value={l.operador} onChange={(e) => updLinea(l.id, 'operador', e.target.value)}>
+                        <option value="">—</option>
+                        {OPERADORES_PORTA.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select></label>
+                    </div>
+                    <div className="sm:col-span-1 flex items-center justify-between gap-1 pb-2">
+                      <label className="flex items-center gap-1 text-xs text-fg-soft cursor-pointer" title="Porta ya activada">
+                        <input type="checkbox" checked={l.activa} onChange={(e) => updLinea(l.id, 'activa', e.target.checked)} className="accent-emerald-500 w-4 h-4" />
+                        Act.
+                      </label>
+                      <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
+                    </div>
+                    <div className="sm:col-span-3">
+                      <label className="label">Fecha ventana portabilidad
+                      <input type="datetime-local" className="input" value={l.ventanaPorta || ''} onChange={(e) => updLinea(l.id, 'ventanaPorta', e.target.value)} /></label>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="label">Incidencia porta
+                      <select className="input" value={l.incidenciaPorta || ''} onChange={(e) => updLinea(l.id, 'incidenciaPorta', e.target.value)}>
+                        {INCIDENCIAS_PORTA.map((i) => <option key={i.id} value={i.id}>{i.label}</option>)}
+                      </select></label>
+                    </div>
+                  </>
+                ) : (
+                  <div className="sm:col-span-4 flex items-center justify-end pb-2">
+                    <button type="button" onClick={() => delLinea(l.id)} className="text-fg-muted hover:text-vf-redLight" aria-label="Quitar línea"><X size={15} /></button>
+                  </div>
+                )}
+              </div>
+            ))}
+            <p className="text-[11px] text-fg-muted">
+              Resumen: {v.lineasVoz} líneas · {v.portasVoz} portas ({v.portasActivas} activas) · {v.til65} TIL65 — calculado automáticamente.
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-fg-muted">Añade las líneas móviles una a una (tarifa, número, nueva/porta y operador). Los contadores de abajo se rellenarán solos.</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div><label className="label">Cantidad<input type="number" min="1" className="input" value={v.cantidad} onChange={(e) => set('cantidad', (Number(e.target.value) || 0))} /></label></div>
+        {/* Contadores manuales: solo como respaldo si NO se usan líneas móviles (si las usas, se calculan solos) */}
+        {!tieneLineas && (
+          <>
+            <div><label className="label">Portas voz<input type="number" min="0" className="input" value={v.portasVoz} onChange={(e) => set('portasVoz', (Number(e.target.value) || 0))} /></label></div>
+            <div>
+              <label className="label flex items-center gap-1">
+                Portas activas
+                <span className="inline-flex" title="De las portas solicitadas, cuántas ya se han activado.">
+                  <HelpCircle size={13} className="text-fg-muted cursor-help" />
+                </span>
+              </label>
+              <input type="number" min="0" max={v.portasVoz} className="input" value={v.portasActivas} onChange={(e) => set('portasActivas', (Number(e.target.value) || 0))} />
+            </div>
+            <div><label className="label">Líneas voz (total)<input type="number" min="0" className="input" value={v.lineasVoz} onChange={(e) => set('lineasVoz', (Number(e.target.value) || 0))} /></label></div>
+            <div>
+              <label className="label flex items-center gap-1">
+                TIL65
+                <span className="inline-flex" title="TIL65 = línea móvil ILIMITADA. Llave: 4 mínimo en el mes.">
+                  <HelpCircle size={13} className="text-fg-muted cursor-help" />
+                </span>
+              </label>
+              <input type="number" min="0" className="input" value={v.til65} onChange={(e) => set('til65', (Number(e.target.value) || 0))} />
+            </div>
+          </>
+        )}
+        <div><label className="label">Secure Net<input type="number" min="0" className="input" value={v.secureNet} onChange={(e) => set('secureNet', (Number(e.target.value) || 0))} /></label></div>
+        <div>
+          <label className="label">Mes (auto)
+          <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!(v.fechaInstalacion || v.fechaVenta)} title={(v.fechaInstalacion || v.fechaVenta) ? 'Se autodetecta desde la fecha de instalación (o la de venta si aún no hay instalación)' : undefined}>
+            {PERIODO.meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
+            {v.mes && !PERIODO.meses.includes(v.mes) && <option value={v.mes}>{etiquetaMes(v.mes)} · seguimiento</option>}
+          </select></label>
+        </div>
+      </div>
+
+      {Number(v.portasVoz) > 0 && (
+        <p className="text-xs text-fg-muted -mt-1">
+          Solo las <span className="text-fg-soft">portas activadas</span> suman a la llave del incentivo. Las solicitadas que aún no se activen cuentan como pendientes.
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-4 pt-1">
+        <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
+          <input type="checkbox" checked={v.clienteNuevo} onChange={(e) => set('clienteNuevo', e.target.checked)} className="accent-vf-red w-4 h-4" />
+          Cliente nuevo
+        </label>
+        <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer">
+          <input type="checkbox" checked={v.fibraActiva} onChange={(e) => set('fibraActiva', e.target.checked)} className="accent-vf-red w-4 h-4" />
+          Fibra activa (neba o fibra)
+        </label>
+        {v.marca && (
+          <label className="flex items-center gap-2 text-sm text-fg-soft cursor-pointer" title="Los puntos y GP Coins del dispositivo solo cuentan cuando el cliente lo ha recibido.">
+            <input type="checkbox" checked={v.dispositivoEntregado} onChange={(e) => set('dispositivoEntregado', e.target.checked)} className="accent-emerald-500 w-4 h-4" />
+            Dispositivo entregado al cliente
+          </label>
+        )}
+      </div>
+
+      {v.marca && v.dispositivoEntregado && (
+        <div className="max-w-xs">
+          <label className="label">Fecha de entrega del dispositivo
+          <input type="date" className="input" value={v.fechaEntrega || ''} onChange={(e) => set('fechaEntrega', e.target.value)} /></label>
+          <p className="text-[11px] text-fg-muted mt-1">
+            Los puntos/GP Coins del dispositivo cuentan en el <span className="text-fg-soft">mes de esta fecha</span>
+            {v.fechaEntrega ? <> (<span className="capitalize">{mesDesdeFecha(v.fechaEntrega)}</span>)</> : null}, no en el de la venta.
+          </p>
+        </div>
+      )}
+
+      {v.marca && !v.dispositivoEntregado && (() => {
+        const estadoEntrega = estadoEntregaTerminal(v);
+        const et = ETIQUETAS_ENTREGA[estadoEntrega];
+        const principal = lineaPrincipal(v.lineasMoviles);
+        return (
+          <div className="-mt-1 space-y-2">
+            <p className="text-xs text-amber-400">
+              El dispositivo aún no consta como entregado: sus <span className="text-fg-soft">puntos/GP Coins no se cuentan</span> hasta que marques la casilla.
+            </p>
+            {et && <Badge tone={et.tone}>{et.label}</Badge>}
+            {principal?.tipo === 'porta' && (
+              <p className="text-[11px] text-fg-muted">Según la línea principal {principal.numero || '(sin número)'} — su porta manda sobre la entrega.</p>
+            )}
+            {!principal && (lineas.length > 1) && (
+              <p className="text-[11px] text-amber-400">Marca cuál es la línea principal para calcular cuándo estará lista la entrega.</p>
+            )}
+            {(estadoEntrega === 'lista' || v.incidenciaEntrega) && (
+              <div className="max-w-xs">
+                <label className="label">Incidencia en la entrega <span className="text-fg-muted font-normal">(opcional)</span>
+                <select className="input" value={v.incidenciaEntrega || ''} onChange={(e) => set('incidenciaEntrega', e.target.value)}>
+                  <option value="">Sin incidencia</option>
+                  <option value="cliente_ausente">Cliente ausente</option>
+                  <option value="rechaza_terminal">Cliente rechaza el terminal</option>
+                  <option value="otro">Otra incidencia</option>
+                </select></label>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className="label">Estado de la venta
+          <select className="input" value={v.estado} onChange={(e) => set('estado', e.target.value)}>
+            {ORDEN_ESTADOS.map((k) => <option key={k} value={k}>{ESTADOS[k].label}</option>)}
+          </select></label>
+        </div>
+        {esBaja && (
+          <>
+            <div><label className="label">Fecha de baja<input type="date" className="input" value={v.fechaBaja} onChange={(e) => set('fechaBaja', e.target.value)} /></label></div>
+            <div>
+              <label className="label">Motivo de baja
+              <select className="input" value={v.motivoBaja} onChange={(e) => set('motivoBaja', e.target.value)}>
+                <option value="">—</option>
+                {MOTIVOS_BAJA.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select></label>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div><label className="label">Notas<input className="input" value={v.notas} onChange={(e) => set('notas', e.target.value)} /></label></div>
+
+      <div className="flex gap-2 justify-end">
+        <button className="btn-ghost" onClick={onCancelar}><X size={16} /> Cancelar</button>
+        <button className="btn-primary" onClick={() => onGuardar(v)}><Check size={16} /> Guardar</button>
+      </div>
+    </div>
+  );
+}
+
+export default FormVenta;
