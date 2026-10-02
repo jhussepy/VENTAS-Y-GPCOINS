@@ -1,6 +1,7 @@
 import { fusionar, fusionarRegistros } from '../lib/mutations.js';
 import { collection, deleteDoc, doc, getDocFromServer, getDocsFromServer, onSnapshot, setDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
+import { normalizarMesCampana } from '../data/campanas.js';
 
 export const CAMPOS_PERSISTIBLES = new Set([
   'ventas', 'ventasLowi', 'tarifas', 'precios', 'objetivosLogros', 'agendados', 'tema', 'personal',
@@ -16,12 +17,25 @@ const objetoPlano = (valor) => (
   valor && typeof valor === 'object' && !Array.isArray(valor) ? valor : {}
 );
 
+// Compatibilidad con ventas creadas cuando octubre todavía era solo seguimiento.
+// No muta el objeto original: al cargar, "2026-10" pasa a "octubre".
+export function normalizarVentaUsuario(registro) {
+  if (!registro || typeof registro !== 'object' || Array.isArray(registro)) return registro;
+  if (typeof registro.mes !== 'string') return registro;
+  const mes = normalizarMesCampana(registro.mes);
+  return mes === registro.mes ? registro : { ...registro, mes };
+}
+
+const normalizarVentas = (valor) => (
+  Array.isArray(valor) ? valor.map(normalizarVentaUsuario) : []
+);
+
 // Frontera de normalización para documentos antiguos, incompletos o
 // manipulados. El hook siempre recibe la misma estructura segura.
 export function normalizarDatosUsuario(datos) {
   const d = objetoPlano(datos);
   return {
-    ventas: Array.isArray(d.ventas) ? d.ventas : [],
+    ventas: normalizarVentas(d.ventas),
     ventasLowi: Array.isArray(d.ventasLowi) ? d.ventasLowi : [],
     tarifas: Array.isArray(d.tarifas) ? d.tarifas : [],
     precios: objetoPlano(d.precios),
@@ -38,7 +52,7 @@ const referenciaUsuario = (uid) => {
   return doc(db, 'usuarios', uid);
 };
 
-const registrosDeSnapshot = (snapshot) => snapshot.docs.map((item) => ({
+const registrosDeSnapshot = (snapshot) => snapshot.docs.map((item) => normalizarVentaUsuario({
   ...item.data(),
   id: item.id,
 }));
@@ -225,8 +239,9 @@ export async function migrarUsuarioAV2(uid, datos, { ahora = Date.now(), onProgr
     const root = await transaction.get(ref);
     const raw = root.exists() ? root.data() : {};
     if ((raw.revision || 0) !== actuales.revision || Number(raw.versionEsquema) >= 2) throw new Error('Otra sesión modificó los datos. Reintenta la migración.');
+    const rawNormalizado = normalizarDatosUsuario(raw);
     for (const campo of campos) {
-      if (JSON.stringify(idsOrdenados(raw[campo] || [])) !== JSON.stringify(idsOrdenados(actuales[campo]))) throw new Error('Los datos cambiaron antes de migrar.');
+      if (JSON.stringify(idsOrdenados(rawNormalizado[campo] || [])) !== JSON.stringify(idsOrdenados(actuales[campo]))) throw new Error('Los datos cambiaron antes de migrar.');
     }
     for (const { campo, ruta, borrar } of cambios) {
       for (const registro of actuales[campo]) transaction.set(doc(db, 'usuarios', uid, ruta, registro.id), registro);
@@ -293,7 +308,13 @@ export async function guardarOperacionUsuario(uid, operacion) {
         for (const id of [...cambios.creados, ...cambios.actualizados].map(v => v.id).concat(cambios.eliminados)) {
           const ref = doc(db, 'usuarios', uid, COLECCIONES_V2[campo], id);
           const item = await transaction.get(ref);
-          const value = fusionar(item.exists() ? item.data() : undefined, old.get(id), next.get(id), true, `${campo}/${id}`);
+          const current = item.exists() ? item.data() : undefined;
+          // Las ventas Vodafone de octubre creadas antes de activar el mes
+          // pueden seguir persistidas como "2026-10". Normalizamos el valor
+          // remoto antes del three-way merge para que "2026-10" y "octubre"
+          // no aparezcan como un conflicto falso.
+          const currentNormalizado = campo === 'ventas' ? normalizarVentaUsuario(current) : current;
+          const value = fusionar(currentNormalizado, old.get(id), next.get(id), true, `${campo}/${id}`);
           registros.push({ ref, value });
         }
       } else {

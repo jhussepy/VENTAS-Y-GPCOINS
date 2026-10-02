@@ -2,7 +2,7 @@ import { mesBaseCampana, periodoDesdeCampana } from './campanas.js';
 
 // ============================================================================
 //  DATOS MAESTROS - INCENTIVO VODAFONE CLIENTE NUEVO / CAPTACIÓN
-//  Período: 1 de junio al 30 de septiembre de 2026 (ambos incluidos)
+//  Período: 1 de junio al 31 de octubre de 2026 (ambos incluidos)
 //  Plataforma: Televenta Outbound - Captación
 //  Fuente: bases legales + tablas de puntos suministradas por el agente
 // ============================================================================

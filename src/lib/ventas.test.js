@@ -49,26 +49,36 @@ describe('lógica de la página Ventas', () => {
 
   it('detecta meses de seguimiento fuera de la campaña sin duplicados', () => {
     const ventas = [
-      { ...ventaVacia(), mes: '2026-10' },
-      { ...ventaVacia(), mes: '2026-10' },
+      { ...ventaVacia(), mes: 'octubre' },
       { ...ventaVacia(), mes: '2026-11' },
+      { ...ventaVacia(), mes: '2026-11' },
+      { ...ventaVacia(), mes: '2026-12' },
       { ...ventaVacia(), mes: 'septiembre' },
     ];
-    expect(mesesSeguimientoVentas(ventas)).toEqual(['2026-10', '2026-11']);
+    expect(mesesSeguimientoVentas(ventas)).toEqual(['2026-11', '2026-12']);
   });
 
-  it('avisa de meses sin reglas comerciales posteriores a septiembre', () => {
-    const venta = {
+  it('octubre usa reglas normales y noviembre vuelve a ser solo seguimiento', () => {
+    const octubre = analizarVentaParaGuardar({
       ...ventaVacia(),
       nombre: 'Ana',
       apellido: 'Prueba',
       fechaVenta: '2026-10-02',
-      mes: '2026-10',
-    };
-    const resultado = analizarVentaParaGuardar(venta, []);
-    expect(resultado.mesSinReglas).toBe(true);
-    expect(resultado.avisos.join(' ')).toMatch(/fuera del período/i);
-    expect(resultado.avisos.join(' ')).toMatch(/OCTUBRE 2026 no tiene reglas/i);
+      mes: 'octubre',
+    }, []);
+    expect(octubre.mesSinReglas).toBe(false);
+    expect(octubre.avisos.join(' ')).not.toMatch(/fuera del período|no tiene reglas/i);
+
+    const noviembre = analizarVentaParaGuardar({
+      ...ventaVacia(),
+      nombre: 'Ana',
+      apellido: 'Prueba',
+      fechaVenta: '2026-11-02',
+      mes: '2026-11',
+    }, []);
+    expect(noviembre.mesSinReglas).toBe(true);
+    expect(noviembre.avisos.join(' ')).toMatch(/fuera del período/i);
+    expect(noviembre.avisos.join(' ')).toMatch(/NOVIEMBRE 2026 no tiene reglas/i);
   });
 
   it('calcula el aviso de stock con el mes de entrega, no con el mes de venta', () => {

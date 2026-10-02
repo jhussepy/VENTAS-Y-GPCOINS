@@ -5,8 +5,8 @@ import { create } from 'react-test-renderer';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 const mock = vi.hoisted(() => ({ observer: null, remote: null, save: vi.fn(), load: vi.fn(), profile: vi.fn() }));
 vi.mock('../repositories/userDataRepository.js', async () => {
-  const { calcularCambiosColeccion, normalizarDatosUsuario } = await vi.importActual('../repositories/userDataRepository.js');
-  return { calcularCambiosColeccion, normalizarDatosUsuario, guardarPerfilUsuario: mock.profile, guardarOperacionUsuario: mock.save, cargarDatosCoherentes: mock.load,
+  const { calcularCambiosColeccion, normalizarDatosUsuario, normalizarVentaUsuario } = await vi.importActual('../repositories/userDataRepository.js');
+  return { calcularCambiosColeccion, normalizarDatosUsuario, normalizarVentaUsuario, guardarPerfilUsuario: mock.profile, guardarOperacionUsuario: mock.save, cargarDatosCoherentes: mock.load,
     observarDatosCoherentes: (_uid, callbacks) => { mock.observer = callbacks; return vi.fn(); }, migrarUsuarioAV2: vi.fn() };
 });
 vi.mock('../lib/firebase.js', () => ({ db: {} }));
@@ -99,6 +99,16 @@ describe('cola durable y estado global de sincronización', () => {
     await act(async () => { liberar(empty()); await recuperacion; });
     expect(state.ventas).toEqual([]); expect(state.pendientes).toBe(0);
     expect(JSON.parse(localStorage.getItem('gpcoins:pendientes-archivados:owner')).datos.ventas).toEqual([{ id: 'pendiente' }]);
+  });
+
+  it('restaura una copia legacy de octubre dentro del mes oficial octubre', async () => {
+    await mount(); await emit(empty());
+    await act(async () => state.restaurarDatos(crearBackup({
+      ventas: [{ id: 'oct-1', mes: '2026-10', nombre: 'Ana', apellido: 'Prueba' }],
+    })));
+    expect(state.ventas).toEqual([
+      expect.objectContaining({ id: 'oct-1', mes: 'octubre', nombre: 'Ana' }),
+    ]);
   });
 
   it('rechaza una restauración con papelera dañada antes de escribir o encolar', async () => {

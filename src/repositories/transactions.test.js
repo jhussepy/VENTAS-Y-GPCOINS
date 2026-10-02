@@ -48,6 +48,20 @@ describe('transacciones de datos',()=>{
     expect(result.versionEsquema).toBe(2);expect(m.docs.get(root).ventas).toBeUndefined();expect(m.docs.get(root+'/ventasVodafone/a')).toEqual(datos.ventas[0]);
     expect((await cargarDatosCoherentes('u')).ventas).toEqual(datos.ventas);
   });
+  it('edita una venta legacy de octubre sin conflicto y la normaliza',async()=>{
+    m.docs.set(root+'/ventasVodafone/a',{id:'a',mes:'2026-10',nombre:'Ana'});
+    await guardarOperacionUsuario('u',{changes:{ventas:{
+      before:[{id:'a',mes:'octubre',nombre:'Ana'}],
+      after:[{id:'a',mes:'octubre',nombre:'Eva'}],
+    }}});
+    expect(m.docs.get(root+'/ventasVodafone/a')).toEqual({id:'a',mes:'octubre',nombre:'Eva'});
+  });
+  it('migra a v2 una venta legacy de octubre sin falso conflicto',async()=>{
+    m.docs.set(root,{ventas:[{id:'a',mes:'2026-10',nombre:'Ana'}],ventasLowi:[],agendados:[],revision:0});
+    const datos={ventas:[{id:'a',mes:'octubre',nombre:'Ana'}],ventasLowi:[],agendados:[]};
+    await expect(migrarUsuarioAV2('u',datos)).resolves.toMatchObject({versionEsquema:2});
+    expect(m.docs.get(root+'/ventasVodafone/a').mes).toBe('octubre');
+  });
   it('la migración compara contenido, no solo IDs',async()=>{
     m.docs.set(root,{ventas:[{id:'a',lineasMoviles:[{activa:false}]}],revision:0});
     await expect(migrarUsuarioAV2('u',{ventas:[{id:'a',lineasMoviles:[{activa:true}]}],ventasLowi:[],agendados:[]})).rejects.toThrow('no coincide');expect(m.writes).toHaveLength(0);

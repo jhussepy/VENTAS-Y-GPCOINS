@@ -5,7 +5,7 @@ import { resumenGlobal, mesesImplicados } from './engine.js';
 import { isoMesCampana } from '../data/campanas.js';
 import { INCENTIVOS } from '../data/incentivos.js';
 
-export const VERSION_REGLAS = 'campana-2026-jun-sep.r2';
+export const VERSION_REGLAS = 'campana-2026-jun-oct.r3';
 export function tareasDelDia(ventas, ventasLowi, agendados, ahora = new Date()) {
   const hoy = ahoraLocalISO(ahora).slice(0, 10);
   const tareas = [];

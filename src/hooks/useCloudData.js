@@ -1,6 +1,6 @@
 import { validarEntradaPapelera } from '../lib/validacionBackup.js';
 import { useState, useEffect, useRef } from 'react';
-import { calcularCambiosColeccion, cargarDatosCoherentes, guardarOperacionUsuario, guardarPerfilUsuario, migrarUsuarioAV2, normalizarDatosUsuario, observarDatosCoherentes } from '../repositories/userDataRepository.js';
+import { calcularCambiosColeccion, cargarDatosCoherentes, guardarOperacionUsuario, guardarPerfilUsuario, migrarUsuarioAV2, normalizarDatosUsuario, normalizarVentaUsuario, observarDatosCoherentes } from '../repositories/userDataRepository.js';
 import { aplicarOperacion, camposColeccion } from '../lib/mutations.js';
 import { esPropietario } from '../lib/admin.js';
 import { crearBackup, descargarJSON, validarBackup } from '../lib/backup.js';
@@ -30,7 +30,8 @@ export function useCloudData(user) {
     };
     const saveLocal = () => localStorage.setItem(key, JSON.stringify({ base: s.base, queue: s.queue }));
     const publish = () => {
-      s.view = s.queue.reduce((base, op) => aplicarOperacion(base, op), s.base);
+      const merged = s.queue.reduce((base, op) => aplicarOperacion(base, op), s.base);
+      s.view = { ...merged, ventas: (merged.ventas || []).map(normalizarVentaUsuario) };
       if (s.alive) { setDatos(s.view); setPendientes(s.queue.length); }
     };
     const loadLocal = () => {
@@ -160,6 +161,7 @@ export function useCloudData(user) {
   };
   const restaurarDatos = async nuevos => {
     nuevos = validarBackup(nuevos);
+    nuevos = { ...nuevos, ventas: nuevos.ventas.map(normalizarVentaUsuario) };
     const s = session.current;
     await s.flush();
     localStorage.setItem(`gpcoins:recuperacion:${uid}`, JSON.stringify(crearBackup(s.view)));
