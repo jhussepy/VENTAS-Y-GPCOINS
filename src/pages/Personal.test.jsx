@@ -11,6 +11,7 @@ import LowiVentas from './LowiVentas.jsx';
 import Agendados from './Agendados.jsx';
 import Tarifas from './Tarifas.jsx';
 import { crearBackup, validarBackup } from '../lib/backup.js';
+import { comisionTotal } from '../lib/comision.js';
 import { lineaMovilVacia } from '../data/movil.js';
 import { ventaVacia } from '../lib/engine.js';
 import { ventaLowiVacia } from '../lib/lowi.js';
@@ -39,6 +40,40 @@ it('cambiar mes cambia los campos del cobro, sin arrastrar importes',async()=>{
   context.personal={cobros:{'2026-06':{importe:150,fecha:'2026-06-30'}}};
   await render(<Ingresos/>);expect(host.querySelector('[name=importe]').value).toBe('150');context.mes='julio';await render(<Ingresos/>);expect(host.querySelector('[name=importe]').value).toBe('');
 });
+it('Mis ingresos usa la fotografía del cierre para próxima valla y avisos',async()=>{
+  const countsCierre={
+    fijo:{BV:23,MV:0,AV:0},
+    movil:{BA:42,MV:0,AV:0},
+    clientes:22,
+    sinClasificar:0,
+  };
+  const datosCierre={
+    counts:countsCierre,
+    comision:comisionTotal(countsCierre.fijo,countsCierre.movil,countsCierre.clientes),
+    gp:{gpDirectosTotal:120,gpPotencialRanking:300,gpPotencialMax:500},
+  };
+  context.personal={cierres:{'2026-06':{
+    periodo:'2026-06',
+    mes:'junio',
+    cerradoEn:'2026-06-30T20:00:00.000Z',
+    versionReglas:'prueba',
+    datos:datosCierre,
+  }}};
+  // Después del cierre aparece una línea viva sin clasificar. No debe alterar
+  // la fotografía histórica que se muestra en el resumen cerrado.
+  context.ventas=[{
+    ...ventaVacia(),
+    mes:'junio',
+    estado:'activa',
+    lineasMoviles:[{tipo:'nueva',tarifa:''}],
+  }];
+  await render(<Ingresos/>);
+  expect(host.textContent).toContain('Próxima valla al cierre');
+  expect(host.textContent).toContain('Has alcanzado la última valla.');
+  expect(host.textContent).not.toContain('líneas sin clasificar');
+  expect(host.textContent).toContain('Estimación actual:');
+});
+
 it('el diálogo mantiene el foco y admite Escape',async()=>{
   const close=vi.fn();await render(<DialogSurface onClose={close}><button>Primero</button><button>Último</button></DialogSurface>);
   const buttons=host.querySelectorAll('button');expect(document.activeElement).toBe(buttons[0]);buttons[1].focus();
