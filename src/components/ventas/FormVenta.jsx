@@ -12,7 +12,6 @@ import { Badge } from '../ui.jsx';
 const VELOCIDADES = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
 const MARCAS = Object.keys(CATALOGO);
 const etiquetaMes = (mes) => etiquetaMesCampana(mes);
-const etiquetaMesCorta = (mes) => etiquetaMes(mes).slice(0, 3);
 
 function FormVenta({ inicial, onGuardar, onCancelar }) {
   const [v, setV] = useState(inicial);
