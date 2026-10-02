@@ -21,10 +21,25 @@ export const CAMPANA_ACTIVA = CAMPANAS[CAMPANA_ACTIVA_ID];
 
 const isoMesDesdeFecha = (fecha) => {
   if (!fecha) return '';
-  if (fecha instanceof Date && Number.isNaN(fecha.getTime())) return '';
-  const iso = fecha instanceof Date ? fecha.toISOString().slice(0, 7) : String(fecha).slice(0, 7);
+  if (fecha instanceof Date) {
+    if (Number.isNaN(fecha.getTime())) return '';
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+  }
+  const iso = String(fecha).slice(0, 7);
   return /^\d{4}-\d{2}$/.test(iso) ? iso : '';
 };
+
+const isoDiaDesdeFecha = (fecha) => {
+  if (!fecha) return '';
+  if (fecha instanceof Date) {
+    if (Number.isNaN(fecha.getTime())) return '';
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+  }
+  const iso = String(fecha).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : '';
+};
+
+const NOMBRES_MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
 // Convierte fechas de la campaña a sus IDs históricos. Fuera de ella devuelve
 // YYYY-MM para no atribuir fechas de otras campañas a la campaña activa.
@@ -74,3 +89,25 @@ export const mesAnteriorCampana = (mes, campana = CAMPANA_ACTIVA) => {
   if (indice > 0) return campana.meses[indice - 1].id;
   return campana.meses[1]?.id || mes;
 };
+
+
+export function estadoCampanaEnFecha(fecha, campana = CAMPANA_ACTIVA) {
+  const dia = isoDiaDesdeFecha(fecha);
+  if (!dia) return 'sin-fecha';
+  if (dia < campana.inicio) return 'por-iniciar';
+  if (dia > campana.fin) return 'finalizada';
+  return 'activa';
+}
+
+export const mesConfiguradoCampana = (mes, campana = CAMPANA_ACTIVA) => (
+  campana.meses.some((item) => item.id === mes || item.iso === mes)
+);
+
+export function etiquetaMesCampana(mes, campana = CAMPANA_ACTIVA) {
+  const configurado = campana.meses.find((item) => item.id === mes || item.iso === mes);
+  if (configurado) return configurado.etiqueta;
+  const match = /^(\d{4})-(\d{2})$/.exec(String(mes || ''));
+  if (!match) return String(mes || '—').toUpperCase();
+  const indice = Number(match[2]) - 1;
+  return `${NOMBRES_MESES[indice] || match[2]} ${match[1]}`;
+}
