@@ -8,6 +8,7 @@ import { etiquetaMesCampana } from '../../data/campanas.js';
 import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas, INCIDENCIAS_PORTA } from '../../data/movil.js';
 import { nuevoId } from '../../lib/id.js';
 import { fechaLocalISO } from '../../lib/fecha.js';
+import { OFERTAS_COMISION } from '../../lib/comision.js';
 import { Badge } from '../ui.jsx';
 
 const VELOCIDADES = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
@@ -271,7 +272,19 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
             {v.mes && !PERIODO.meses.includes(v.mes) && <option value={v.mes}>{etiquetaMes(v.mes)} · seguimiento</option>}
           </select></label>
         </div>
+        <div>
+          <label className="label">Oferta
+          <select className="input" value={v.oferta || 'real'} onChange={(e) => set('oferta', e.target.value)}>
+            {OFERTAS_COMISION.map((oferta) => (
+              <option key={oferta.id} value={oferta.id}>{oferta.label}</option>
+            ))}
+          </select></label>
+        </div>
       </div>
+
+      <p className="text-[11px] text-fg-muted -mt-1">
+        Comisión: <span className="text-fg-soft">40% → 80%</span> del precio de tabla · <span className="text-fg-soft">30% → 70%</span> · <span className="text-fg-soft">LOWI → 30%</span> · <span className="text-fg-soft">REAL → 100%</span>.
+      </p>
 
       {Number(v.portasVoz) > 0 && (
         <p className="text-xs text-fg-muted -mt-1">
