@@ -7,6 +7,7 @@ import { CATALOGO, PERIODO, TV_CONTENIDOS } from '../../data/incentivos.js';
 import { etiquetaMesCampana } from '../../data/campanas.js';
 import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas, INCIDENCIAS_PORTA } from '../../data/movil.js';
 import { nuevoId } from '../../lib/id.js';
+import { fechaLocalISO } from '../../lib/fecha.js';
 import { Badge } from '../ui.jsx';
 
 const VELOCIDADES = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
@@ -24,7 +25,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
     if (k === 'marca') { next.sap = ''; if (!val) next.dispositivoEntregado = false; }
     // Al marcar "entregado" sin fecha, proponemos hoy (sus puntos cuentan en ese mes)
     if (k === 'dispositivoEntregado') {
-      if (val && !next.fechaEntrega) next.fechaEntrega = new Date().toISOString().slice(0, 10);
+      if (val && !next.fechaEntrega) next.fechaEntrega = fechaLocalISO();
       if (!val) next.fechaEntrega = '';
     }
     // El estado manda: "instalación activa" solo es cierto cuando el estado es 'activa'

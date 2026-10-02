@@ -18,6 +18,7 @@ import { avisosContacto } from '../lib/validacion.js';
 import { Card, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { ventanaRelevante, fmtVentana, TONO_VENTANA, ETIQUETA_VENTANA } from '../lib/portabilidad.js';
 import { fmtFecha, fmtEur } from '../lib/format.js';
+import { fechaLocalISO } from '../lib/fecha.js';
 
 function FormLowi({ inicial, onGuardar, onCancelar }) {
   const [v, setV] = useState(inicial);
@@ -359,8 +360,7 @@ export default function LowiVentas() {
                 ? { ...ventaLowiVacia(), ...ventasLowi.find((v) => v.id === editId) }
                 : (() => {
                     // Alta nueva: fecha de venta de HOY prellenada (editable)
-                    const hoy = new Date();
-                    const f = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+                    const f = fechaLocalISO();
                     return { ...ventaLowiVacia(), fechaVenta: f, ...(prefab || {}) };
                   })()}
               onGuardar={guardar}

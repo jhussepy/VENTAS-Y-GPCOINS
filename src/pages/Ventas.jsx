@@ -19,6 +19,7 @@ import {
   filtrarVentas,
   mesesSeguimientoVentas,
 } from '../lib/ventas.js';
+import { fechaLocalISO } from '../lib/fecha.js';
 
 
 export default function Ventas() {
@@ -173,8 +174,7 @@ export default function Ventas() {
                 : (() => {
                     // Alta nueva: fecha de venta de HOY prellenada (editable), para
                     // que la venta cuente en "Ventas por día" desde el primer momento.
-                    const hoy = new Date();
-                    const f = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+                    const f = fechaLocalISO();
                     return { ...ventaVacia(), fechaVenta: f, mes: mesDesdeFecha(f) || mes, ...(prefab || {}) };
                   })()}
               onGuardar={guardar}
