@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesDesdeFecha, mesEfectivo, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas, estadoEntregaTerminal, lineaPrincipal } from './engine.js';
+import { mesDesdeFecha, mesEfectivo, ventaVacia, resumenGlobal, portasDetalle, valorLlave, puntosClienteNuevo, portasCruzadas, estadoEntregaTerminal, lineaPrincipal, unidadesVendidas } from './engine.js';
 import { CAMPANA_ACTIVA, mesActivoCampanaDesdeFecha, periodoDesdeCampana } from '../data/campanas.js';
 import { CATALOGO, PUNTOS_CONVERGENCIA, convPts, estDe, gpDe, ptsDe, udsDe } from '../data/incentivos.js';
 import { dniValido, telefonoValido, emailValido } from './validacion.js';
@@ -55,6 +55,47 @@ describe('campaña versionada', () => {
   });
   it('tolera una fecha Date inválida usando el primer mes configurado', () => {
     expect(mesActivoCampanaDesdeFecha(new Date('fecha-invalida'))).toBe('junio');
+  });
+});
+
+describe('stock del catálogo alineado con GP Coins', () => {
+  const [s26, s26b] = CATALOGO.samsung.productos;
+
+  it('solo descuenta terminales de ventas activas y entregadas', () => {
+    const ventas = [
+      { ...ventaVacia(), marca: 'samsung', sap: s26.sap, mes: 'junio', estado: 'pendiente', dispositivoEntregado: true, fechaEntrega: '2026-06-15', cantidad: 2 },
+      { ...ventaVacia(), marca: 'samsung', sap: s26.sap, mes: 'junio', estado: 'activa', dispositivoEntregado: false, fechaEntrega: '', cantidad: 3 },
+      { ...ventaVacia(), marca: 'samsung', sap: s26.sap, mes: 'junio', estado: 'activa', dispositivoEntregado: true, fechaEntrega: '2026-06-20', cantidad: 1 },
+    ];
+    const r = unidadesVendidas(ventas, 'samsung', 'junio');
+    expect(r.porModelo[s26.sap]).toBe(1);
+    expect(r.porFamilia[s26.familia]).toBe(1);
+  });
+
+  it('atribuye el stock al mes de entrega, no al mes guardado de la venta', () => {
+    const venta = {
+      ...ventaVacia(),
+      marca: 'samsung',
+      sap: s26.sap,
+      mes: 'junio',
+      estado: 'activa',
+      dispositivoEntregado: true,
+      fechaEntrega: '2026-07-02',
+      cantidad: 2,
+    };
+    expect(unidadesVendidas([venta], 'samsung', 'junio').porModelo[s26.sap]).toBeUndefined();
+    expect(unidadesVendidas([venta], 'samsung', 'julio').porModelo[s26.sap]).toBe(2);
+  });
+
+  it('acumula correctamente el stock compartido por familia', () => {
+    const ventas = [
+      { ...ventaVacia(), marca: 'samsung', sap: s26.sap, mes: 'julio', estado: 'activa', dispositivoEntregado: true, fechaEntrega: '2026-07-05', cantidad: 1 },
+      { ...ventaVacia(), marca: 'samsung', sap: s26b.sap, mes: 'julio', estado: 'activa', dispositivoEntregado: true, fechaEntrega: '2026-07-06', cantidad: 2 },
+    ];
+    const r = unidadesVendidas(ventas, 'samsung', 'julio');
+    expect(r.porModelo[s26.sap]).toBe(1);
+    expect(r.porModelo[s26b.sap]).toBe(2);
+    expect(r.porFamilia[s26.familia]).toBe(3);
   });
 });
 
