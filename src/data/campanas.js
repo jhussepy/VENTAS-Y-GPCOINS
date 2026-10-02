@@ -3,15 +3,18 @@
 export const CAMPANAS = {
   'vodafone-captacion-2026-06-09': {
     id: 'vodafone-captacion-2026-06-09',
-    nombre: 'Captación junio-septiembre 2026',
+    nombre: 'Captación junio-octubre 2026',
     inicio: '2026-06-01',
-    fin: '2026-09-30',
+    fin: '2026-10-31',
     meses: [
       { id: 'junio', iso: '2026-06', etiqueta: 'JUNIO' },
       { id: 'julio', iso: '2026-07', etiqueta: 'JULIO' },
-      // Vodafone mantiene en agosto/septiembre las condiciones vigentes en julio.
+      // Agosto y septiembre mantienen las condiciones vigentes en julio.
       { id: 'agosto', iso: '2026-08', etiqueta: 'AGOSTO', heredaDe: 'julio' },
       { id: 'septiembre', iso: '2026-09', etiqueta: 'SEPTIEMBRE', heredaDe: 'julio' },
+      // Octubre replica exactamente septiembre. La herencia se resuelve de forma
+      // transitiva: octubre → septiembre → julio (base efectiva de las tablas).
+      { id: 'octubre', iso: '2026-10', etiqueta: 'OCTUBRE', heredaDe: 'septiembre' },
     ],
   },
 };
@@ -73,12 +76,25 @@ export function periodoDesdeCampana(campana = CAMPANA_ACTIVA) {
 }
 
 export const configuracionMesCampana = (mes, campana = CAMPANA_ACTIVA) => (
-  campana.meses.find((item) => item.id === mes)
+  campana.meses.find((item) => item.id === mes || item.iso === mes)
 );
 
-export const mesBaseCampana = (mes, campana = CAMPANA_ACTIVA) => (
-  configuracionMesCampana(mes, campana)?.heredaDe || mes
+export const normalizarMesCampana = (mes, campana = CAMPANA_ACTIVA) => (
+  configuracionMesCampana(mes, campana)?.id || mes
 );
+
+// Resuelve herencias encadenadas. Ej.: octubre → septiembre → julio.
+export function mesBaseCampana(mes, campana = CAMPANA_ACTIVA) {
+  let actual = normalizarMesCampana(mes, campana);
+  const visitados = new Set();
+  while (actual && !visitados.has(actual)) {
+    visitados.add(actual);
+    const siguiente = configuracionMesCampana(actual, campana)?.heredaDe;
+    if (!siguiente) return actual;
+    actual = normalizarMesCampana(siguiente, campana);
+  }
+  return actual || mes;
+}
 
 export const isoMesCampana = (mes, campana = CAMPANA_ACTIVA) => (
   configuracionMesCampana(mes, campana)?.iso || ''
