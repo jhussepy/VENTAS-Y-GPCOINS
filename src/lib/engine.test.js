@@ -11,6 +11,7 @@ describe('mesDesdeFecha', () => {
     expect(mesDesdeFecha('2026-07-01')).toBe('julio');
     expect(mesDesdeFecha('2026-08-01')).toBe('agosto');
     expect(mesDesdeFecha('2026-09-07')).toBe('septiembre');
+    expect(mesDesdeFecha('2026-10-02')).toBe('octubre');
   });
   it('por defecto junio si no hay fecha', () => {
     expect(mesDesdeFecha('')).toBe('junio');
@@ -20,7 +21,7 @@ describe('mesDesdeFecha', () => {
     expect(mesDesdeFecha('2026-07-01')).toBe('julio');
   });
   it('mantiene en ISO los meses externos a la campaña', () => {
-    expect(mesDesdeFecha('2026-10-01')).toBe('2026-10');
+    expect(mesDesdeFecha('2026-11-01')).toBe('2026-11');
     expect(mesDesdeFecha('2027-01-01')).toBe('2027-01');
   });
   it('mantiene los identificadores legacy para la campaña actual', () => {
@@ -33,19 +34,20 @@ describe('campaña versionada', () => {
   it('selecciona el límite más cercano cuando hoy cae fuera de la campaña', () => {
     expect(mesActivoCampanaDesdeFecha('2026-05-01')).toBe('junio');
     expect(mesActivoCampanaDesdeFecha('2026-09-07')).toBe('septiembre');
-    expect(mesActivoCampanaDesdeFecha('2026-10-01')).toBe('septiembre');
+    expect(mesActivoCampanaDesdeFecha('2026-10-01')).toBe('octubre');
+    expect(mesActivoCampanaDesdeFecha('2026-11-01')).toBe('octubre');
   });
   it('genera la interfaz de período que consume la aplicación', () => {
     expect(periodoDesdeCampana(CAMPANA_ACTIVA)).toMatchObject({
       id: 'vodafone-captacion-2026-06-09',
-      meses: ['junio', 'julio', 'agosto', 'septiembre'],
-      etiquetas: { junio: 'JUNIO', julio: 'JULIO', agosto: 'AGOSTO', septiembre: 'SEPTIEMBRE' },
+      meses: ['junio', 'julio', 'agosto', 'septiembre', 'octubre'],
+      etiquetas: { junio: 'JUNIO', julio: 'JULIO', agosto: 'AGOSTO', septiembre: 'SEPTIEMBRE', octubre: 'OCTUBRE' },
     });
   });
-  it('hereda en agosto y septiembre las condiciones de julio', () => {
+  it('hereda en agosto, septiembre y octubre las mismas condiciones efectivas', () => {
     const xiaomi = CATALOGO.xiaomi.productos[0];
     const samsung = CATALOGO.samsung.productos[0];
-    for (const mes of ['agosto', 'septiembre']) {
+    for (const mes of ['agosto', 'septiembre', 'octubre']) {
       expect(ptsDe(xiaomi, mes)).toBe(ptsDe(xiaomi, 'julio'));
       expect(estDe(xiaomi, mes)).toBe(estDe(xiaomi, 'julio'));
       expect(gpDe(samsung, mes)).toBe(gpDe(samsung, 'julio'));
