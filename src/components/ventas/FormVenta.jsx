@@ -7,7 +7,7 @@ import { CATALOGO, PERIODO, TV_CONTENIDOS } from '../../data/incentivos.js';
 import { etiquetaMesCampana } from '../../data/campanas.js';
 import { TARIFAS_MOVIL, OPERADORES_PORTA, lineaMovilVacia, resumenLineas, INCIDENCIAS_PORTA } from '../../data/movil.js';
 import { nuevoId } from '../../lib/id.js';
-import { fechaLocalISO } from '../../lib/agendados.js';
+import { fechaLocalISO } from '../../lib/fecha.js';
 import { Badge } from '../ui.jsx';
 
 const VELOCIDADES = ['Fibra 300 MB', 'Fibra 600 MB', 'Fibra 1 GB'];
