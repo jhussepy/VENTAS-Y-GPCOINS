@@ -60,10 +60,10 @@ function BarraVallas({ propia, vallaPago, umbrales }) {
 // La valla que se PAGA (vallaPago) puede ir por detrás de la valla propia de
 // esta categoría si otra categoría (u otra valla) va más atrasada: el rappel
 // de clientes actúa como freno común a las tres.
-function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, vallaPago, reducida }) {
+function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, vallaPago, reducida, resultado }) {
   const total = totalCategoria(cat, counts);
   const propia = vallaAlcanzada(total, umbrales);
-  const r = comisionCategoria(cat, counts, vallaPago);
+  const r = resultado || comisionCategoria(cat, counts, vallaPago);
   const falta = faltanParaSiguiente(total, umbrales);
   const frenada = propia >= 0 && vallaPago < propia;
   const set = (id, v) => setCounts((p) => ({ ...p, [id]: Math.max(0, Number(v) || 0) }));
@@ -85,7 +85,11 @@ function BloqueCategoria({ cat, icon: Icon, counts, setCounts, umbrales, vallaPa
             <input type="number" min="0" className="input" value={counts[s.id]} onChange={(e) => set(s.id, e.target.value)} />
             <p className="text-[11px] text-fg-muted mt-1">
               {r.valla >= 0
-                ? <>{fmtSol(r.detalle[s.id].precio)}/ud · <span className="text-fg-soft font-medium">{fmtSol(r.detalle[s.id].importe)}</span></>
+                ? <>
+                    {fmtSol(r.detalle[s.id].precio)}/ud tabla
+                    {r.detalle[s.id].factor < 0.999 && <> · {Math.round(r.detalle[s.id].factor * 100)}% efectivo</>}
+                    {' · '}<span className="text-fg-soft font-medium">{fmtSol(r.detalle[s.id].importe)}</span>
+                  </>
                 : `Precio en 1ª valla: ${fmtSol(TARIFA_COMISION[cat][s.id][0])}/ud`}
             </p>
           </div>
@@ -165,11 +169,12 @@ export default function Comision() {
   const [fijo, setFijo] = useState(() => contadorVacio('fijo'));
   const [movil, setMovil] = useState(() => contadorVacio('movil'));
   const [clientes, setClientes] = useState(0);
+  const [ponderado, setPonderado] = useState(null);
   const [msg, setMsg] = useState(null);
   // Días trabajados del mes (para prorratear las vallas por vacaciones/ausencias)
   const diasMes = diasDelMes(mes);
   const [diasTrab, setDiasTrab] = useState(diasMes);
-  useEffect(() => { setDiasTrab(diasMes); setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setClientes(0); setMsg(null); }, [mes, diasMes]);
+  useEffect(() => { setDiasTrab(diasMes); setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setClientes(0); setPonderado(null); setMsg(null); }, [mes, diasMes]);
 
   const factor = Math.max(0, Math.min(1, (Number(diasTrab) || 0) / diasMes));
   const reducida = factor < 1;
@@ -179,7 +184,7 @@ export default function Comision() {
     clientes: reducida ? prorratearUmbrales(UMBRALES_CLIENTES, factor) : UMBRALES_CLIENTES,
   }), [factor, reducida]);
 
-  const total = useMemo(() => comisionTotal(fijo, movil, clientes, umbrales), [fijo, movil, clientes, umbrales]);
+  const total = useMemo(() => comisionTotal(fijo, movil, clientes, umbrales, ponderado), [fijo, movil, clientes, umbrales, ponderado]);
   // Cuál de las tres es el "cuello de botella" que fija la valla de pago (solo informativo)
   const cuelloBotella = useMemo(() => {
     if (total.vallaPago < 0) return null;
@@ -187,7 +192,9 @@ export default function Comision() {
     return candidatos.length === 3 ? null : candidatos.map((k) => ETIQUETA_GATE[k]).join(' y ');
   }, [total]);
 
-  const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setClientes(0); setDiasTrab(diasMes); setMsg(null); };
+  const editarFijo = (updater) => { setPonderado(null); setFijo(updater); };
+  const editarMovil = (updater) => { setPonderado(null); setMovil(updater); };
+  const limpiar = () => { setFijo(contadorVacio('fijo')); setMovil(contadorVacio('movil')); setClientes(0); setPonderado(null); setDiasTrab(diasMes); setMsg(null); };
 
   // Exporta el desglose de la comisión a Excel
   const exportar = async () => {
@@ -203,8 +210,9 @@ export default function Comision() {
           Unidades: det.n,
           'Valla propia': r.propia >= 0 ? `${r.propia + 1}ª` : 'Sin valla',
           'Valla pagada': total.vallaPago >= 0 ? `${total.vallaPago + 1}ª` : 'Sin valla',
-          'Precio/ud (S/)': det.precio,
-          'Importe (S/)': det.importe,
+          'Precio tabla/ud (S/)': det.precio,
+          'Factor oferta efectivo': `${Math.round(det.factor * 100)}%`,
+          'Importe ajustado (S/)': det.importe,
         });
       }
     }
@@ -218,13 +226,13 @@ export default function Comision() {
 
   // Precarga contando las ventas Vodafone ACTIVAS del período activo
   const precargar = () => {
-    const { fijo: f, movil: m, clientes: c, sinClasificar } = contarDesdeVentas(ventas, mes, (v) => estadoDe(v) === 'activa');
-    setFijo(f); setMovil(m); setClientes(c);
+    const { fijo: f, movil: m, clientes: c, sinClasificar, ponderado: p } = contarDesdeVentas(ventas, mes, (v) => estadoDe(v) === 'activa');
+    setFijo(f); setMovil(m); setClientes(c); setPonderado(p);
     const totalUds = Object.values(f).reduce((a, b) => a + b, 0) + Object.values(m).reduce((a, b) => a + b, 0);
     if (totalUds === 0 && sinClasificar === 0) {
       setMsg({ tone: 'red', text: `No hay ventas Vodafone activas en ${PERIODO.etiquetas[mes]} que clasificar.` });
     } else {
-      let text = `Cargadas ${totalUds} unidades activas de ${PERIODO.etiquetas[mes]}. Puedes ajustar los números a mano.`;
+      let text = `Cargadas ${totalUds} unidades activas de ${PERIODO.etiquetas[mes]}. La comisión ya está ajustada por la oferta de cada venta.`;
       if (sinClasificar > 0) {
         text += ` ⚠️ ${sinClasificar} línea${sinClasificar === 1 ? '' : 's'} móvil sin tarifa registrada no se pudo clasificar por valor: añádela${sinClasificar === 1 ? '' : 's'} a mano en Bajo/Medio/Alto.`;
       }
@@ -251,6 +259,13 @@ export default function Comision() {
       </div>
 
       {msg && <div className={`text-sm px-4 py-2 rounded-lg ${msg.tone === 'green' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-vf-red/15 text-vf-redLight'}`} role="alert">{msg.text}</div>}
+
+      {ponderado && (
+        <div className="text-sm px-4 py-3 rounded-lg bg-sky-500/10 text-sky-200 border border-sky-500/25">
+          Comisión por oferta aplicada: <span className="font-semibold">40% → 80%</span> del precio de tabla · <span className="font-semibold">30% → 70%</span> · <span className="font-semibold">LOWI → 30%</span> · <span className="font-semibold">REAL → 100%</span>.
+          <span className="block text-xs text-sky-200/75 mt-1">Las unidades siguen contando completas para alcanzar las vallas. Si modificas manualmente Fijo o Móvil, el simulador pasa a REAL (100%) porque ya no puede asociar cada unidad a una oferta concreta.</span>
+        </div>
+      )}
 
       {/* Ajuste por días trabajados (vacaciones / ausencias) */}
       <Card>
@@ -306,8 +321,8 @@ export default function Comision() {
       <BloqueClientes clientes={clientes} setClientes={setClientes} umbrales={umbrales.clientes} vallaPago={total.vallaPago} reducida={reducida} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BloqueCategoria cat="fijo" icon={Wifi} counts={fijo} setCounts={setFijo} umbrales={umbrales.fijo} vallaPago={total.vallaPago} reducida={reducida} />
-        <BloqueCategoria cat="movil" icon={Smartphone} counts={movil} setCounts={setMovil} umbrales={umbrales.movil} vallaPago={total.vallaPago} reducida={reducida} />
+        <BloqueCategoria cat="fijo" icon={Wifi} counts={fijo} setCounts={editarFijo} umbrales={umbrales.fijo} vallaPago={total.vallaPago} reducida={reducida} resultado={total.fijo} />
+        <BloqueCategoria cat="movil" icon={Smartphone} counts={movil} setCounts={editarMovil} umbrales={umbrales.movil} vallaPago={total.vallaPago} reducida={reducida} resultado={total.movil} />
       </div>
 
       {/* Tabla de referencia de vallas */}
