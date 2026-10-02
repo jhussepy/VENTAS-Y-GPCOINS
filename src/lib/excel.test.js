@@ -30,6 +30,20 @@ describe('importarVentas: líneas móviles sin id', () => {
   });
 });
 
+describe('importarVentas: oferta de comisión', () => {
+  it.each([
+    ['40%', '40'],
+    ['30%', '30'],
+    ['LOWI', 'lowi'],
+    ['REAL', 'real'],
+    ['', 'real'],
+  ])('normaliza %s al valor persistido', async (oferta, esperado) => {
+    const file = filaAExcel([{ nombre: 'Ana', apellido: 'Ruiz', oferta }]);
+    const { ventas } = await importarVentas(file, []);
+    expect(ventas[0].oferta).toBe(esperado);
+  });
+});
+
 describe('importarVentas: el mes lo manda la instalación', () => {
   it('atribuye la venta al mes de fechaInstalacion, aunque fechaVenta sea de otro mes', async () => {
     const file = filaAExcel([{
