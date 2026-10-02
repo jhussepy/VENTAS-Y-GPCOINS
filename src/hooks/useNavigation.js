@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { mesActivoCampanaDesdeFecha, CAMPANA_ACTIVA } from '../data/campanas.js';
-const allowed = new Set(['mi-dia','clientes','ingresos','recuperacion','dashboard','ventas','gpcoins','comision','llaves','incentivos','tarifas','catalogo','lowi-dashboard','lowi-ventas','agendados','fe','ajustes']);
+const allowed = new Set(['mi-dia','clientes','recuperacion','dashboard','ventas','gpcoins','comision','llaves','incentivos','tarifas','catalogo','lowi-dashboard','lowi-ventas','agendados','fe','ajustes']);
 function leer() {
   const p = new URLSearchParams(window.location.hash.slice(1));
   const page = allowed.has(p.get('pagina')) ? p.get('pagina') : 'mi-dia';

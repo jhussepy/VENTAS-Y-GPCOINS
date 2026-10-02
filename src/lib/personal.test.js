@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { agruparClientes } from './clientes.js';
 import { fusionar, fusionarRegistros } from './mutations.js';
 import { validarBackup, crearBackup } from './backup.js';
-import { siguienteObjetivo, tareasDelDia, crearCierre, ingresosMes, VERSION_REGLAS } from './personal.js';
+import { tareasDelDia } from './personal.js';
 import { numeroLocal, fechaExcel } from './parsing.js';
 import { esPropietario } from './admin.js';
 
@@ -48,35 +48,5 @@ describe('uso personal y recuperación', () => {
     const tasks = tareasDelDia([{id:'cancelada',estado:'cancelada',sap:'1'}], [], [{id:'a',estado:'reagendado',fechaLlamada:'2026-06-01',hora:'10:00'}], new Date('2026-06-02T12:00:00'));
     expect(tasks).toHaveLength(1); expect(tasks[0].atrasada).toBe(true);
   });
-  it('simula las tres cuotas de la siguiente valla sin inventar precio', () => {
-    const r = siguienteObjetivo({ fijo:{BV:5,MV:0,AV:0}, movil:{BA:12,MV:0,AV:0}, clientes:6 });
-    expect(r.faltan).toEqual({fijo:1,movil:1,clientes:1}); expect(r.importe).toBe(6*30+13*19);
-  });
-  it('octubre usa las mismas condiciones de ingresos y comisión que septiembre', () => {
-    const base = {
-      id: 'a',
-      estado: 'activa',
-      convergencia: '3P',
-      velocidad: 'Fibra 300 MB',
-      clienteNuevo: true,
-      lineasMoviles: [{ tipo: 'nueva', tarifa: 'basica' }],
-    };
-    const septiembre = ingresosMes([{ ...base, mes: 'septiembre' }], 'septiembre');
-    const octubre = ingresosMes([{ ...base, mes: 'octubre' }], 'octubre');
-    expect(octubre.counts).toEqual(septiembre.counts);
-    expect(octubre.comision).toEqual(septiembre.comision);
-  });
 
-  it('el cierre de octubre usa el período ISO 2026-10 y la nueva versión de reglas', () => {
-    const cierre = crearCierre([{ id: 'a', mes: 'octubre', estado: 'activa', lineasMoviles: [] }], 'octubre');
-    expect(cierre.periodo).toBe('2026-10');
-    expect(cierre.versionReglas).toBe(VERSION_REGLAS);
-    expect(cierre.versionReglas).toContain('jun-oct');
-  });
-
-  it('un cierre conserva datos aunque después cambie la venta original', () => {
-    const venta = {id:'a',mes:'junio',estado:'activa',nombre:'Ana',lineasMoviles:[]};
-    const cierre = crearCierre([venta],'junio'); venta.nombre='Eva';
-    expect(cierre.registros[0].nombre).toBe('Ana'); expect(cierre.versionReglas).toBeTruthy();
-  });
 });

@@ -2,7 +2,7 @@ import { useState, createContext, useContext, lazy, Suspense, useRef, useMemo, u
 import {
   LayoutDashboard, ShoppingCart, Coins, KeyRound, Trophy,
   Tag, Smartphone, Menu, Sun, Moon, LogOut, Loader2, Cloud, CloudOff, Check, Wifi,
-  Download, Upload, Trash2, Users, Wallet, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator, Search,
+  Download, Upload, Trash2, Users, Settings, CalendarClock, BookOpen, PhoneCall, AlertTriangle, Calculator, Search,
 } from 'lucide-react';
 import { PERIODO } from './data/incentivos.js';
 import { estadoCampanaEnFecha } from './data/campanas.js';
@@ -27,7 +27,6 @@ const Tarifas = lazy(() => import('./pages/Tarifas.jsx'));
 const Catalogo = lazy(() => import('./pages/Catalogo.jsx'));
 const MiDia = lazy(() => import('./pages/Personal.jsx').then(m => ({ default: m.MiDia })));
 const Clientes = lazy(() => import('./pages/Personal.jsx').then(m => ({ default: m.Clientes })));
-const Ingresos = lazy(() => import('./pages/Personal.jsx').then(m => ({ default: m.Ingresos })));
 const Recuperacion = lazy(() => import('./pages/Personal.jsx').then(m => ({ default: m.Recuperacion })));
 const LowiDashboard = lazy(() => import('./pages/LowiDashboard.jsx'));
 const LowiVentas = lazy(() => import('./pages/LowiVentas.jsx'));
@@ -57,7 +56,6 @@ const NAV = [
 const NAV_PERSONAL = [
   { id: 'mi-dia', label: 'Mi día', icon: CalendarClock, Comp: MiDia },
   { id: 'clientes', label: 'Clientes', icon: Users, Comp: Clientes },
-  { id: 'ingresos', label: 'Mis ingresos', icon: Wallet, Comp: Ingresos },
   { id: 'recuperacion', label: 'Copias y papelera', icon: Trash2, Comp: Recuperacion },
 ];
 const NAV_FE = { id: 'fe', label: 'Fe', icon: BookOpen, Comp: Fe };
@@ -93,7 +91,7 @@ function Spinner() {
 
 export default function App() {
   const user = useAuth();
-  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, restaurarDatos, versionDatos, migrarEsquemaV2, tema, setTema, loading, estadoGuardado, personal, setPersonal, guardarVenta, restaurarPapelera, esperarGuardado, reintentarGuardado, descargarPendientes, errorGuardado, pendientes, recuperarDesdeNube, cerrarMes } = useCloudData(user);
+  const { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, restaurarDatos, versionDatos, migrarEsquemaV2, tema, setTema, loading, estadoGuardado, personal, setPersonal, guardarVenta, restaurarPapelera, esperarGuardado, reintentarGuardado, descargarPendientes, errorGuardado, pendientes, recuperarDesdeNube } = useCloudData(user);
   const { operador, setOperador, page, setPage, mes, setMes } = useNavigation();
   const ahora = useAhora();
   const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
@@ -230,7 +228,7 @@ export default function App() {
     guardado: { icon: Check, text: 'Guardado', cls: 'text-emerald-400' },
     error: { icon: CloudOff, text: 'Error al guardar', cls: 'text-vf-redLight' },
   }[estadoGuardado];
-  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, versionDatos, migrarEsquemaV2, convertirAgendado, marcarAgendadoConvertido, personal, setPersonal, guardarVenta, restaurarPapelera, esperarGuardado, cerrarMes, tema, restaurarDatos, navegar: irADesdePaleta, registroSeleccionado, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta, toast };
+  const ctx = { ventas, setVentas, ventasLowi, setVentasLowi, tarifas, setTarifas, precios, guardarPrecio, objetivosLogros, guardarObjetivoLogro, agendados, setAgendados, versionDatos, migrarEsquemaV2, convertirAgendado, marcarAgendadoConvertido, personal, setPersonal, guardarVenta, restaurarPapelera, esperarGuardado, tema, restaurarDatos, navegar: irADesdePaleta, registroSeleccionado, mes, setMes, user, admin, operador, venderModelo, prefillVenta, setPrefillVenta, toast };
   const Active = paginas.find((n) => n.id === page)?.Comp ?? nav[0]?.Comp ?? Dashboard;
 
   // Navegación desde la barra de comandos: ajusta el operador si hace falta

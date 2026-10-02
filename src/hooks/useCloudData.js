@@ -5,8 +5,6 @@ import { aplicarOperacion, camposColeccion } from '../lib/mutations.js';
 import { esPropietario } from '../lib/admin.js';
 import { crearBackup, descargarJSON, validarBackup } from '../lib/backup.js';
 import { nuevoId } from '../lib/id.js';
-import { crearCierre } from '../lib/personal.js';
-import { isoMesCampana } from '../data/campanas.js';
 
 export function useCloudData(user) {
   const uid = esPropietario(user) ? user.uid : null;
@@ -183,13 +181,6 @@ export function useCloudData(user) {
     setPersonal: fn => actualizar('personal', fn), setTema: fn => actualizar('tema', fn), guardarVenta,
     guardarPrecio: (sap, mes, valor) => actualizar('precios', prev => ({ ...prev, [sap]: { ...prev[sap], [mes]: Number(valor) || 0 } })),
     guardarObjetivoLogro: (id, valor) => actualizar('objetivosLogros', prev => { const next = { ...prev }; if (valor > 0) next[id] = valor; else delete next[id]; return next; }),
-    cerrarMes: async mes => {
-      const s = session.current; await s.flush();
-      const periodo = isoMesCampana(mes);
-      if (s.view.personal.cierres?.[periodo]) throw new Error('Este mes ya está cerrado.');
-      actualizar('personal', p => ({ ...p, cierres: { ...p.cierres, [periodo]: crearCierre(s.view.ventas, mes) } }));
-      await s.flush();
-    },
     recuperarDesdeNube: async () => {
       const s = session.current;
       if (!s?.writable) throw new Error('Esta pestaña no tiene el permiso de edición.');

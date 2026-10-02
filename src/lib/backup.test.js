@@ -46,8 +46,6 @@ describe('validación de papelera dentro de las copias', () => {
 describe('copia completa de seguridad', () => {
   it('conserva datos personales y tema visual', () => {
     const personal = {
-      cobros: { junio: { importe: 123.45 } },
-      cierres: { junio: { cerradoEn: '2026-09-30T20:00:00.000Z' } },
       notasClientes: { 'cliente-1': 'Seguimiento' },
       fe: { favoritos: [{ cita: 'Colosenses 3:23', texto: 'Texto' }] },
       papelera: {},
