@@ -2,10 +2,8 @@ import { inspeccionarPapelera } from '../lib/validacionBackup.js';
 import { useMemo, useState } from 'react';
 import { useApp } from '../App.jsx';
 import { useAhora } from '../hooks/useAhora.js';
-import { tareasDelDia, ingresosMes, siguienteObjetivo } from '../lib/personal.js';
+import { tareasDelDia } from '../lib/personal.js';
 import { agruparClientes } from '../lib/clientes.js';
-import { fmtSol } from '../lib/comision.js';
-import { isoMesCampana } from '../data/campanas.js';
 import { exportarBackup, descargarJSON } from '../lib/backup.js';
 import { Card, SectionTitle, Badge, useConfirm } from '../components/ui.jsx';
 
@@ -40,43 +38,12 @@ export function Clientes() {
   </div>;
 }
 
-export function Ingresos() {
-  const { ventas, mes, personal, setPersonal, cerrarMes, toast } = useApp();
-  const { confirmar, dialogo } = useConfirm();
-  const periodo = isoMesCampana(mes);
-  const actual = useMemo(() => ingresosMes(ventas, mes), [ventas, mes]);
-  const cierre = personal.cierres?.[periodo];
-  const datos = cierre?.datos || actual;
-  // Si el mes está cerrado, todas las cifras principales deben salir de la
-  // misma fotografía histórica. Solo el bloque de comparación del cierre usa
-  // deliberadamente el cálculo actual para mostrar diferencias posteriores.
-  const siguiente = siguienteObjetivo(datos.counts);
-  const cobro = personal.cobros?.[periodo] || {};
-  const [error, setError] = useState('');
-  const cerrar = async () => {
-    if (cierre || !await confirmar(`Se conservarán el cálculo y las reglas de ${periodo}. Los cambios posteriores en ventas no modificarán esta copia.`, { titulo: 'Cerrar mes', accion: 'Crear cierre' })) return;
-    try { await cerrarMes(mes); toast('Cierre sincronizado'); } catch(e) { setError(e.message); }
-  };
-  const guardarCobro = e => {
-    e.preventDefault(); const data = new FormData(e.currentTarget);
-    setPersonal(p => ({ ...p, cobros: { ...p.cobros, [periodo]: { importe: Number(data.get('importe')), gpConfirmados: Number(data.get('gp')), fecha: data.get('fecha'), nota: data.get('nota') } } }));
-    toast('Cobro anotado; consulta el estado de sincronización');
-  };
-  return <div className="space-y-5"><p className="text-fg-muted">Comisión Vodafone estimada en soles. GP Coins se muestran por separado; su valor no se convierte a dinero.</p>{error && <p role="alert" className="text-vf-redLight">{error}</p>}
-    <div className="grid sm:grid-cols-3 gap-3"><Card><p className="text-fg-muted">{cierre ? 'Estimación al cierre' : 'Estimación actual'}</p><p className="text-3xl font-bold">{fmtSol(datos.comision.importe)}</p></Card><Card><p className="text-fg-muted">Cobrado registrado</p><p className="text-3xl font-bold">{fmtSol(cobro.importe)}</p></Card><Card><p className="text-fg-muted">Diferencia pendiente</p><p className="text-3xl font-bold">{fmtSol(datos.comision.importe - (cobro.importe || 0))}</p></Card></div>
-    {datos.counts.sinClasificar > 0 && <p role="status" className="text-amber-400">Hay {datos.counts.sinClasificar} líneas sin clasificar. La estimación puede estar incompleta.</p>}
-    <div className="grid lg:grid-cols-2 gap-5"><Card><SectionTitle>Registro de cobro · {periodo}</SectionTitle><form key={periodo} onSubmit={guardarCobro} className="space-y-3"><label className="block">Importe recibido (S/)<input name="importe" type="number" min="0" step="0.01" required className="input" defaultValue={cobro.importe ?? ''} /></label><label className="block">GP confirmados por ti<input name="gp" type="number" min="0" step="1" required className="input" defaultValue={cobro.gpConfirmados ?? 0} /></label><label className="block">Fecha del cobro<input name="fecha" type="date" required className="input" defaultValue={cobro.fecha || ''} /></label><label className="block">Referencia o ajustes<textarea name="nota" className="input" defaultValue={cobro.nota || ''} /></label><button className="btn-primary">Guardar cobro</button></form></Card>
-    <Card><SectionTitle>GP Coins calculados</SectionTitle><p className="text-2xl font-bold">{datos.gp.gpDirectosTotal} GP directos</p><p className="text-sm text-fg-muted mb-5">Potencial de ranking: {datos.gp.gpPotencialRanking} GP. Confirmados por ti: {cobro.gpConfirmados || 0} GP.</p><SectionTitle>{cierre ? 'Próxima valla al cierre' : 'Próxima valla'}</SectionTitle>{siguiente ? <><p className="text-lg font-semibold">Valla {siguiente.valla}</p><ul className="list-disc pl-5 my-3"><li>{siguiente.faltan.fijo} unidades de fijo</li><li>{siguiente.faltan.movil} líneas móviles</li><li>{siguiente.faltan.clientes} clientes nuevos únicos</li></ul><p>Escenario: {fmtSol(siguiente.importe)} <span className="text-emerald-400">(+{fmtSol(siguiente.incremento)})</span></p><p className="text-sm text-fg-muted mt-2">Supone que las unidades añadidas son de bajo valor y alcanzas las tres cuotas del mes completo. No es una promesa de pago.</p></> : <p>Has alcanzado la última valla.</p>}<p className="text-fg-muted text-sm mt-4">La calculadora permite simular otros tipos de tarifa y días trabajados.</p></Card></div>
-    <Card><SectionTitle>Cierre mensual</SectionTitle>{cierre ? <><Badge tone="green">Copia conservada · {cierre.cerradoEn.slice(0,10)}</Badge><p className="text-sm text-fg-muted my-3">Reglas {cierre.versionReglas}. Estimación actual: {fmtSol(actual.comision.importe)}; diferencia respecto al cierre: {fmtSol(actual.comision.importe - cierre.datos.comision.importe)}.</p><button className="btn-ghost" onClick={() => descargarJSON(cierre, `cierre-gpcoins-${periodo}.json`)}>Descargar cierre</button></> : <button className="btn-primary" onClick={cerrar}>Conservar cierre de {periodo}</button>}</Card>{dialogo}
-  </div>;
-}
-
 export function Recuperacion() {
   const app = useApp();
   const { personal, setPersonal, restaurarPapelera, user, toast } = app;
   const { confirmar, dialogo } = useConfirm();
   const { entradas: entries, error: errorPapelera } = inspeccionarPapelera(personal.papelera);
-  return <div className="space-y-5"><Card><SectionTitle>Copias y recuperación</SectionTitle><div className="flex flex-wrap gap-3"><button className="btn-primary" onClick={() => exportarBackup(app)}>Descargar copia completa</button><button className="btn-ghost" onClick={() => { const raw = localStorage.getItem(`gpcoins:recuperacion:${user.uid}`); if (raw) descargarJSON(JSON.parse(raw), 'gpcoins-antes-de-restaurar.json'); else toast('No hay una restauración previa en este navegador', 'info'); }}>Copia anterior a restauración</button></div><button className="btn-ghost mt-3" onClick={() => { const raw = localStorage.getItem(`gpcoins:pendientes-archivados:${user.uid}`); if (raw) { const archive = JSON.parse(raw); exportarBackup(archive.datos); } else toast('No hay pendientes archivados', 'info'); }}>Descargar pendientes archivados</button><p className="text-sm text-fg-muted mt-3">Las copias incluyen notas, cobros, cierres y papelera. Conserva tus exportaciones en un lugar privado.</p></Card>
+  return <div className="space-y-5"><Card><SectionTitle>Copias y recuperación</SectionTitle><div className="flex flex-wrap gap-3"><button className="btn-primary" onClick={() => exportarBackup(app)}>Descargar copia completa</button><button className="btn-ghost" onClick={() => { const raw = localStorage.getItem(`gpcoins:recuperacion:${user.uid}`); if (raw) descargarJSON(JSON.parse(raw), 'gpcoins-antes-de-restaurar.json'); else toast('No hay una restauración previa en este navegador', 'info'); }}>Copia anterior a restauración</button></div><button className="btn-ghost mt-3" onClick={() => { const raw = localStorage.getItem(`gpcoins:pendientes-archivados:${user.uid}`); if (raw) { const archive = JSON.parse(raw); exportarBackup(archive.datos); } else toast('No hay pendientes archivados', 'info'); }}>Descargar pendientes archivados</button><p className="text-sm text-fg-muted mt-3">Las copias incluyen tus datos personales de la app, notas y papelera. Conserva tus exportaciones en un lugar privado.</p></Card>
     <Card>
       <SectionTitle>Papelera · {entries.length} registros</SectionTitle>
       {errorPapelera && <div role="alert" className="space-y-3">
