@@ -14,21 +14,10 @@ export function tareasDelDia(ventas, ventasLowi, agendados, ahora = new Date()) 
       if (estadoDe(v) === 'pendiente' && v.fechaInstalacion) tareas.push({ id: `${pagina}:${v.id}:inst`, tipo: 'Instalación', fecha: v.fechaInstalacion, registro: v, pagina });
       if (v.sap && !v.dispositivoEntregado) tareas.push({ id: `${pagina}:${v.id}:entrega`, tipo: v.incidenciaEntrega ? 'Incidencia de entrega' : 'Entrega pendiente', fecha: v.fechaEntrega || '', registro: v, pagina, urgente: !!v.incidenciaEntrega });
       for (const l of v.lineasMoviles || []) {
-        if (l.tipo === 'porta' && !l.activa && l.incidenciaPorta !== 'cancelada_m1') tasksPushPorta(tareas, pagina, v, l);
+        if (l.tipo === 'porta' && !l.activa && l.incidenciaPorta !== 'cancelada_m1') tareas.push({ id: `${pagina}:${v.id}:${l.id}`, tipo: 'Portabilidad', fecha: l.ventanaPorta?.slice(0, 10) || '', hora: l.ventanaPorta?.slice(11, 16) || '', registro: v, pagina });
       }
     }
   }
   return tareas.map(t => ({ ...t, atrasada: !!t.fecha && `${t.fecha}T${t.hora || '23:59'}` < ahoraLocalISO(ahora), hoy: t.fecha === hoy }))
     .sort((a, b) => Number(!!b.urgente) - Number(!!a.urgente) || Number(b.atrasada) - Number(a.atrasada) || (a.fecha || '9999').localeCompare(b.fecha || '9999') || (a.hora || '').localeCompare(b.hora || ''));
-}
-
-function tasksPushPorta(tareas, pagina, venta, linea) {
-  tareas.push({
-    id: `${pagina}:${venta.id}:${linea.id}`,
-    tipo: 'Portabilidad',
-    fecha: linea.ventanaPorta?.slice(0, 10) || '',
-    hora: linea.ventanaPorta?.slice(11, 16) || '',
-    registro: venta,
-    pagina,
-  });
 }
