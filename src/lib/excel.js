@@ -4,6 +4,7 @@ import { ESTADOS } from './estados.js';
 import { resumenLineas } from '../data/movil.js';
 import { nuevoId } from './id.js';
 import { PERIODO } from '../data/incentivos.js';
+import { etiquetaOfertaComision, normalizarOfertaComision } from './comision.js';
 
 // Normaliza el texto de estado a una clave válida
 const aEstado = (x) => {
@@ -22,7 +23,7 @@ const cargarXLSX = () => import('xlsx');
 // Cabeceras esperadas en el Excel de ventas (orden de plantilla)
 export const COLUMNAS_VENTAS = [
   'nombre', 'apellido', 'dni', 'telefono', 'email', 'direccion', 'idSmart', 'idWeb',
-  'fechaVenta', 'fechaInstalacion', 'convergencia',
+  'fechaVenta', 'fechaInstalacion', 'oferta', 'convergencia',
   'velocidad', 'tv', 'clienteNuevo', 'fibraActiva', 'marca', 'sap', 'dispositivoEntregado', 'fechaEntrega', 'incidenciaEntrega', 'cantidad',
   'portasVoz', 'portasActivas', 'lineasVoz', 'til65', 'secureNet', 'estado', 'fechaBaja', 'motivoBaja', 'notas', 'lineasMoviles',
 ];
@@ -78,6 +79,7 @@ export async function importarVentas(file, existentes = []) {
     v.idWeb = String(r.idWeb ?? r['id web'] ?? '').trim();
     v.fechaVenta = aFecha(XLSX, r.fechaVenta ?? r['fecha venta'] ?? r.FechaVenta);
     v.fechaInstalacion = aFecha(XLSX, r.fechaInstalacion ?? r['fecha instalacion'] ?? r.FechaInstalacion);
+    v.oferta = normalizarOfertaComision(r.oferta ?? r.Oferta ?? r.OFERTA);
     v.convergencia = String(r.convergencia ?? '').trim().toUpperCase();
     v.velocidad = String(r.velocidad ?? '').trim();
     v.tv = v.convergencia === '4P' ? String(r.tv ?? r.TV ?? '').trim() : '';
@@ -140,7 +142,7 @@ export async function exportarVentas(ventas) {
     nombre: v.nombre, apellido: v.apellido, dni: v.dni, telefono: v.telefono,
     email: v.email, direccion: v.direccion, idSmart: v.pedido, idWeb: v.idWeb,
     fechaVenta: v.fechaVenta,
-    fechaInstalacion: v.fechaInstalacion, convergencia: v.convergencia,
+    fechaInstalacion: v.fechaInstalacion, oferta: etiquetaOfertaComision(v.oferta), convergencia: v.convergencia,
     velocidad: v.velocidad, tv: v.tv, clienteNuevo: v.clienteNuevo ? 'SI' : 'NO',
     fibraActiva: v.fibraActiva ? 'SI' : 'NO', marca: v.marca, sap: v.sap,
     dispositivoEntregado: v.dispositivoEntregado ? 'SI' : 'NO',
@@ -163,7 +165,7 @@ export async function plantillaVentas() {
     nombre: 'Juan', apellido: 'Pérez', dni: '12345678Z', telefono: '600111222',
     email: 'juan@email.com', direccion: 'C/ Mayor 1, Madrid', idSmart: 'SM-001', idWeb: 'WEB-001',
     fechaVenta: '2026-06-15',
-    fechaInstalacion: '2026-06-20', convergencia: '4P', velocidad: 'Fibra 1 GB', tv: 'Netflix Estándar',
+    fechaInstalacion: '2026-06-20', oferta: 'REAL', convergencia: '4P', velocidad: 'Fibra 1 GB', tv: 'Netflix Estándar',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: 'samsung', sap: '316414', dispositivoEntregado: 'SI',
     cantidad: 1, portasVoz: 2, portasActivas: 1, lineasVoz: 2, til65: 1, secureNet: 1,
     estado: 'Activa', fechaBaja: '', motivoBaja: '', notas: 'Ejemplo con terminal',
@@ -171,7 +173,7 @@ export async function plantillaVentas() {
     nombre: 'María', apellido: 'García', dni: '87654321X', telefono: '600333444',
     email: '', direccion: '', idSmart: 'SM-002', idWeb: '',
     fechaVenta: '2026-06-18',
-    fechaInstalacion: '2026-06-25', convergencia: '3P', velocidad: 'Fibra 600 MB', tv: '',
+    fechaInstalacion: '2026-06-25', oferta: '40%', convergencia: '3P', velocidad: 'Fibra 600 MB', tv: '',
     clienteNuevo: 'SI', fibraActiva: 'SI', marca: '', sap: '', dispositivoEntregado: 'NO',
     cantidad: '', portasVoz: 1, portasActivas: 0, lineasVoz: 1, til65: 0, secureNet: 0,
     estado: 'Pendiente', fechaBaja: '', motivoBaja: '', notas: 'Solo fibra y movil (sin terminal): deja marca y sap vacios',
