@@ -1,6 +1,7 @@
 import { fusionar, fusionarRegistros } from '../lib/mutations.js';
 import { collection, deleteDoc, doc, getDocFromServer, getDocsFromServer, onSnapshot, setDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
+import { normalizarMesCampana } from '../data/campanas.js';
 
 export const CAMPOS_PERSISTIBLES = new Set([
   'ventas', 'ventasLowi', 'tarifas', 'precios', 'objetivosLogros', 'agendados', 'tema', 'personal',
@@ -16,12 +17,25 @@ const objetoPlano = (valor) => (
   valor && typeof valor === 'object' && !Array.isArray(valor) ? valor : {}
 );
 
+// Compatibilidad con ventas creadas cuando octubre todavía era solo seguimiento.
+// No muta el objeto original: al cargar, "2026-10" pasa a "octubre".
+export function normalizarVentaUsuario(registro) {
+  if (!registro || typeof registro !== 'object' || Array.isArray(registro)) return registro;
+  if (typeof registro.mes !== 'string') return registro;
+  const mes = normalizarMesCampana(registro.mes);
+  return mes === registro.mes ? registro : { ...registro, mes };
+}
+
+const normalizarVentas = (valor) => (
+  Array.isArray(valor) ? valor.map(normalizarVentaUsuario) : []
+);
+
 // Frontera de normalización para documentos antiguos, incompletos o
 // manipulados. El hook siempre recibe la misma estructura segura.
 export function normalizarDatosUsuario(datos) {
   const d = objetoPlano(datos);
   return {
-    ventas: Array.isArray(d.ventas) ? d.ventas : [],
+    ventas: normalizarVentas(d.ventas),
     ventasLowi: Array.isArray(d.ventasLowi) ? d.ventasLowi : [],
     tarifas: Array.isArray(d.tarifas) ? d.tarifas : [],
     precios: objetoPlano(d.precios),
@@ -38,7 +52,7 @@ const referenciaUsuario = (uid) => {
   return doc(db, 'usuarios', uid);
 };
 
-const registrosDeSnapshot = (snapshot) => snapshot.docs.map((item) => ({
+const registrosDeSnapshot = (snapshot) => snapshot.docs.map((item) => normalizarVentaUsuario({
   ...item.data(),
   id: item.id,
 }));
