@@ -18,7 +18,7 @@ import { avisosContacto } from '../lib/validacion.js';
 import { Card, Badge, EmptyState, useConfirm, Avatar } from '../components/ui.jsx';
 import { ventanaRelevante, fmtVentana, TONO_VENTANA, ETIQUETA_VENTANA } from '../lib/portabilidad.js';
 import { fmtFecha, fmtEur } from '../lib/format.js';
-import { fechaLocalISO } from '../lib/agendados.js';
+import { fechaLocalISO } from '../lib/fecha.js';
 
 function FormLowi({ inicial, onGuardar, onCancelar }) {
   const [v, setV] = useState(inicial);
