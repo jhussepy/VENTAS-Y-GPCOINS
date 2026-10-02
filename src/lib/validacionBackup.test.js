@@ -91,6 +91,16 @@ it.each([
   expect(() => restaurar(campo, { id: 'a', ...campos }, false)).toThrow(mensaje);
   expect(() => restaurar(campo, { id: 'a', ...campos }, true)).toThrow(mensaje);
 });
+it.each(['40', '30', 'lowi', 'real'])('conserva la oferta Vodafone %s en backup y papelera', oferta => {
+  const venta = { ...ventaVacia(), oferta };
+  expect(restaurar('ventas', venta, false).ventas[0].oferta).toBe(oferta);
+  expect(restaurar('ventas', venta, true).personal.papelera.x.registro.oferta).toBe(oferta);
+});
+
+it('rechaza ofertas Vodafone desconocidas en backups', () => {
+  expect(() => restaurar('ventas', { ...ventaVacia(), oferta: '50' }, false)).toThrow(/oferta/i);
+});
+
 it('conserva una agenda convertida, fechas locales y textos libres', () => {
   const agenda = { ...agendadoVacio(), ventaId: 'venta-1', ultimoIntento: '2026-09-22T10:30', hora: '10:30' };
   const venta = { ...ventaVacia(), tv: 'Mi pack antiguo', velocidad: 'Fibra anterior', fechaVenta: '2026-09-22' };
