@@ -195,15 +195,19 @@ export function gpDirectos(ventas, marca, mes) {
   return total;
 }
 
-// --- Unidades vendidas por modelo y por familia (para topes de stock) -------
+// --- Unidades acreditables por modelo y familia (para topes de stock) -------
+// Debe seguir exactamente el mismo criterio que puntosDispositivos/gpDirectos:
+// solo ventas ACTIVAS, terminal ENTREGADO y atribuido al MES DE ENTREGA.
+// Así el catálogo no descuenta stock por ventas pendientes o entregas de otro mes.
 export function unidadesVendidas(ventas, marca, mes) {
   const porModelo = {};
   const porFamilia = {};
   for (const v of ventas) {
-    if (v.mes !== mes || v.marca !== marca) continue;
+    if (v.marca !== marca || mesEntrega(v) !== mes) continue;
+    if (estadoDe(v) !== 'activa' || !v.dispositivoEntregado) continue;
     const prod = buscarProducto(marca, v.sap);
     if (!prod) continue;
-    const c = v.cantidad || 1;
+    const c = Number(v.cantidad) || 1;
     porModelo[v.sap] = (porModelo[v.sap] || 0) + c;
     if (prod.familia) porFamilia[prod.familia] = (porFamilia[prod.familia] || 0) + c;
   }
