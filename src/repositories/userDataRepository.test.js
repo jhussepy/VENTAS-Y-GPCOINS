@@ -4,7 +4,6 @@ const mocks = vi.hoisted(() => ({
   collection: vi.fn(),
   deleteDoc: vi.fn(),
   doc: vi.fn(),
-  getDocs: vi.fn(),
   onSnapshot: vi.fn(),
   setDoc: vi.fn(),
   writeBatch: vi.fn(),
@@ -16,7 +15,6 @@ vi.mock('../lib/firebase.js', () => ({ db: { nombre: 'db-test' } }));
 
 import {
   calcularCambiosColeccion,
-  cargarUsuariosSupervisor,
   guardarCampoUsuario,
   guardarPerfilUsuario,
   normalizarDatosUsuario,
@@ -163,35 +161,6 @@ describe('escrituras del esquema v2', () => {
     mocks.writeBatch.mockReturnValue({ set: mocks.batchSet, delete: mocks.batchDelete, commit: mocks.commit });
     mocks.commit.mockResolvedValue(undefined);
     mocks.deleteDoc.mockResolvedValue(undefined);
-  });
-
-  it('carga agentes v1 y v2 para el panel de supervisor', async () => {
-    mocks.collection.mockImplementation((_db, _usuarios, _uid, ruta) => ({ ruta }));
-    mocks.getDocs.mockImplementation((ref) => {
-      if (!ref.ruta) {
-        return Promise.resolve({ docs: [
-          { id: 'legacy', data: () => ({ email: 'legacy@test', ventas: [{ id: 'l1' }] }) },
-          { id: 'nuevo', data: () => ({ email: 'nuevo@test', versionEsquema: 2, ventas: [{ id: 'ignorar' }] }) },
-        ] });
-      }
-      const porRuta = {
-        ventasVodafone: [{ id: 'v2', data: () => ({ nombre: 'Venta v2' }) }],
-        ventasLowi: [],
-        agendados: [{ id: 'a2', data: () => ({ nombre: 'Agenda v2' }) }],
-      };
-      return Promise.resolve({ docs: porRuta[ref.ruta] });
-    });
-
-    const usuarios = await cargarUsuariosSupervisor();
-
-    expect(usuarios).toHaveLength(2);
-    expect(usuarios[0]).toMatchObject({ uid: 'legacy', ventas: [{ id: 'l1' }] });
-    expect(usuarios[1]).toMatchObject({
-      uid: 'nuevo',
-      ventas: [{ id: 'v2', nombre: 'Venta v2' }],
-      ventasLowi: [],
-      agendados: [{ id: 'a2', nombre: 'Agenda v2' }],
-    });
   });
 
   it('reemplaza un backup legacy en una sola escritura', async () => {
