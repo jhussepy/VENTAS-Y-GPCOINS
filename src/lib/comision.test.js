@@ -2,7 +2,30 @@ import { describe, it, expect } from 'vitest';
 import {
   vallaAlcanzada, faltanParaSiguiente, comisionCategoria, comisionTotal, totalCategoria,
   contarDesdeVentas, prorratearUmbrales, UMBRALES_VALLA,
+  factorOfertaComision, etiquetaOfertaComision, normalizarOfertaComision,
 } from './comision.js';
+
+describe('ofertas de comisión', () => {
+  it.each([
+    ['40', 0.8, '40%'],
+    ['40%', 0.8, '40%'],
+    ['30', 0.7, '30%'],
+    ['30%', 0.7, '30%'],
+    ['lowi', 0.3, 'LOWI'],
+    ['REAL', 1, 'REAL'],
+    [undefined, 1, 'REAL'],
+  ])('normaliza %s al factor esperado', (valor, factor, etiqueta) => {
+    expect(factorOfertaComision(valor)).toBe(factor);
+    expect(etiquetaOfertaComision(valor)).toBe(etiqueta);
+  });
+
+  it('normaliza valores de formulario/Excel a ids persistibles', () => {
+    expect(normalizarOfertaComision('40%')).toBe('40');
+    expect(normalizarOfertaComision('30%')).toBe('30');
+    expect(normalizarOfertaComision('LOWI')).toBe('lowi');
+    expect(normalizarOfertaComision('REAL')).toBe('real');
+  });
+});
 
 describe('vallaAlcanzada', () => {
   it('devuelve -1 si no llega a la 1ª valla', () => {
@@ -40,10 +63,17 @@ describe('comisionCategoria (paga a la valla indicada, ya decidida externamente)
   it('aplica el precio de la valla de pago a todas las unidades (retroactivo)', () => {
     // 2ª valla (idx 1): BV=34, MV=55, AV=77
     const r = comisionCategoria('fijo', { BV: 4, MV: 4, AV: 4 }, 1);
-    expect(r.detalle.BV).toEqual({ n: 4, precio: 34, importe: 136 });
-    expect(r.detalle.MV).toEqual({ n: 4, precio: 55, importe: 220 });
-    expect(r.detalle.AV).toEqual({ n: 4, precio: 77, importe: 308 });
+    expect(r.detalle.BV).toEqual({ n: 4, precio: 34, factor: 1, importe: 136 });
+    expect(r.detalle.MV).toEqual({ n: 4, precio: 55, factor: 1, importe: 220 });
+    expect(r.detalle.AV).toEqual({ n: 4, precio: 77, factor: 1, importe: 308 });
     expect(r.importe).toBe(664);
+  });
+
+  it('aplica unidades ponderadas solo al importe, no al número de unidades', () => {
+    const r = comisionCategoria('fijo', { BV: 4, MV: 0, AV: 0 }, 0, { BV: 2.8, MV: 0, AV: 0 });
+    expect(r.total).toBe(4);
+    expect(r.detalle.BV.factor).toBeCloseTo(0.7);
+    expect(r.detalle.BV.importe).toBeCloseTo(2.8 * 30);
   });
 
   it('móvil usa sus propios precios por subtipo', () => {
@@ -170,6 +200,37 @@ describe('contarDesdeVentas', () => {
     const r = contarDesdeVentas(v, 'julio', activa);
     expect(r.movil).toEqual({ BA: 0, MV: 0, AV: 0 });
     expect(r.sinClasificar).toBe(1 + 3); // 1 sin tarifa + (2 portas + 1 nueva) manuales
+  });
+
+  it('las ofertas reducen el importe ponderado pero no las unidades para valla', () => {
+    const v = [
+      { mes: 'julio', estado: 'activa', oferta: '40', clienteNuevo: true, convergencia: '3P', velocidad: 'Fibra 300 MB',
+        lineasMoviles: [{ tipo: 'nueva', tarifa: 'basica' }] },
+      { mes: 'julio', estado: 'activa', oferta: '30', clienteNuevo: true, convergencia: '3P', velocidad: 'Fibra 300 MB',
+        lineasMoviles: [{ tipo: 'nueva', tarifa: 'basica' }] },
+      { mes: 'julio', estado: 'activa', oferta: 'lowi', clienteNuevo: true, convergencia: '3P', velocidad: 'Fibra 300 MB',
+        lineasMoviles: [{ tipo: 'nueva', tarifa: 'basica' }] },
+      { mes: 'julio', estado: 'activa', oferta: 'real', clienteNuevo: true, convergencia: '3P', velocidad: 'Fibra 300 MB',
+        lineasMoviles: [{ tipo: 'nueva', tarifa: 'basica' }] },
+      // Legacy sin oferta: debe equivaler a REAL.
+      { mes: 'julio', estado: 'activa', clienteNuevo: true, convergencia: '3P', velocidad: 'Fibra 300 MB',
+        lineasMoviles: [{ tipo: 'nueva', tarifa: 'basica' }] },
+      { mes: 'julio', estado: 'activa', oferta: 'real', clienteNuevo: true, convergencia: '3P', velocidad: 'Fibra 300 MB',
+        lineasMoviles: [{ tipo: 'nueva', tarifa: 'basica' }] },
+      { mes: 'julio', estado: 'activa', oferta: 'real', clienteNuevo: true, convergencia: '', velocidad: '',
+        lineasMoviles: Array.from({ length: 7 }, () => ({ tipo: 'nueva', tarifa: 'basica' })) },
+    ];
+    const counts = contarDesdeVentas(v, 'julio', activa);
+    expect(counts.fijo.BV).toBe(6);
+    expect(counts.movil.BA).toBe(13);
+    expect(counts.clientes).toBe(7);
+    expect(counts.ponderado.fijo.BV).toBeCloseTo(0.8 + 0.7 + 0.3 + 1 + 1 + 1);
+    expect(counts.ponderado.movil.BA).toBeCloseTo((0.8 + 0.7 + 0.3 + 1 + 1 + 1) + 7);
+
+    const total = comisionTotal(counts.fijo, counts.movil, counts.clientes, undefined, counts.ponderado);
+    expect(total.vallaPago).toBe(0);
+    expect(total.fijo.importe).toBeCloseTo(counts.ponderado.fijo.BV * 30);
+    expect(total.movil.importe).toBeCloseTo(counts.ponderado.movil.BA * 19);
   });
 
   it('no cuenta portas sin activar ni canceladas por el cliente (ES M1)', () => {

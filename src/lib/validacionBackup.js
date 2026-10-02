@@ -19,7 +19,7 @@ const venta = {
 const esquemas = {
   ventas: {
     ...venta, ...campos('texto', 'convergencia sap incidenciaEntrega'),
-    ...campos('clave', 'mes marca'), fechaEntrega: 'fecha',
+    ...campos('clave', 'mes marca'), oferta: 'oferta', fechaEntrega: 'fecha',
     ...campos('booleano', 'clienteNuevo fibraActiva dispositivoEntregado instalacionActiva'),
     ...campos('numero', 'cantidad portasVoz portasActivas lineasVoz til65 secureNet'),
   },
@@ -49,6 +49,7 @@ const validadores = {
   clave: value => typeof value === 'string' && !Object.hasOwn(Object.prototype, value),
   numero: value => typeof value === 'number' && Number.isFinite(value) && value >= 0,
   booleano: value => typeof value === 'boolean',
+  oferta: value => ['40', '30', 'lowi', 'real'].includes(value),
   fecha: fechaValida,
   hora: value => typeof value === 'string' && (value === '' || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)),
 };

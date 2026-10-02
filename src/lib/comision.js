@@ -12,6 +12,28 @@ import { estadoDe } from './estados.js';
 export const MONEDA = 'S/';
 export const fmtSol = (n) => `S/ ${(Number(n) || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 })}`;
 
+// Oferta comercial aplicada a la venta y porcentaje REAL de comisión que se paga.
+export const OFERTAS_COMISION = [
+  { id: '40', label: '40%', factor: 0.80 },
+  { id: '30', label: '30%', factor: 0.70 },
+  { id: 'lowi', label: 'LOWI', factor: 0.30 },
+  { id: 'real', label: 'REAL', factor: 1.00 },
+];
+
+const OFERTA_POR_ID = Object.fromEntries(OFERTAS_COMISION.map((oferta) => [oferta.id, oferta]));
+
+export function normalizarOfertaComision(valor) {
+  const raw = String(valor ?? '').trim().toLowerCase().replace(/\s+/g, '');
+  if (!raw || raw === 'real' || raw === '100' || raw === '100%') return 'real';
+  if (raw === '40' || raw === '40%') return '40';
+  if (raw === '30' || raw === '30%') return '30';
+  if (raw === 'lowi') return 'lowi';
+  return 'real';
+}
+
+export const factorOfertaComision = (valor) => OFERTA_POR_ID[normalizarOfertaComision(valor)]?.factor ?? 1;
+export const etiquetaOfertaComision = (valor) => OFERTA_POR_ID[normalizarOfertaComision(valor)]?.label ?? 'REAL';
+
 // Subtipos por categoría (Bajo / Medio / Alto valor)
 export const SUBTIPOS = {
   fijo: [
@@ -88,13 +110,23 @@ export const MOVIL_POR_TARIFA = {
 export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
   const fijo = { BV: 0, MV: 0, AV: 0 };
   const movil = { BA: 0, MV: 0, AV: 0 };
+  // Unidades equivalentes de pago. Las vallas usan las unidades REALES de arriba;
+  // estos valores solo reducen el importe según la oferta aplicada a cada venta.
+  const ponderado = {
+    fijo: { BV: 0, MV: 0, AV: 0 },
+    movil: { BA: 0, MV: 0, AV: 0 },
+  };
   const clientes = contarClientes(ventas.filter(v => v.mes === mes && estadoActivo(v) && v.clienteNuevo));
   let sinClasificar = 0;
   for (const v of ventas) {
     // Fibra: mes propio de la venta y activa
+    const factorOferta = factorOfertaComision(v.oferta);
     if (v.mes === mes && estadoActivo(v) && v.convergencia && v.velocidad) {
       const b = FIJO_POR_VELOCIDAD[v.velocidad];
-      if (b) fijo[b] += 1;
+      if (b) {
+        fijo[b] += 1;
+        ponderado.fijo[b] += factorOferta;
+      }
     }
     if (estadoDe(v) === 'cancelada' || estadoDe(v) === 'baja') continue;
     // Líneas móviles
@@ -112,8 +144,10 @@ export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
         }
         if (!enMes) continue;
         const b = MOVIL_POR_TARIFA[l.tarifa];
-        if (b) movil[b] += 1;
-        else sinClasificar += 1; // línea activa pero sin tarifa reconocible
+        if (b) {
+          movil[b] += 1;
+          ponderado.movil[b] += factorOferta;
+        } else sinClasificar += 1; // línea activa pero sin tarifa reconocible
       }
     } else if (v.mes === mes && estadoActivo(v)) {
       // Sin detalle de líneas: contadores manuales (activas pero sin tarifa)
@@ -122,7 +156,7 @@ export function contarDesdeVentas(ventas = [], mes, estadoActivo = () => true) {
       sinClasificar += portasAct + nuevas;
     }
   }
-  return { fijo, movil, clientes, sinClasificar };
+  return { fijo, movil, clientes, sinClasificar, ponderado };
 }
 
 // Prorratea los umbrales de valla por un factor (días trabajados / días del
@@ -160,7 +194,7 @@ export function totalCategoria(cat, counts = {}) {
 // pagando al precio de `vallaPago` (la valla EFECTIVA tras aplicar el rappel
 // de clientes, no necesariamente la propia de esta categoría).
 // Devuelve { total, valla, importe, detalle: { [sub]: { n, precio, importe } } }.
-export function comisionCategoria(cat, counts = {}, vallaPago) {
+export function comisionCategoria(cat, counts = {}, vallaPago, unidadesPago = null) {
   const subtipos = SUBTIPOS[cat].map((s) => s.id);
   const total = subtipos.reduce((a, s) => a + (Number(counts[s]) || 0), 0);
   const detalle = {};
@@ -168,8 +202,10 @@ export function comisionCategoria(cat, counts = {}, vallaPago) {
   for (const s of subtipos) {
     const n = Number(counts[s]) || 0;
     const precio = vallaPago >= 0 ? (TARIFA_COMISION[cat][s]?.[vallaPago] || 0) : 0;
-    const sub = n * precio;
-    detalle[s] = { n, precio, importe: sub };
+    const equivalentes = unidadesPago ? Math.max(0, Number(unidadesPago[s]) || 0) : n;
+    const factor = n > 0 ? equivalentes / n : 1;
+    const sub = equivalentes * precio;
+    detalle[s] = { n, precio, factor, importe: sub };
     importe += sub;
   }
   return { total, valla: vallaPago, importe, detalle };
@@ -183,14 +219,14 @@ export function comisionCategoria(cat, counts = {}, vallaPago) {
 // según sus propias unidades. Pero el precio que se paga en fijo y móvil es
 // el de la valla más BAJA de las tres (hay que llegar a las tres para cobrar
 // la valla más alta). Si alguna no llega ni a la 1ª, no se paga comisión.
-export function comisionTotal(fijo = {}, movil = {}, clientes = 0, umbrales = { ...UMBRALES_VALLA, clientes: UMBRALES_CLIENTES }) {
+export function comisionTotal(fijo = {}, movil = {}, clientes = 0, umbrales = { ...UMBRALES_VALLA, clientes: UMBRALES_CLIENTES }, ponderado = null) {
   const vFijo = vallaAlcanzada(totalCategoria('fijo', fijo), umbrales.fijo);
   const vMovil = vallaAlcanzada(totalCategoria('movil', movil), umbrales.movil);
   const vClientes = vallaAlcanzada(Number(clientes) || 0, umbrales.clientes);
   const vallaPago = Math.min(vFijo, vMovil, vClientes);
 
-  const rFijo = comisionCategoria('fijo', fijo, vallaPago);
-  const rMovil = comisionCategoria('movil', movil, vallaPago);
+  const rFijo = comisionCategoria('fijo', fijo, vallaPago, ponderado?.fijo);
+  const rMovil = comisionCategoria('movil', movil, vallaPago, ponderado?.movil);
   return {
     fijo: { ...rFijo, propia: vFijo },
     movil: { ...rMovil, propia: vMovil },

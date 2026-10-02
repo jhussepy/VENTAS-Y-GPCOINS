@@ -24,6 +24,7 @@ export const ventaVacia = () => ({
   fechaVenta: '',
   fechaInstalacion: '',
   mes: 'junio',            // ID persistido del mes dentro de la campaña activa
+  oferta: 'real',           // 40 | 30 | lowi | real — ajusta solo la comisión pagada
   // Fibra / convergencia
   convergencia: '',        // '' | '3P' (Fibra+Fijo+Móvil) | '4P' (+TV)
   velocidad: '',           // '' | 'Fibra 300 MB' | 'Fibra 600 MB' | 'Fibra 1 GB'
