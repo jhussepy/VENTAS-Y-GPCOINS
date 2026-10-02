@@ -101,6 +101,16 @@ describe('cola durable y estado global de sincronización', () => {
     expect(JSON.parse(localStorage.getItem('gpcoins:pendientes-archivados:owner')).datos.ventas).toEqual([{ id: 'pendiente' }]);
   });
 
+  it('restaura una copia legacy de octubre dentro del mes oficial octubre', async () => {
+    await mount(); await emit(empty());
+    await act(async () => state.restaurarDatos(crearBackup({
+      ventas: [{ id: 'oct-1', mes: '2026-10', nombre: 'Ana', apellido: 'Prueba' }],
+    })));
+    expect(state.ventas).toEqual([
+      expect.objectContaining({ id: 'oct-1', mes: 'octubre', nombre: 'Ana' }),
+    ]);
+  });
+
   it('rechaza una restauración con papelera dañada antes de escribir o encolar', async () => {
     await mount(); await emit(empty());
     await expect(state.restaurarDatos(crearBackup({ personal: { papelera: { x: {} } } }))).rejects.toThrow(/papelera/i);
