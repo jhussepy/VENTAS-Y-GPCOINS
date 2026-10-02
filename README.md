@@ -1,6 +1,6 @@
 # Ventas & GP Coins · Vodafone + Lowi
 
-Dashboard para agentes de captación (Televenta Outbound) que registra ventas,
+Aplicación personal de seguimiento comercial que registra ventas,
 calcula GP Coins, sigue los incentivos de Vodafone y, de forma independiente,
 hace seguimiento de las ventas de **Lowi**.
 **Período de incentivos cubierto: 1 de junio al 30 de septiembre de 2026.**
@@ -30,9 +30,8 @@ hace seguimiento de las ventas de **Lowi**.
 ### Plataforma
 - **Login con Google** (Firebase Auth) y **sincronización en la nube**
   (Cloud Firestore) en tiempo real entre dispositivos.
-- **Datos privados por usuario**: cada agente solo ve los suyos.
-- **Panel de Supervisor** (solo administradores): ranking del equipo, KPIs de
-  Vodafone y Lowi, y drill-down por agente.
+- **Acceso personal restringido**: la aplicación está limitada a la cuenta
+  propietaria autorizada por las reglas de Firestore y la validación de la app.
 - **Modo claro/oscuro** persistido en la nube.
 - **Copia de seguridad** export/import en JSON (en el menú lateral).
 - **PWA**: instalable y con respuesta offline básica.
@@ -61,8 +60,8 @@ npm run check    # lint + tests + build, igual que CI
   `ventasVodafone`, `ventasLowi` y `agendados`; los usuarios sin esa marca
   continúan usando automáticamente los arrays históricos del documento.
   Las escrituras se dirigen al esquema correspondiente y se serializan para
-  preservar su orden. El panel de supervisor y la restauración de backups leen
-  y escriben ambos esquemas. La migración se inicia desde Ajustes: descarga un
+  preservar su orden. La restauración de backups funciona con ambos esquemas.
+  La migración se inicia desde Ajustes: descarga un
   backup, copia y verifica los registros y solo entonces activa la versión 2.
   No establezcas `versionEsquema` manualmente desde la consola de Firebase.
 
@@ -73,9 +72,11 @@ Cada mes relaciona un identificador persistido con su valor ISO `YYYY-MM`; esto
 mantiene compatibles las ventas antiguas de junio/julio y evita asignar fechas
 de campañas futuras al mes de junio. Para añadir una campaña, crea su entrada
 en `CAMPANAS`, actualiza `CAMPANA_ACTIVA_ID` y aporta sus tablas comerciales.
-Mientras Vodafone no publique nuevas tablas, agosto y septiembre heredan las
-condiciones comerciales de julio; la herencia queda declarada explícitamente
-en la configuración y puede retirarse cuando cambien.
+Agosto y septiembre heredan explícitamente las condiciones comerciales de
+julio dentro de la campaña cerrada. Las ventas posteriores al 30/09/2026 se
+pueden registrar para seguimiento, pero no reutilizan automáticamente GP Coins,
+llaves, incentivos ni comisiones de septiembre. Para una nueva campaña deben
+añadirse sus reglas comerciales oficiales antes de activar sus cálculos.
 
 ## Stack
 
