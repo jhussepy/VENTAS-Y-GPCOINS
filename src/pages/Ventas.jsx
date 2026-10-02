@@ -102,7 +102,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           <input type="date" className="input" value={v.fechaVenta} onChange={(e) => set('fechaVenta', e.target.value)} /></label>
           {fechaFuera && (
             <p className="text-xs text-amber-400 mt-1">
-              Fecha fuera del período del incentivo ({PERIODO.inicio} → {PERIODO.fin}).
+              Fecha fuera del período del incentivo ({PERIODO.inicio} → {PERIODO.fin}). Se guardará solo para seguimiento hasta configurar una nueva campaña.
             </p>
           )}
         </div>
@@ -277,7 +277,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
           <label className="label">Mes (auto)
           <select className="input" value={v.mes} onChange={(e) => set('mes', e.target.value)} disabled={!!(v.fechaInstalacion || v.fechaVenta)} title={(v.fechaInstalacion || v.fechaVenta) ? 'Se autodetecta desde la fecha de instalación (o la de venta si aún no hay instalación)' : undefined}>
             {PERIODO.meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
-            {mesesSeguimiento.map((m) => <option key={m} value={m}>{etiquetaMes(m)} · seguimiento</option>)}
+            {v.mes && !PERIODO.meses.includes(v.mes) && <option value={v.mes}>{etiquetaMes(v.mes)} · seguimiento</option>}
           </select></label>
         </div>
       </div>
@@ -556,6 +556,7 @@ export default function Ventas() {
           >
             <option value="todos">Todos los meses</option>
             {PERIODO.meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
+            {mesesSeguimiento.map((m) => <option key={m} value={m}>{etiquetaMes(m)} · seguimiento</option>)}
           </select>
           <select className="input w-auto" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
             <option value="todos">Todos los estados</option>
