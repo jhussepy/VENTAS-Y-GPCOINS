@@ -5,8 +5,8 @@ import { create } from 'react-test-renderer';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 const mock = vi.hoisted(() => ({ observer: null, remote: null, save: vi.fn(), load: vi.fn(), profile: vi.fn() }));
 vi.mock('../repositories/userDataRepository.js', async () => {
-  const { calcularCambiosColeccion, normalizarDatosUsuario } = await vi.importActual('../repositories/userDataRepository.js');
-  return { calcularCambiosColeccion, normalizarDatosUsuario, guardarPerfilUsuario: mock.profile, guardarOperacionUsuario: mock.save, cargarDatosCoherentes: mock.load,
+  const { calcularCambiosColeccion, normalizarDatosUsuario, normalizarVentaUsuario } = await vi.importActual('../repositories/userDataRepository.js');
+  return { calcularCambiosColeccion, normalizarDatosUsuario, normalizarVentaUsuario, guardarPerfilUsuario: mock.profile, guardarOperacionUsuario: mock.save, cargarDatosCoherentes: mock.load,
     observarDatosCoherentes: (_uid, callbacks) => { mock.observer = callbacks; return vi.fn(); }, migrarUsuarioAV2: vi.fn() };
 });
 vi.mock('../lib/firebase.js', () => ({ db: {} }));
