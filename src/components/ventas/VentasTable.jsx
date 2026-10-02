@@ -7,6 +7,7 @@ import { INCIDENCIAS_PORTA } from '../../data/movil.js';
 import { Card, Badge, EmptyState, Avatar } from '../ui.jsx';
 import { fmtFecha } from '../../lib/format.js';
 import { ventanaRelevante, fmtVentana, TONO_VENTANA } from '../../lib/portabilidad.js';
+import { etiquetaOfertaComision } from '../../lib/comision.js';
 
 const etiquetaMes = (mes) => etiquetaMesCampana(mes);
 const etiquetaMesCorta = (mes) => etiquetaMes(mes).slice(0, 3);
@@ -83,6 +84,7 @@ export default function VentasTable({
                           <div className="flex gap-1 mt-1">
                             {v.clienteNuevo && <Badge tone="red">Nuevo</Badge>}
                             {v.fibraActiva && <Badge tone="neutral">Fibra</Badge>}
+                            <Badge tone="neutral">Oferta {etiquetaOfertaComision(v.oferta)}</Badge>
                           </div>
                         </div>
                       </div>
