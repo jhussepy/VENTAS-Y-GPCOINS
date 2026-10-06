@@ -283,7 +283,7 @@ function FormVenta({ inicial, onGuardar, onCancelar }) {
       </div>
 
       <p className="text-[11px] text-fg-muted -mt-1">
-        Comisión: <span className="text-fg-soft">40% → 80%</span> del precio de tabla · <span className="text-fg-soft">30% → 70%</span> · <span className="text-fg-soft">LOWI → 30%</span> · <span className="text-fg-soft">REAL → 100%</span>.
+        Comisión: <span className="text-fg-soft">40% → 80%</span> del precio de tabla · <span className="text-fg-soft">30% → 70%</span> · <span className="text-fg-soft">LOWI → 30%</span> · <span className="text-fg-soft">DIGI → 25%</span> · <span className="text-fg-soft">REAL → 100%</span>.
       </p>
 
       {Number(v.portasVoz) > 0 && (
