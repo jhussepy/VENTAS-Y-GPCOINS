@@ -91,7 +91,7 @@ it.each([
   expect(() => restaurar(campo, { id: 'a', ...campos }, false)).toThrow(mensaje);
   expect(() => restaurar(campo, { id: 'a', ...campos }, true)).toThrow(mensaje);
 });
-it.each(['40', '30', 'lowi', 'real'])('conserva la oferta Vodafone %s en backup y papelera', oferta => {
+it.each(['40', '30', 'lowi', 'digi', 'real'])('conserva la oferta Vodafone %s en backup y papelera', oferta => {
   const venta = { ...ventaVacia(), oferta };
   expect(restaurar('ventas', venta, false).ventas[0].oferta).toBe(oferta);
   expect(restaurar('ventas', venta, true).personal.papelera.x.registro.oferta).toBe(oferta);

@@ -49,7 +49,7 @@ const validadores = {
   clave: value => typeof value === 'string' && !Object.hasOwn(Object.prototype, value),
   numero: value => typeof value === 'number' && Number.isFinite(value) && value >= 0,
   booleano: value => typeof value === 'boolean',
-  oferta: value => ['40', '30', 'lowi', 'real'].includes(value),
+  oferta: value => ['40', '30', 'lowi', 'digi', 'real'].includes(value),
   fecha: fechaValida,
   hora: value => typeof value === 'string' && (value === '' || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)),
 };

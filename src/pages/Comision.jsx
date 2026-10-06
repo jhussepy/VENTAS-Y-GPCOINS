@@ -262,7 +262,7 @@ export default function Comision() {
 
       {ponderado && (
         <div className="text-sm px-4 py-3 rounded-lg bg-sky-500/10 text-sky-200 border border-sky-500/25">
-          Comisión por oferta aplicada: <span className="font-semibold">40% → 80%</span> del precio de tabla · <span className="font-semibold">30% → 70%</span> · <span className="font-semibold">LOWI → 30%</span> · <span className="font-semibold">REAL → 100%</span>.
+          Comisión por oferta aplicada: <span className="font-semibold">40% → 80%</span> del precio de tabla · <span className="font-semibold">30% → 70%</span> · <span className="font-semibold">LOWI → 30%</span> · <span className="font-semibold">DIGI → 25%</span> · <span className="font-semibold">REAL → 100%</span>.
           <span className="block text-xs text-sky-200/75 mt-1">Las unidades siguen contando completas para alcanzar las vallas. Si modificas manualmente Fijo o Móvil, el simulador pasa a REAL (100%) porque ya no puede asociar cada unidad a una oferta concreta.</span>
         </div>
       )}
