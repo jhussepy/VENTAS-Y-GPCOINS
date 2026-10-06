@@ -17,6 +17,7 @@ export const OFERTAS_COMISION = [
   { id: '40', label: '40%', factor: 0.80 },
   { id: '30', label: '30%', factor: 0.70 },
   { id: 'lowi', label: 'LOWI', factor: 0.30 },
+  { id: 'digi', label: 'DIGI', factor: 0.25 },
   { id: 'real', label: 'REAL', factor: 1.00 },
 ];
 
@@ -28,6 +29,7 @@ export function normalizarOfertaComision(valor) {
   if (raw === '40' || raw === '40%') return '40';
   if (raw === '30' || raw === '30%') return '30';
   if (raw === 'lowi') return 'lowi';
+  if (raw === 'digi') return 'digi';
   return 'real';
 }
 
