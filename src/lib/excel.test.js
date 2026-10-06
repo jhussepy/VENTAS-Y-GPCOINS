@@ -35,6 +35,7 @@ describe('importarVentas: oferta de comisión', () => {
     ['40%', '40'],
     ['30%', '30'],
     ['LOWI', 'lowi'],
+    ['DIGI', 'digi'],
     ['REAL', 'real'],
     ['', 'real'],
   ])('normaliza %s al valor persistido', async (oferta, esperado) => {
