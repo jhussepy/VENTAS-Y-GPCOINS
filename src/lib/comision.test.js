@@ -12,6 +12,8 @@ describe('ofertas de comisión', () => {
     ['30', 0.7, '30%'],
     ['30%', 0.7, '30%'],
     ['lowi', 0.3, 'LOWI'],
+    ['digi', 0.25, 'DIGI'],
+    ['DIGI', 0.25, 'DIGI'],
     ['REAL', 1, 'REAL'],
     [undefined, 1, 'REAL'],
   ])('normaliza %s al factor esperado', (valor, factor, etiqueta) => {
@@ -23,6 +25,7 @@ describe('ofertas de comisión', () => {
     expect(normalizarOfertaComision('40%')).toBe('40');
     expect(normalizarOfertaComision('30%')).toBe('30');
     expect(normalizarOfertaComision('LOWI')).toBe('lowi');
+    expect(normalizarOfertaComision('DIGI')).toBe('digi');
     expect(normalizarOfertaComision('REAL')).toBe('real');
   });
 });
