@@ -6,7 +6,7 @@ import { ventaVacia } from '../../lib/engine.js';
 let root;
 afterEach(() => { if (root) act(() => root.unmount()); root = null; });
 
-it('muestra las cuatro ofertas y guarda la seleccionada', () => {
+it('muestra las cinco ofertas y guarda la seleccionada', () => {
   let guardada = null;
   act(() => {
     root = create(
@@ -21,14 +21,14 @@ it('muestra las cuatro ofertas y guarda la seleccionada', () => {
   const selects = root.root.findAllByType('select');
   const oferta = selects.find((select) => {
     const labels = select.findAllByType('option').map((option) => option.children.join(''));
-    return ['40%', '30%', 'LOWI', 'REAL'].every((label) => labels.includes(label));
+    return ['40%', '30%', 'LOWI', 'DIGI', 'REAL'].every((label) => labels.includes(label));
   });
 
   expect(oferta).toBeTruthy();
   expect(oferta.props.value).toBe('real');
 
-  act(() => oferta.props.onChange({ target: { value: '40' } }));
-  expect(oferta.props.value).toBe('40');
+  act(() => oferta.props.onChange({ target: { value: 'digi' } }));
+  expect(oferta.props.value).toBe('digi');
 
   const guardar = root.root.findAllByType('button').find((button) =>
     button.children.some((child) => child === ' Guardar' || child === 'Guardar')
@@ -36,5 +36,5 @@ it('muestra las cuatro ofertas y guarda la seleccionada', () => {
   expect(guardar).toBeTruthy();
   act(() => guardar.props.onClick());
 
-  expect(guardada.oferta).toBe('40');
+  expect(guardada.oferta).toBe('digi');
 });
