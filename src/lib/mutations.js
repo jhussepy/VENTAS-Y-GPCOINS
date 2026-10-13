@@ -1,10 +1,27 @@
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const plain = x => x && typeof x === 'object' && !Array.isArray(x);
+const arrayOfRecords = value => Array.isArray(value)
+  && value.every(item => plain(item) && typeof item.id === 'string' && item.id.length > 0);
+
+function fusionarArrayPorId(current, before, after, strict, path) {
+  const actual = new Map(current.map(item => [item.id, item]));
+  const anterior = new Map(before.map(item => [item.id, item]));
+  const siguiente = new Map(after.map(item => [item.id, item]));
+  for (const id of new Set([...anterior.keys(), ...siguiente.keys()])) {
+    if (equal(anterior.get(id), siguiente.get(id))) continue;
+    const value = fusionar(actual.get(id), anterior.get(id), siguiente.get(id), strict, `${path}/${id}`);
+    if (value === undefined) actual.delete(id); else actual.set(id, value);
+  }
+  return [...actual.values()];
+}
 
 // Three-way merge: changes to different fields survive; competing edits fail visibly.
 export function fusionar(current, before, after, strict = true, path = '') {
   if (equal(before, after)) return current;
   if (equal(current, before) || equal(current, after)) return after;
+  if (arrayOfRecords(before) && arrayOfRecords(after) && arrayOfRecords(current)) {
+    return fusionarArrayPorId(current, before, after, strict, path);
+  }
   if (plain(before) && plain(after) && plain(current)) {
     const result = { ...current };
     for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
